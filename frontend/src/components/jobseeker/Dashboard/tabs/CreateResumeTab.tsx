@@ -1486,6 +1486,22 @@ const CreateResumeTab: React.FC<CreateResumeTabProps> = ({
     <div className={dashboardStyles.tabContent}>
       <div className={styles.contentWrapper}>
       
+      {/* Resume Creation Disclaimer */}
+      <div className={styles.disclaimerBanner}>
+        <div className={styles.disclaimerContent}>
+          <div className={styles.disclaimerIcon}>
+            <FiFileText />
+          </div>
+          <div className={styles.disclaimerText}>
+            <h3 className={styles.disclaimerTitle}>Resume Required for Job Matching</h3>
+            <p className={styles.disclaimerMessage}>
+              Creating a complete resume is essential for accurate job matching results. Our system analyzes your skills, experience, and qualifications 
+              from your resume to match you with the most suitable job opportunities. Without a resume, job matching functionality will be limited.
+            </p>
+          </div>
+        </div>
+      </div>
+      
       {/* Generation Modal */}
       {showGeneratingModal && (
         <div className={styles.modalOverlay}>
@@ -1835,12 +1851,13 @@ const CreateResumeTab: React.FC<CreateResumeTabProps> = ({
         <h2 className={styles.sectionTitle}>Professional Summary</h2>
       </div>
       <div className={styles.formGroup}>
-        <label>Summary</label>
+        <label>Summary <span className={styles.required}>*</span> <span className={styles.fieldHint}>(Write a compelling 2-3 sentence summary highlighting your key qualifications, experience, and career goals)</span></label>
         <textarea
           value={resumeData.summary}
           onChange={(e) => updateSummary(e.target.value)}
-          placeholder="Write a brief professional summary about yourself..."
+          placeholder="Example: Experienced software developer with 5+ years in full-stack development. Proven track record of delivering scalable web applications and leading cross-functional teams. Seeking to leverage technical expertise and leadership skills in a senior developer role."
           className={styles.formTextarea}
+          rows={4}
         />
       </div>
 
@@ -1945,12 +1962,13 @@ const CreateResumeTab: React.FC<CreateResumeTabProps> = ({
             </div>
           </div>
           <div className={styles.formGroup}>
-            <label>Description</label>
+            <label>Description <span className={styles.fieldHint}>(Describe key responsibilities, achievements, and impact. Use action verbs and quantify results when possible)</span></label>
             <textarea
               value={exp.description}
               onChange={(e) => updateExperience(index, 'description', e.target.value)}
-              placeholder="Describe your responsibilities and achievements..."
+              placeholder="Example: • Developed and maintained web applications using React and Node.js, serving 10,000+ daily users&#10;• Collaborated with cross-functional teams to deliver 15+ projects on time and within budget&#10;• Implemented automated testing procedures, reducing bug reports by 40%&#10;• Mentored 3 junior developers and conducted code reviews to ensure quality standards"
               className={styles.formTextarea}
+              rows={5}
             />
           </div>
         </div>
