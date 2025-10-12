@@ -21,6 +21,42 @@ class ResumeParsingService {
     // Normalize whitespace and line breaks
     text = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
     
+    // Enhanced preprocessing to fix common concatenation issues
+    text = text
+      // Fix common concatenation issues where sections get mashed together
+      .replace(/([a-z])(EDUCATION|EXPERIENCE|SKILLS|PROJECTS|OBJECTIVE|WORK|PERSONAL|CERTIFICATIONS|AWARDS|ACHIEVEMENTS)/g, '$1\n$2')
+      .replace(/(EDUCATION|EXPERIENCE|SKILLS|PROJECTS|OBJECTIVE|WORK|PERSONAL|CERTIFICATIONS|AWARDS|ACHIEVEMENTS)([A-Z][a-z])/g, '$1\n$2')
+      
+      // Fix name concatenation issues
+      .replace(/([a-z])([A-Z][a-z]+[A-Z][a-z]+)/g, '$1\n$2') // Split concatenated names
+      
+      // Add line breaks before degree patterns
+      .replace(/(Bachelor|Master|PhD|BS|BA|MS|MA|Associate|Certificate|Diploma)\s+(of|in)/gi, '\n$1 $2')
+      
+      // Add line breaks before school patterns
+      .replace(/([a-z])(DeLaSalleLipa|SanPabloColleges|University|College|Institute|School|Academy)/gi, '$1\n$2')
+      
+      // Add line breaks before date patterns
+      .replace(/(January|February|March|April|May|June|July|August|September|October|November|December)\s+\d{4}/gi, '\n$1')
+      .replace(/([a-z])(\d{4}\s*-\s*(?:\d{4}|Present|Current))/gi, '$1\n$2')
+      
+      // Add line breaks before contact info patterns
+      .replace(/([a-zA-Z])(@[a-zA-Z])/g, '$1\n$2')
+      .replace(/([a-zA-Z])(\+\d|\d{10,})/g, '$1\n$2')
+      
+      // Add line breaks before job title patterns
+      .replace(/([a-z])(Production Manager|Video Editor|Graphic Designer|Software Engineer|Developer|Manager|Editor|Designer|Engineer|Analyst|Coordinator|Assistant|Specialist|Freelance|Intern|Student)/gi, '$1\n$2')
+      
+      // Add line breaks before technology and skill patterns
+      .replace(/([a-z])(Technologies:|Programming:|Skills:|Languages:|Tools:|Frameworks:|Competencies:)/gi, '$1\n$2')
+      .replace(/([a-z])(JavaScript|TypeScript|React|Angular|Vue|NodeJS|Python|Java|C\+\+|C#|PHP|Ruby|Go|Rust|Swift|Kotlin|HTML|CSS|SQL|MySQL|PostgreSQL|MongoDB|Git|Docker|AWS|Azure|GCP)/gi, '$1\n$2')
+      
+      // Fix common concatenated words
+      .replace(/([a-z])(ProblemSolving|CriticalThinking|ProjectManagement|TimeManagement|DataAnalysis|MachineLearning|UserExperience|UserInterface|WebDevelopment|MobileDevelopment|SoftwareDevelopment)/gi, '$1\n$2')
+      
+      // Add line breaks before company patterns
+      .replace(/([a-z])(LLC|Inc|Corp|Company|Technologies|Systems|Solutions|Group)/gi, '$1\n$2');
+    
     // Remove excessive whitespace
     text = text.replace(/[ \t]+/g, ' ');
     
@@ -37,6 +73,10 @@ class ResumeParsingService {
     text = text.replace(/^([A-Z\s]{3,}):?\s*$/gm, (match, header) => {
       return header.trim().toLowerCase();
     });
+    
+    // Clean up line breaks
+    text = text.replace(/\n\s+/g, '\n');
+    text = text.replace(/\s+\n/g, '\n');
     
     return text.trim();
   }

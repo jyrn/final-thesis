@@ -2245,6 +2245,124 @@ const CreateResumeTab: React.FC<CreateResumeTabProps> = ({
       }
     }
     
+    // Update optional sections
+    if (parsedData.optionalSections && parsedData.optionalSections.length > 0) {
+      console.log('🔍 Processing optional sections:', parsedData.optionalSections);
+      
+      parsedData.optionalSections.forEach((section: any) => {
+        console.log(`🔍 Processing optional section: ${section.type} - ${section.title}`, section.data);
+        
+        switch (section.type) {
+          case 'certificates':
+            // Handle certificates as a special type of certification
+            if (section.data && section.data.length > 0) {
+              const certificates = section.data.map((cert: any) => 
+                typeof cert === 'string' ? cert : cert.name || cert.title || JSON.stringify(cert)
+              ).filter((cert: string) => cert.trim());
+              
+              if (certificates.length > 0) {
+                setResumeData(prev => ({
+                  ...prev,
+                  certifications: [...(prev.certifications || []), ...certificates]
+                }));
+              }
+            }
+            break;
+            
+          case 'projects':
+            // Handle projects
+            if (section.data && section.data.length > 0) {
+              const projects = section.data.map((project: any) => ({
+                name: project.name || project.title || '',
+                description: project.description || '',
+                technologies: project.technologies || '',
+                startDate: project.startDate || '',
+                endDate: project.endDate || '',
+                url: project.url || ''
+              }));
+              
+              setResumeData(prev => ({
+                ...prev,
+                projects: projects
+              }));
+            }
+            break;
+            
+          case 'awards':
+            // Handle awards
+            if (section.data && section.data.length > 0) {
+              const awards = section.data.map((award: any) => ({
+                title: award.title || award.name || '',
+                issuer: award.issuer || award.organization || '',
+                date: award.date || '',
+                description: award.description || ''
+              }));
+              
+              setResumeData(prev => ({
+                ...prev,
+                awards: awards
+              }));
+            }
+            break;
+            
+          case 'volunteer':
+            // Handle volunteer experience
+            if (section.data && section.data.length > 0) {
+              const volunteer = section.data.map((vol: any) => ({
+                organization: vol.organization || '',
+                role: vol.role || vol.position || '',
+                startDate: vol.startDate || '',
+                endDate: vol.endDate || '',
+                description: vol.description || '',
+                location: vol.location || ''
+              }));
+              
+              setResumeData(prev => ({
+                ...prev,
+                volunteer: volunteer
+              }));
+            }
+            break;
+            
+          case 'languages':
+            // Handle languages
+            if (section.data && section.data.length > 0) {
+              const languages = section.data.map((lang: any) => ({
+                language: lang.language || '',
+                proficiency: lang.proficiency || 'intermediate'
+              }));
+              
+              setResumeData(prev => ({
+                ...prev,
+                languages: languages
+              }));
+            }
+            break;
+            
+          case 'references':
+            // Handle references
+            if (section.data && section.data.length > 0) {
+              const references = section.data.map((ref: any) => ({
+                name: ref.name || '',
+                title: ref.title || ref.position || '',
+                company: ref.company || ref.organization || '',
+                phone: ref.phone || '',
+                email: ref.email || ''
+              }));
+              
+              setResumeData(prev => ({
+                ...prev,
+                references: references
+              }));
+            }
+            break;
+            
+          default:
+            console.log(`🔍 Unknown optional section type: ${section.type}`);
+        }
+      });
+    }
+    
     setHasUnsavedChanges(true);
   };
 
