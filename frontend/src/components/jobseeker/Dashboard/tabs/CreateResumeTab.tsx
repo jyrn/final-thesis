@@ -535,47 +535,81 @@ const CreateResumeTab: React.FC<CreateResumeTabProps> = ({
     return emailRegex.test(email);
   };
 
-  // Handle phone number formatting (Philippine format)
+  // Handle phone number formatting (Philippine format with +63 prefix)
   const handlePhoneChange = (phone: string) => {
-    // Remove all non-digit characters
-    const digitsOnly = phone.replace(/\D/g, '');
+    // Remove all non-digit characters except the + at the beginning
+    let cleanPhone = phone.replace(/[^\d+]/g, '');
     
-    // Format based on length
-    let formattedPhone = '';
+    // If it starts with +63, remove it for processing
+    if (cleanPhone.startsWith('+63')) {
+      cleanPhone = cleanPhone.substring(3);
+    } else if (cleanPhone.startsWith('63')) {
+      cleanPhone = cleanPhone.substring(2);
+    }
     
-    if (digitsOnly.length <= 4) {
-      formattedPhone = digitsOnly;
-    } else if (digitsOnly.length <= 7) {
-      formattedPhone = `${digitsOnly.slice(0, 4)}-${digitsOnly.slice(4)}`;
-    } else if (digitsOnly.length <= 11) {
-      // Philippine mobile format: 0XXX-XXX-XXXX
-      if (digitsOnly.startsWith('0')) {
-        formattedPhone = `${digitsOnly.slice(0, 4)}-${digitsOnly.slice(4, 7)}-${digitsOnly.slice(7)}`;
-      } else {
-        // Add leading 0 if not present
-        const withZero = '0' + digitsOnly;
-        if (withZero.length <= 11) {
-          formattedPhone = `${withZero.slice(0, 4)}-${withZero.slice(4, 7)}-${withZero.slice(7)}`;
-        } else {
-          formattedPhone = `${digitsOnly.slice(0, 4)}-${digitsOnly.slice(4, 7)}-${digitsOnly.slice(7, 11)}`;
-        }
-      }
+    // Remove leading 0 if present (since we'll use +63 format)
+    if (cleanPhone.startsWith('0')) {
+      cleanPhone = cleanPhone.substring(1);
+    }
+    
+    // Format based on length (Philippine mobile: 9XX-XXX-XXXX after +63)
+    let formattedPhone = '+63 ';
+    
+    if (cleanPhone.length <= 3) {
+      formattedPhone += cleanPhone;
+    } else if (cleanPhone.length <= 6) {
+      formattedPhone += `${cleanPhone.slice(0, 3)}-${cleanPhone.slice(3)}`;
+    } else if (cleanPhone.length <= 10) {
+      formattedPhone += `${cleanPhone.slice(0, 3)}-${cleanPhone.slice(3, 6)}-${cleanPhone.slice(6)}`;
     } else {
-      // Limit to 11 digits max
-      const limitedDigits = digitsOnly.slice(0, 11);
-      formattedPhone = `${limitedDigits.slice(0, 4)}-${limitedDigits.slice(4, 7)}-${limitedDigits.slice(7)}`;
+      // Limit to 10 digits max (9XX-XXX-XXXX)
+      const limitedDigits = cleanPhone.slice(0, 10);
+      formattedPhone += `${limitedDigits.slice(0, 3)}-${limitedDigits.slice(3, 6)}-${limitedDigits.slice(6)}`;
     }
     
     updatePersonalInfo('phone', formattedPhone);
   };
 
+  // Convert any phone number format to +63 format
+  const convertToPhilippineFormat = (phone: string) => {
+    if (!phone) return '';
+    
+    // Remove all non-digit characters
+    let digitsOnly = phone.replace(/\D/g, '');
+    
+    // Handle different input formats
+    if (digitsOnly.startsWith('63')) {
+      // Already has country code, remove it
+      digitsOnly = digitsOnly.substring(2);
+    }
+    
+    if (digitsOnly.startsWith('0')) {
+      // Remove leading 0
+      digitsOnly = digitsOnly.substring(1);
+    }
+    
+    // Ensure it's a valid Philippine mobile number (should start with 9)
+    if (digitsOnly.length >= 10 && digitsOnly.startsWith('9')) {
+      // Format as +63 9XX-XXX-XXXX
+      const limitedDigits = digitsOnly.slice(0, 10);
+      return `+63 ${limitedDigits.slice(0, 3)}-${limitedDigits.slice(3, 6)}-${limitedDigits.slice(6)}`;
+    }
+    
+    // If it doesn't look like a valid Philippine number, return original
+    return phone;
+  };
+
   // Validate Philippine phone number
   const isValidPhoneNumber = (phone: string) => {
+    // Check if it starts with +63
+    if (!phone.startsWith('+63 ')) {
+      return false;
+    }
+    
     const digitsOnly = phone.replace(/\D/g, '');
-    // Philippine mobile numbers: 11 digits starting with 09
-    // Philippine landline: 7-8 digits (area code + number)
-    return (digitsOnly.length === 11 && digitsOnly.startsWith('09')) || 
-           (digitsOnly.length >= 7 && digitsOnly.length <= 8);
+    // Should be 13 digits total: 63 + 10 digits (9XX-XXX-XXXX)
+    // Philippine mobile numbers start with 9 after country code
+    return digitsOnly.length === 12 && digitsOnly.startsWith('639');
   };
 
   // Validate work experience dates
@@ -1429,17 +1463,25 @@ const CreateResumeTab: React.FC<CreateResumeTabProps> = ({
           doc.setFont('helvetica', 'normal');
           doc.setTextColor(blackColor[0], blackColor[1], blackColor[2]);
           
+          // Add some space before description
+          yPosition += 2;
+          
           // Split description into bullet points if it contains line breaks
           const descriptionParts = exp.description.split('\n').filter(part => part.trim());
           
-          descriptionParts.forEach(part => {
+          descriptionParts.forEach((part, partIndex) => {
             const bulletText = `• ${part.trim()}`;
-            const bulletLines = doc.splitTextToSize(bulletText, contentWidth - 8);
+            const bulletLines = doc.splitTextToSize(bulletText, contentWidth - 12);
             checkPageBreak(bulletLines.length * 4 + 2);
-            doc.text(bulletLines, margin + 8, yPosition);
+            doc.text(bulletLines, margin + 12, yPosition);
             yPosition += bulletLines.length * 4;
+            
+            // Add small space between bullet points
+            if (partIndex < descriptionParts.length - 1) {
+              yPosition += 2;
+            }
           });
-          yPosition += 5;
+          yPosition += 6; // More space after description
         }
         
         // Add spacing between experiences
@@ -1489,9 +1531,33 @@ const CreateResumeTab: React.FC<CreateResumeTabProps> = ({
         // School name (italic)
         doc.setFontSize(9);
         doc.setFont('helvetica', 'italic');
-        doc.setTextColor(blackColor[0], blackColor[1], blackColor[2]);
+        doc.setTextColor(100, 100, 100); // Gray color for school
         doc.text(edu.school, margin, yPosition);
-        yPosition += 6;
+        yPosition += 4;
+        
+        // Location if available
+        if (edu.location && edu.location.trim()) {
+          doc.setFontSize(8);
+          doc.setFont('helvetica', 'normal');
+          doc.setTextColor(120, 120, 120); // Lighter gray for location
+          doc.text(edu.location, margin, yPosition);
+          yPosition += 4;
+        }
+        
+        // Description if available
+        if (edu.description && edu.description.trim()) {
+          doc.setFontSize(8);
+          doc.setFont('helvetica', 'normal');
+          doc.setTextColor(blackColor[0], blackColor[1], blackColor[2]);
+          const descLines = doc.splitTextToSize(edu.description, contentWidth - 8);
+          doc.text(descLines, margin + 8, yPosition);
+          yPosition += descLines.length * 3 + 2;
+        }
+        
+        // Add spacing between education entries
+        if (index < validEducation.length - 1) {
+          yPosition += 6;
+        }
       });
     }
     
@@ -1520,79 +1586,99 @@ const CreateResumeTab: React.FC<CreateResumeTabProps> = ({
     // Optional Sections (in the order specified by sectionOrder)
     resumeData.optionalSections.forEach(section => {
       if (section.type === 'certificates') {
-        const validCertificates = (section.data as Certificate[]).filter(cert => cert.name && cert.issuer);
+        const validCertificates = (section.data as Certificate[]).filter(cert => cert.name && cert.name.trim());
         if (validCertificates.length > 0) {
           addSectionHeader('Certificates & Seminars');
           
           validCertificates.forEach((cert, index) => {
-            checkPageBreak(20);
+            checkPageBreak(25);
             
             // Certificate name - bold
-            doc.setFontSize(9);
+            doc.setFontSize(10);
             doc.setFont('helvetica', 'bold');
             doc.setTextColor(blackColor[0], blackColor[1], blackColor[2]);
-            doc.text(cert.name, margin, yPosition);
             
-            // Date (right aligned)
+            // Handle long certificate names
+            const nameLines = doc.splitTextToSize(cert.name, contentWidth - 80); // Leave space for date
+            doc.text(nameLines, margin, yPosition);
+            
+            // Date (right aligned) - only if we have a date
             if (cert.date) {
-              const certDate = new Date(cert.date + '-01');
-              const dateText = certDate.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+              let dateText = cert.date;
+              // Try to format the date if it's a year
+              if (cert.date.match(/^\d{4}$/)) {
+                dateText = cert.date;
+              } else if (cert.date.includes(' ')) {
+                // Already formatted like "April 2025"
+                dateText = cert.date;
+              }
+              
               doc.setFontSize(9);
               doc.setFont('helvetica', 'normal');
               const dateWidth = doc.getTextWidth(dateText);
               doc.text(dateText, pageWidth - margin - dateWidth, yPosition);
             }
-            yPosition += 4;
+            yPosition += nameLines.length * 4 + 2;
             
-            // Issuer - italic
-            doc.setFontSize(9);
-            doc.setFont('helvetica', 'italic');
-            doc.text(cert.issuer, margin, yPosition);
-            yPosition += 4;
-            
-            // Description
-            if (cert.description) {
+            // Issuer - italic (only if we have an issuer)
+            if (cert.issuer && cert.issuer.trim()) {
               doc.setFontSize(9);
-              doc.setFont('helvetica', 'normal');
-              const descLines = doc.splitTextToSize(cert.description, contentWidth - 8);
-              checkPageBreak(descLines.length * 4 + 2);
-              doc.text(descLines, margin + 8, yPosition);
-              yPosition += descLines.length * 4;
+              doc.setFont('helvetica', 'italic');
+              doc.setTextColor(100, 100, 100); // Gray color for issuer
+              doc.text(cert.issuer, margin, yPosition);
+              yPosition += 4;
             }
             
+            // Description (only if we have a description)
+            if (cert.description && cert.description.trim()) {
+              yPosition += 2; // Add space before description
+              doc.setFontSize(8);
+              doc.setFont('helvetica', 'normal');
+              doc.setTextColor(blackColor[0], blackColor[1], blackColor[2]);
+              const descLines = doc.splitTextToSize(cert.description, contentWidth - 12);
+              checkPageBreak(descLines.length * 3 + 4);
+              doc.text(descLines, margin + 12, yPosition);
+              yPosition += descLines.length * 3 + 4;
+            }
+            
+            // Add spacing between certificates
             if (index < validCertificates.length - 1) {
-              yPosition += 6;
+              yPosition += 8;
             }
           });
+          yPosition += 5; // Extra space after certificates section
         }
       }
 
       if (section.type === 'projects') {
-        const validProjects = (section.data as Project[]).filter(project => project.name && project.description);
+        const validProjects = (section.data as Project[]).filter(project => project.name && project.name.trim());
         if (validProjects.length > 0) {
           addSectionHeader('Projects');
           
           validProjects.forEach((project, index) => {
-            checkPageBreak(25);
+            checkPageBreak(30);
             
             // Project name - bold
-            doc.setFontSize(9);
+            doc.setFontSize(10);
             doc.setFont('helvetica', 'bold');
             doc.setTextColor(blackColor[0], blackColor[1], blackColor[2]);
-            doc.text(project.name, margin, yPosition);
+            
+            // Handle long project names
+            const nameLines = doc.splitTextToSize(project.name, contentWidth - 80); // Leave space for date
+            doc.text(nameLines, margin, yPosition);
             
             // Date range (right aligned)
             let dateText = '';
-            if (project.startDate && project.endDate) {
-              const startDate = new Date(project.startDate + '-01');
-              const endDate = new Date(project.endDate + '-01');
-              const startMonth = startDate.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
-              const endMonth = endDate.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
-              dateText = `${startMonth} - ${endMonth}`;
+            if (project.startDate && project.endDate && project.endDate !== 'present') {
+              if (project.startDate.match(/^\d{4}$/) && project.endDate.match(/^\d{4}$/)) {
+                dateText = `${project.startDate} - ${project.endDate}`;
+              } else {
+                dateText = `${project.startDate} - ${project.endDate}`;
+              }
+            } else if (project.startDate && project.endDate === 'present') {
+              dateText = `${project.startDate} - Present`;
             } else if (project.startDate) {
-              const startDate = new Date(project.startDate + '-01');
-              const startMonth = startDate.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
-              dateText = startMonth;
+              dateText = project.startDate;
             }
             
             if (dateText) {
@@ -1601,40 +1687,47 @@ const CreateResumeTab: React.FC<CreateResumeTabProps> = ({
               const dateWidth = doc.getTextWidth(dateText);
               doc.text(dateText, pageWidth - margin - dateWidth, yPosition);
             }
-            yPosition += 4;
+            yPosition += nameLines.length * 4 + 2;
             
-            // Technologies - italic
-            if (project.technologies) {
+            // Technologies - italic (only if we have technologies)
+            if (project.technologies && project.technologies.trim()) {
               doc.setFontSize(9);
               doc.setFont('helvetica', 'italic');
-              doc.text(`Technologies: ${project.technologies}`, margin, yPosition);
-              yPosition += 4;
+              doc.setTextColor(100, 100, 100); // Gray color
+              const techLines = doc.splitTextToSize(`Technologies: ${project.technologies}`, contentWidth);
+              doc.text(techLines, margin, yPosition);
+              yPosition += techLines.length * 4;
             }
             
-            // URL
-            if (project.url) {
+            // URL (only if we have a URL)
+            if (project.url && project.url.trim()) {
               doc.setFontSize(8);
               doc.setFont('helvetica', 'normal');
-              doc.setTextColor(0, 0, 255); // Blue for URL
-              doc.text(project.url, margin, yPosition);
+              doc.setTextColor(0, 100, 200); // Blue for URL
+              const urlLines = doc.splitTextToSize(project.url, contentWidth);
+              doc.text(urlLines, margin, yPosition);
               doc.setTextColor(blackColor[0], blackColor[1], blackColor[2]); // Reset color
-              yPosition += 4;
+              yPosition += urlLines.length * 3 + 2;
             }
             
-            // Description
-            if (project.description) {
+            // Description (only if we have a description)
+            if (project.description && project.description.trim()) {
+              yPosition += 2; // Add space before description
               doc.setFontSize(9);
               doc.setFont('helvetica', 'normal');
-              const descLines = doc.splitTextToSize(project.description, contentWidth - 8);
-              checkPageBreak(descLines.length * 4 + 2);
-              doc.text(descLines, margin + 8, yPosition);
-              yPosition += descLines.length * 4;
+              doc.setTextColor(blackColor[0], blackColor[1], blackColor[2]);
+              const descLines = doc.splitTextToSize(project.description, contentWidth - 12);
+              checkPageBreak(descLines.length * 4 + 4);
+              doc.text(descLines, margin + 12, yPosition);
+              yPosition += descLines.length * 4 + 4;
             }
             
+            // Add spacing between projects
             if (index < validProjects.length - 1) {
-              yPosition += 8;
+              yPosition += 10;
             }
           });
+          yPosition += 5; // Extra space after projects section
         }
       }
 
@@ -2129,8 +2222,10 @@ const CreateResumeTab: React.FC<CreateResumeTabProps> = ({
       }
       
       if (personalInfo.phone) {
-        console.log('✅ Using parsed phone:', personalInfo.phone);
-        updatePersonalInfo('phone', personalInfo.phone);
+        console.log('✅ Raw parsed phone:', personalInfo.phone);
+        const convertedPhone = convertToPhilippineFormat(personalInfo.phone);
+        console.log('✅ Converted phone to +63 format:', convertedPhone);
+        updatePersonalInfo('phone', convertedPhone);
       }
       
       // Handle address - put the full parsed address in the address field
@@ -2249,22 +2344,52 @@ const CreateResumeTab: React.FC<CreateResumeTabProps> = ({
     if (parsedData.optionalSections && parsedData.optionalSections.length > 0) {
       console.log('🔍 Processing optional sections:', parsedData.optionalSections);
       
+      const newOptionalSections: OptionalSection[] = [];
+      const newSectionOrder: SectionOrder[] = [...resumeData.sectionOrder];
+      
       parsedData.optionalSections.forEach((section: any) => {
         console.log(`🔍 Processing optional section: ${section.type} - ${section.title}`, section.data);
         
         switch (section.type) {
           case 'certificates':
-            // Handle certificates as a special type of certification
+            // Handle certificates as structured Certificate objects
             if (section.data && section.data.length > 0) {
-              const certificates = section.data.map((cert: any) => 
-                typeof cert === 'string' ? cert : cert.name || cert.title || JSON.stringify(cert)
-              ).filter((cert: string) => cert.trim());
+              const certificates: Certificate[] = section.data.map((cert: any) => {
+                if (typeof cert === 'string') {
+                  return {
+                    name: cert,
+                    issuer: '',
+                    date: '',
+                    description: ''
+                  };
+                } else {
+                  return {
+                    name: cert.name || cert.title || '',
+                    issuer: cert.issuer || '',
+                    date: cert.date || '',
+                    description: cert.description || ''
+                  };
+                }
+              }).filter((cert: Certificate) => cert.name.trim());
               
               if (certificates.length > 0) {
-                setResumeData(prev => ({
-                  ...prev,
-                  certifications: [...(prev.certifications || []), ...certificates]
-                }));
+                const sectionId = section.id || `certificates-${Date.now()}`;
+                newOptionalSections.push({
+                  id: sectionId,
+                  type: 'certificates',
+                  title: section.title || 'Certificates & Seminars',
+                  data: certificates
+                });
+                
+                // Add to section order if not already present
+                if (!newSectionOrder.find(s => s.id === sectionId)) {
+                  newSectionOrder.push({
+                    id: sectionId,
+                    type: 'optional',
+                    title: section.title || 'Certificates & Seminars',
+                    optionalType: 'certificates'
+                  });
+                }
               }
             }
             break;
@@ -2272,88 +2397,100 @@ const CreateResumeTab: React.FC<CreateResumeTabProps> = ({
           case 'projects':
             // Handle projects
             if (section.data && section.data.length > 0) {
-              const projects = section.data.map((project: any) => ({
+              const projects: Project[] = section.data.map((project: any) => ({
                 name: project.name || project.title || '',
                 description: project.description || '',
                 technologies: project.technologies || '',
                 startDate: project.startDate || '',
                 endDate: project.endDate || '',
                 url: project.url || ''
-              }));
+              })).filter((proj: Project) => proj.name.trim());
               
-              setResumeData(prev => ({
-                ...prev,
-                projects: projects
-              }));
+              if (projects.length > 0) {
+                const sectionId = section.id || `projects-${Date.now()}`;
+                newOptionalSections.push({
+                  id: sectionId,
+                  type: 'projects',
+                  title: section.title || 'Projects',
+                  data: projects
+                });
+                
+                // Add to section order if not already present
+                if (!newSectionOrder.find(s => s.id === sectionId)) {
+                  newSectionOrder.push({
+                    id: sectionId,
+                    type: 'optional',
+                    title: section.title || 'Projects',
+                    optionalType: 'projects'
+                  });
+                }
+              }
             }
             break;
             
           case 'awards':
             // Handle awards
             if (section.data && section.data.length > 0) {
-              const awards = section.data.map((award: any) => ({
+              const awards: Award[] = section.data.map((award: any) => ({
                 title: award.title || award.name || '',
                 issuer: award.issuer || award.organization || '',
                 date: award.date || '',
                 description: award.description || ''
-              }));
+              })).filter((award: Award) => award.title.trim());
               
-              setResumeData(prev => ({
-                ...prev,
-                awards: awards
-              }));
+              if (awards.length > 0) {
+                const sectionId = section.id || `awards-${Date.now()}`;
+                newOptionalSections.push({
+                  id: sectionId,
+                  type: 'awards',
+                  title: section.title || 'Awards & Achievements',
+                  data: awards
+                });
+                
+                // Add to section order if not already present
+                if (!newSectionOrder.find(s => s.id === sectionId)) {
+                  newSectionOrder.push({
+                    id: sectionId,
+                    type: 'optional',
+                    title: section.title || 'Awards & Achievements',
+                    optionalType: 'awards'
+                  });
+                }
+              }
             }
             break;
             
           case 'volunteer':
             // Handle volunteer experience
             if (section.data && section.data.length > 0) {
-              const volunteer = section.data.map((vol: any) => ({
+              const volunteer: VolunteerExperience[] = section.data.map((vol: any) => ({
                 organization: vol.organization || '',
                 role: vol.role || vol.position || '',
                 startDate: vol.startDate || '',
                 endDate: vol.endDate || '',
                 description: vol.description || '',
                 location: vol.location || ''
-              }));
+              })).filter((vol: VolunteerExperience) => vol.organization.trim() && vol.role.trim());
               
-              setResumeData(prev => ({
-                ...prev,
-                volunteer: volunteer
-              }));
-            }
-            break;
-            
-          case 'languages':
-            // Handle languages
-            if (section.data && section.data.length > 0) {
-              const languages = section.data.map((lang: any) => ({
-                language: lang.language || '',
-                proficiency: lang.proficiency || 'intermediate'
-              }));
-              
-              setResumeData(prev => ({
-                ...prev,
-                languages: languages
-              }));
-            }
-            break;
-            
-          case 'references':
-            // Handle references
-            if (section.data && section.data.length > 0) {
-              const references = section.data.map((ref: any) => ({
-                name: ref.name || '',
-                title: ref.title || ref.position || '',
-                company: ref.company || ref.organization || '',
-                phone: ref.phone || '',
-                email: ref.email || ''
-              }));
-              
-              setResumeData(prev => ({
-                ...prev,
-                references: references
-              }));
+              if (volunteer.length > 0) {
+                const sectionId = section.id || `volunteer-${Date.now()}`;
+                newOptionalSections.push({
+                  id: sectionId,
+                  type: 'volunteer',
+                  title: section.title || 'Volunteer Experience',
+                  data: volunteer
+                });
+                
+                // Add to section order if not already present
+                if (!newSectionOrder.find(s => s.id === sectionId)) {
+                  newSectionOrder.push({
+                    id: sectionId,
+                    type: 'optional',
+                    title: section.title || 'Volunteer Experience',
+                    optionalType: 'volunteer'
+                  });
+                }
+              }
             }
             break;
             
@@ -2361,6 +2498,16 @@ const CreateResumeTab: React.FC<CreateResumeTabProps> = ({
             console.log(`🔍 Unknown optional section type: ${section.type}`);
         }
       });
+      
+      // Update resumeData with all new optional sections and section order
+      if (newOptionalSections.length > 0) {
+        setResumeData(prev => ({
+          ...prev,
+          optionalSections: newOptionalSections,
+          sectionOrder: newSectionOrder
+        }));
+        console.log('✅ Added optional sections:', newOptionalSections.map(s => s.type));
+      }
     }
     
     setHasUnsavedChanges(true);
@@ -2613,7 +2760,7 @@ const CreateResumeTab: React.FC<CreateResumeTabProps> = ({
                 type="tel"
                 value={resumeData.personalInfo.phone}
                 onChange={(e) => handlePhoneChange(e.target.value)}
-                placeholder="0XXX-XXX-XXXX"
+                placeholder="+63 9XX-XXX-XXXX"
                 className={`${styles.formInput} ${resumeData.personalInfo.phone && !isValidPhoneNumber(resumeData.personalInfo.phone) ? styles.inputError : ''}`}
               />
               {resumeData.personalInfo.phone && !isValidPhoneNumber(resumeData.personalInfo.phone) && (
