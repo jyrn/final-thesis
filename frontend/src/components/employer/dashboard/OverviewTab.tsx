@@ -24,9 +24,9 @@ interface OverviewTabProps {
   onViewJob: (job: Job) => void;
   onEditJob: (job: Job) => void;
   onDeleteJob: (jobId: number | string) => void;
-  onAcceptApplicant: (applicantId: number) => void;
-  onRejectApplicant: (applicantId: number) => void;
-  onViewResume: (applicantId: number) => void;
+  onAcceptApplicant: (applicantId: string) => void;
+  onRejectApplicant: (applicantId: string) => void;
+  onViewResume: (applicantId: string) => void;
 }
 
 export const OverviewTab: React.FC<OverviewTabProps> = ({

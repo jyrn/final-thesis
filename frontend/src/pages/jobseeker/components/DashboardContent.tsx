@@ -15,6 +15,7 @@ interface Job {
   posted: string;
   saved?: boolean;
   matchPercentage?: number;
+  matchScore?: number;
 }
 import styles from '../Dashboard.enhanced.module.css';
 

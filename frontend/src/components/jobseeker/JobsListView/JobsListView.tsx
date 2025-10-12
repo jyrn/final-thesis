@@ -12,6 +12,7 @@ interface JobsListViewProps {
   savedJobs?: Set<string | number>;
   appliedJobs?: Set<string | number>;
   jobseekerSkills?: string[]; // Skills from jobseeker's resume
+  jobseekerEducation?: string; // Education from jobseeker's resume
 }
 
 export const JobsListView: React.FC<JobsListViewProps> = ({
@@ -22,29 +23,106 @@ export const JobsListView: React.FC<JobsListViewProps> = ({
   savedJobs = new Set(),
   appliedJobs = new Set(),
   jobseekerSkills = [],
+  jobseekerEducation,
 }) => {
-  // TF-IDF calculation for jobseeker side
-  const calculateMatchScore = (job: Job): number => {
+  // Enhanced TF-IDF calculation including education factors
+  const calculateMatchScore = (job: Job, jobseekerEducation?: string | Array<any> | { level?: string; field?: string; degrees?: Array<{degree?: string; school?: string; major?: string; course?: string}> }): number => {
     if (!jobseekerSkills || jobseekerSkills.length === 0) return 0;
     if (!job.requirements || job.requirements.length === 0) return 0;
     
     const lowerJobRequirements = job.requirements.map(s => s.toLowerCase());
     const lowerJobseekerSkills = jobseekerSkills.map(s => s.toLowerCase());
     
-    // Find matching skills
+    // Skills matching (70% weight)
     const matchingSkills = lowerJobseekerSkills.filter(skill => lowerJobRequirements.includes(skill));
-    
-    // TF: how many jobseeker skills match job requirements
-    const tf = matchingSkills.length / jobseekerSkills.length;
-    
-    // IDF: give higher weight to matching skills
-    const idf = lowerJobseekerSkills.reduce((sum, skill) => {
-      const weight = lowerJobRequirements.includes(skill) ? 2 : 0.5;
+    const skillsTF = matchingSkills.length / jobseekerSkills.length;
+    const skillsIDF = lowerJobseekerSkills.reduce((sum, skill) => {
+      const weight = lowerJobRequirements.includes(skill) ? 2.0 : 0.5;
       return sum + weight;
     }, 0) / jobseekerSkills.length;
+    // Normalize the skills score to a 0-1 range before applying weight
+    const normalizedSkillsScore = Math.min(1.0, (skillsTF * skillsIDF) / 2.0);
+    const skillsScore = normalizedSkillsScore * 0.7; // 70% weight for skills
     
-    const score = (tf * idf) * 100;
-    return Math.min(100, Math.round(score));
+    // Education matching (30% weight)
+    let educationScore = 0;
+    if (jobseekerEducation && (job.educationLevel || job.preferredCourse)) {
+      let educationMatch = 0;
+      let totalEducationFactors = 0;
+      
+      // Handle string, object, or array education data
+      let educationText = '';
+      if (typeof jobseekerEducation === 'string') {
+        educationText = jobseekerEducation;
+      } else if (Array.isArray(jobseekerEducation)) {
+        // Handle array of education objects
+        educationText = jobseekerEducation.map(edu => 
+          `${edu.degree || ''} ${edu.school || ''} ${edu.major || ''} ${edu.course || ''} ${edu.field || ''}`
+        ).join(' ');
+      } else if (jobseekerEducation && typeof jobseekerEducation === 'object') {
+        // Handle single education object
+        if (jobseekerEducation.degrees && Array.isArray(jobseekerEducation.degrees)) {
+          educationText = jobseekerEducation.degrees.map(edu => `${edu.degree || ''} ${edu.school || ''} ${edu.major || ''} ${edu.course || ''}`).join(' ');
+        } else {
+          educationText = `${jobseekerEducation.level || ''} ${jobseekerEducation.field || ''}`;
+        }
+      }
+      
+      const educationLower = educationText.toLowerCase();
+      
+      // Education level matching
+      if (job.educationLevel) {
+        totalEducationFactors++;
+        const jobEducationLower = job.educationLevel.toLowerCase();
+        
+        // Check if education level matches
+        let hasMatchingLevel = false;
+        if (jobEducationLower.includes('bachelor') && educationLower.includes('bachelor')) hasMatchingLevel = true;
+        if (jobEducationLower.includes('master') && educationLower.includes('master')) hasMatchingLevel = true;
+        if (jobEducationLower.includes('doctorate') && (educationLower.includes('doctorate') || educationLower.includes('phd'))) hasMatchingLevel = true;
+        if (jobEducationLower.includes('associate') && educationLower.includes('associate')) hasMatchingLevel = true;
+        if (jobEducationLower.includes('high school') && educationLower.includes('high school')) hasMatchingLevel = true;
+        
+        if (hasMatchingLevel) {
+          educationMatch += 1.0;
+        }
+      }
+      
+      // Course/field matching
+      if (job.preferredCourse) {
+        totalEducationFactors++;
+        const jobCourseLower = job.preferredCourse.toLowerCase();
+        
+        // Simple keyword matching for course/field
+        const jobKeywords = jobCourseLower.split(/[,\s]+/).filter(word => word.length > 2);
+        const educationKeywords = educationLower.split(/[,\s]+/).filter(word => word.length > 2);
+        
+        // Count matching keywords
+        const matchingKeywords = jobKeywords.filter(jobWord => 
+          educationKeywords.some(eduWord => 
+            eduWord.includes(jobWord) || jobWord.includes(eduWord) ||
+            // Handle common abbreviations and variations
+            (jobWord === 'it' && (eduWord.includes('information') || eduWord.includes('technology'))) ||
+            (jobWord === 'cs' && (eduWord.includes('computer') || eduWord.includes('science'))) ||
+            (eduWord === 'it' && (jobWord.includes('information') || jobWord.includes('technology'))) ||
+            (eduWord === 'cs' && (jobWord.includes('computer') || jobWord.includes('science')))
+          )
+        );
+        
+        if (matchingKeywords.length > 0) {
+          // Simple percentage match: matching keywords / total job keywords
+          const courseMatch = matchingKeywords.length / jobKeywords.length;
+          educationMatch += courseMatch;
+        }
+      }
+      
+      if (totalEducationFactors > 0) {
+        educationScore = (educationMatch / totalEducationFactors) * 0.3; // 30% weight for education
+      }
+    }
+    
+    const totalScore = (skillsScore + educationScore) * 100;
+    return Math.min(100, Math.round(totalScore));
   };
 
   const formatSalary = (salary: string | number | undefined) => {
@@ -153,7 +231,7 @@ export const JobsListView: React.FC<JobsListViewProps> = ({
       
       <div className={styles.listBody}>
         {jobs
-          .map(job => ({ ...job, matchScore: calculateMatchScore(job) }))
+          .map(job => ({ ...job, matchScore: calculateMatchScore(job, jobseekerEducation) }))
           .sort((a, b) => b.matchScore - a.matchScore)
           .map((job, index) => {
           const matchScore = job.matchScore;

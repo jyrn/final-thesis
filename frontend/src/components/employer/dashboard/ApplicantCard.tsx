@@ -6,9 +6,9 @@ import { getImageSrc } from '../../../utils/imageUtils';
 
 interface ApplicantCardProps {
   applicant: Applicant;
-  onAccept?: (applicantId: number) => void;
-  onReject?: (applicantId: number) => void;
-  onViewResume?: (applicantId: number) => void;
+  onAccept?: (applicantId: string) => void;
+  onReject?: (applicantId: string) => void;
+  onViewResume?: (applicantId: string) => void;
 }
 
 export const ApplicantCard: React.FC<ApplicantCardProps> = ({
@@ -61,7 +61,7 @@ export const ApplicantCard: React.FC<ApplicantCardProps> = ({
         </div>
         <div className={styles.detailItem}>
           <FiUser className={styles.icon} />
-          <span>{applicant.experience} of experience</span>
+          <span>{applicant.experience?.length || 0} years of experience</span>
         </div>
       </div>
 

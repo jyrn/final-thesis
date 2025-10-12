@@ -358,8 +358,32 @@
   content: '✓';
   position: absolute;
   left: 0;
-  color: #22c55e;
+  color: #10b981;
   font-weight: bold;
+}
+
+/* Education Requirements */
+.educationRequirements {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 1rem;
+  margin-top: 0.5rem;
+}
+
+.educationItem {
+  margin-bottom: 0.75rem;
+  color: #475569;
+  line-height: 1.6;
+}
+
+.educationItem:last-child {
+  margin-bottom: 0;
+}
+
+.educationItem strong {
+  color: #334155;
+  font-weight: 600;
 }
 
 /* Right Column Cards */

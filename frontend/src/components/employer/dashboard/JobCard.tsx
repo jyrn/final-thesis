@@ -1,7 +1,17 @@
 import React from 'react';
 import { Job } from '@/types/Job';
 import Button from '../ui/Button';
-import { FiEye, FiEdit2, FiTrash2, FiUsers, FiClock, FiMapPin, FiBriefcase, FiTrendingUp } from 'react-icons/fi';
+import { 
+  FiMapPin, 
+  FiClock, 
+  FiTrendingUp, 
+  FiBriefcase, 
+  FiTrash2, 
+  FiEdit3,
+  FiEye,
+  FiUsers,
+  FiFileText
+} from 'react-icons/fi';
 import styles from './JobCard.module.css';
 
 interface JobCardProps {
@@ -138,6 +148,18 @@ export const JobCard: React.FC<JobCardProps> = ({ job, onView, onEdit, onDelete,
               <span>{job.workplaceType || (job.remote ? 'Remote' : 'On-site')}</span>
             </div>
           )}
+          {job.educationLevel && (
+            <div className={styles.metaItem}>
+              <FiFileText className={styles.metaIcon} />
+              <span>{job.educationLevel}</span>
+            </div>
+          )}
+          {job.preferredCourse && (
+            <div className={styles.metaItem}>
+              <FiFileText className={styles.metaIcon} />
+              <span>{job.preferredCourse}</span>
+            </div>
+          )}
         </div>
       </div>
       
@@ -173,7 +195,7 @@ export const JobCard: React.FC<JobCardProps> = ({ job, onView, onEdit, onDelete,
             }}
           >
             <span className={styles.buttonContent}>
-              <FiEdit2 className={styles.icon} />
+              <FiEdit3 className={styles.icon} />
               <span>Edit</span>
             </span>
           </Button>

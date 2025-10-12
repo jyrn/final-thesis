@@ -78,10 +78,10 @@ interface ApplicantDetailsModalProps {
   applicant: Applicant;
   isOpen: boolean;
   onClose: () => void;
-  onApprove: (applicantId: number) => void;
-  onReject: (applicantId: number) => void;
-  onViewResume: (applicantId: number) => void;
-  onDownloadResume: (applicantId: number) => void;
+  onApprove: (applicantId: string) => void;
+  onReject: (applicantId: string) => void;
+  onViewResume: (applicantId: string) => void;
+  onDownloadResume: (applicantId: string) => void;
 }
 
 export const ApplicantDetailsModal: React.FC<ApplicantDetailsModalProps> = ({

@@ -38,23 +38,8 @@ const ApplicationSchema = new mongoose.Schema({
       duration: String,
       description: String
     }],
-    education: {
-      tertiary: {
-        institution: String,
-        degree: String,
-        year: String
-      },
-      secondary: {
-        institution: String,
-        degree: String,
-        year: String
-      },
-      primary: {
-        institution: String,
-        degree: String,
-        year: String
-      }
-    },
+    education: mongoose.Schema.Types.Mixed, // Allow both array and object formats
+    workExperience: [mongoose.Schema.Types.Mixed], // Allow flexible work experience format
     certifications: [String]
   },
   coverLetter: String,

@@ -21,7 +21,7 @@ export const ApplicantListView: React.FC<ApplicantListViewProps> = ({
  
   // Using shared utilities for consistent image and text handling
 
-  // TF-IDF calculation based on the specific job each applicant applied to
+  // Enhanced TF-IDF calculation including education factors
   const calculateTfidfScore = useCallback((applicant: Applicant): number => {
     const applicantSkills = applicant.skills || [];
     if (!applicantSkills || applicantSkills.length === 0) return 0;
@@ -29,22 +29,87 @@ export const ApplicantListView: React.FC<ApplicantListViewProps> = ({
     // Find the job this applicant applied to
     const appliedJob = jobPostings.find(job => job.id?.toString() === applicant.jobId?.toString());
     if (!appliedJob || !appliedJob.requirements || appliedJob.requirements.length === 0) return 0;
- 
+
     const lowerTarget = appliedJob.requirements.map(s => s.toLowerCase());
     const lowerSkills = applicantSkills.map(s => s.toLowerCase());
- 
-    // TF: how many applicant skills match the job they applied to
+
+    // Skills matching (70% weight)
     const matchingSkills = lowerSkills.filter(skill => lowerTarget.includes(skill));
-    const tf = matchingSkills.length / applicantSkills.length;
- 
-    // IDF: give higher weight to matching skills
-    const idf = lowerSkills.reduce((sum, skill) => {
-      const weight = lowerTarget.includes(skill) ? 2 : 0.5; // Higher weight for matches
+    const skillsTF = matchingSkills.length / applicantSkills.length;
+    const skillsIDF = lowerSkills.reduce((sum, skill) => {
+      const weight = lowerTarget.includes(skill) ? 2.0 : 0.5;
       return sum + weight;
     }, 0) / applicantSkills.length;
- 
-    const score = (tf * idf) * 100;
-    return Math.min(100, Math.round(score));
+    // Normalize the skills score to a 0-1 range before applying weight
+    const normalizedSkillsScore = Math.min(1.0, (skillsTF * skillsIDF) / 2.0);
+    const skillsScore = normalizedSkillsScore * 0.7; // 70% weight for skills
+
+    // Education matching (30% weight)
+    let educationScore = 0;
+    if ((appliedJob.educationLevel || appliedJob.preferredCourse) && applicant.education) {
+      let educationMatch = 0;
+      let totalEducationFactors = 0;
+      
+      // Handle both string and array education data
+      const educationText = Array.isArray(applicant.education) 
+        ? applicant.education.map(edu => `${edu.degree || ''} ${edu.school || ''} ${edu.major || ''} ${edu.course || ''}`).join(' ')
+        : String(applicant.education);
+      
+      const educationLower = educationText.toLowerCase();
+      
+      // Education level matching
+      if (appliedJob.educationLevel) {
+        totalEducationFactors++;
+        const jobEducationLower = appliedJob.educationLevel.toLowerCase();
+        
+        // Check if education level matches
+        let hasMatchingLevel = false;
+        if (jobEducationLower.includes('bachelor') && educationLower.includes('bachelor')) hasMatchingLevel = true;
+        if (jobEducationLower.includes('master') && educationLower.includes('master')) hasMatchingLevel = true;
+        if (jobEducationLower.includes('doctorate') && (educationLower.includes('doctorate') || educationLower.includes('phd'))) hasMatchingLevel = true;
+        if (jobEducationLower.includes('associate') && educationLower.includes('associate')) hasMatchingLevel = true;
+        if (jobEducationLower.includes('high school') && educationLower.includes('high school')) hasMatchingLevel = true;
+        
+        if (hasMatchingLevel) {
+          educationMatch += 1.0;
+        }
+      }
+      
+      // Course/field matching
+      if (appliedJob.preferredCourse) {
+        totalEducationFactors++;
+        const jobCourseLower = appliedJob.preferredCourse.toLowerCase();
+        
+        // Simple keyword matching for course/field
+        const jobKeywords = jobCourseLower.split(/[,\s]+/).filter(word => word.length > 2);
+        const educationKeywords = educationLower.split(/[,\s]+/).filter(word => word.length > 2);
+        
+        // Count matching keywords
+        const matchingKeywords = jobKeywords.filter(jobWord => 
+          educationKeywords.some(eduWord => 
+            eduWord.includes(jobWord) || jobWord.includes(eduWord) ||
+            // Handle common abbreviations and variations
+            (jobWord === 'it' && (eduWord.includes('information') || eduWord.includes('technology'))) ||
+            (jobWord === 'cs' && (eduWord.includes('computer') || eduWord.includes('science'))) ||
+            (eduWord === 'it' && (jobWord.includes('information') || jobWord.includes('technology'))) ||
+            (eduWord === 'cs' && (jobWord.includes('computer') || jobWord.includes('science')))
+          )
+        );
+        
+        if (matchingKeywords.length > 0) {
+          // Simple percentage match: matching keywords / total job keywords
+          const courseMatch = matchingKeywords.length / jobKeywords.length;
+          educationMatch += courseMatch;
+        }
+      }
+      
+      if (totalEducationFactors > 0) {
+        educationScore = (educationMatch / totalEducationFactors) * 0.3; // 30% weight for education
+      }
+    }
+
+    const totalScore = (skillsScore + educationScore) * 100;
+    return Math.min(100, Math.round(totalScore));
   }, [jobPostings]);
  
   // Precompute TF-IDF scores based on the job each applicant applied to
@@ -62,7 +127,7 @@ export const ApplicantListView: React.FC<ApplicantListViewProps> = ({
       {jobPostings.length > 0 && (
         <div className={styles.infoBanner}>
           <div className={styles.infoText}>
-            <strong>Info:</strong> TF-IDF scores calculated based on the specific job each applicant applied to.
+            <strong>Info:</strong> Enhanced TF-IDF scores calculated based on skills (70%) and education (30%) matching for each job.
           </div>
           <div className={styles.legend}>
             <div className={styles.legendItem}>
