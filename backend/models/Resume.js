@@ -90,9 +90,31 @@ const ResumeSchema = new mongoose.Schema({
     school: String,
     location: String,
     startDate: String,
-    endDate: String
+    endDate: String,
+    description: String
   }],
   
+  // Optional Sections (Certificates, Projects, Awards, Volunteer)
+  optionalSections: [{
+    id: String,
+    type: {
+      type: String,
+      enum: ['certificates', 'projects', 'awards', 'volunteer']
+    },
+    title: String,
+    data: mongoose.Schema.Types.Mixed // Flexible data structure for different section types
+  }],
+  
+  // Section Order for customization
+  sectionOrder: [{
+    id: String,
+    type: {
+      type: String,
+      enum: ['personal', 'summary', 'experience', 'education', 'skills', 'optional']
+    },
+    title: String,
+    optionalType: String // For optional sections
+  }],
   
   // Version Control
   version: {
@@ -134,8 +156,10 @@ ResumeSchema.methods.markAsProcessed = function(resumeData) {
   this.personalInfo = resumeData.personalInfo;
   this.summary = resumeData.summary;
   this.skills = resumeData.skills;
-  this.workExperience = resumeData.workExperience;
+  this.workExperience = resumeData.workExperience || resumeData.experience;
   this.education = resumeData.education;
+  this.optionalSections = resumeData.optionalSections || [];
+  this.sectionOrder = resumeData.sectionOrder || [];
   this.processedAt = new Date();
 };
 

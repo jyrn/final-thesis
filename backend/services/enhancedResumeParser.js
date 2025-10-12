@@ -274,7 +274,15 @@ class EnhancedResumeParser {
       education: [],
       experience: [],
       skills: [],
-      certifications: []
+      certifications: [],
+      optionalSections: [],
+      sectionOrder: [
+        { id: 'personal', type: 'personal', title: 'Personal Information' },
+        { id: 'summary', type: 'summary', title: 'Professional Summary' },
+        { id: 'experience', type: 'experience', title: 'Work Experience' },
+        { id: 'education', type: 'education', title: 'Educational Background' },
+        { id: 'skills', type: 'skills', title: 'Skills' }
+      ]
     };
     
     // First, try to extract name from the entire document
@@ -315,7 +323,6 @@ class EnhancedResumeParser {
           result.education = this.parseEducationRules(sectionData.content);
           break;
         case 'experience':
-        case 'projects':
           result.experience = this.parseExperienceRules(sectionData.content);
           break;
         case 'skills':
@@ -325,6 +332,78 @@ class EnhancedResumeParser {
           break;
         case 'certifications':
           result.certifications = this.parseCertificationsRules(sectionData.content);
+          // Also add to optional sections
+          const certificates = this.parseOptionalCertificatesRules(sectionData.content);
+          if (certificates.length > 0) {
+            result.optionalSections.push({
+              id: 'certificates-' + Date.now(),
+              type: 'certificates',
+              title: 'Certificates & Seminars',
+              data: certificates
+            });
+            result.sectionOrder.push({
+              id: 'certificates-' + Date.now(),
+              type: 'optional',
+              title: 'Certificates & Seminars',
+              optionalType: 'certificates'
+            });
+          }
+          break;
+        case 'projects':
+          // Parse projects as optional section
+          const projects = this.parseProjectsRules(sectionData.content);
+          if (projects.length > 0) {
+            result.optionalSections.push({
+              id: 'projects-' + Date.now(),
+              type: 'projects',
+              title: 'Projects',
+              data: projects
+            });
+            result.sectionOrder.push({
+              id: 'projects-' + Date.now(),
+              type: 'optional',
+              title: 'Projects',
+              optionalType: 'projects'
+            });
+          }
+          break;
+        case 'awards':
+        case 'achievements':
+          // Parse awards as optional section
+          const awards = this.parseAwardsRules(sectionData.content);
+          if (awards.length > 0) {
+            result.optionalSections.push({
+              id: 'awards-' + Date.now(),
+              type: 'awards',
+              title: 'Awards & Achievements',
+              data: awards
+            });
+            result.sectionOrder.push({
+              id: 'awards-' + Date.now(),
+              type: 'optional',
+              title: 'Awards & Achievements',
+              optionalType: 'awards'
+            });
+          }
+          break;
+        case 'volunteer':
+        case 'volunteering':
+          // Parse volunteer experience as optional section
+          const volunteer = this.parseVolunteerRules(sectionData.content);
+          if (volunteer.length > 0) {
+            result.optionalSections.push({
+              id: 'volunteer-' + Date.now(),
+              type: 'volunteer',
+              title: 'Volunteer Experience',
+              data: volunteer
+            });
+            result.sectionOrder.push({
+              id: 'volunteer-' + Date.now(),
+              type: 'optional',
+              title: 'Volunteer Experience',
+              optionalType: 'volunteer'
+            });
+          }
           break;
       }
     }
@@ -362,6 +441,14 @@ class EnhancedResumeParser {
       experience: [],
       skills: [],
       certifications: [],
+      optionalSections: [],
+      sectionOrder: [
+        { id: 'personal', type: 'personal', title: 'Personal Information' },
+        { id: 'summary', type: 'summary', title: 'Professional Summary' },
+        { id: 'experience', type: 'experience', title: 'Work Experience' },
+        { id: 'education', type: 'education', title: 'Educational Background' },
+        { id: 'skills', type: 'skills', title: 'Skills' }
+      ],
       note: 'AI parsing not yet implemented - using template'
     };
     
@@ -393,7 +480,15 @@ class EnhancedResumeParser {
       education: [],
       experience: [],
       skills: [],
-      certifications: []
+      certifications: [],
+      optionalSections: [],
+      sectionOrder: [
+        { id: 'personal', type: 'personal', title: 'Personal Information' },
+        { id: 'summary', type: 'summary', title: 'Professional Summary' },
+        { id: 'experience', type: 'experience', title: 'Work Experience' },
+        { id: 'education', type: 'education', title: 'Educational Background' },
+        { id: 'skills', type: 'skills', title: 'Skills' }
+      ]
     };
     
     // Apply template matching
@@ -493,6 +588,14 @@ class EnhancedResumeParser {
       experience: [],
       skills: [],
       certifications: [],
+      optionalSections: [],
+      sectionOrder: [
+        { id: 'personal', type: 'personal', title: 'Personal Information' },
+        { id: 'summary', type: 'summary', title: 'Professional Summary' },
+        { id: 'experience', type: 'experience', title: 'Work Experience' },
+        { id: 'education', type: 'education', title: 'Educational Background' },
+        { id: 'skills', type: 'skills', title: 'Skills' }
+      ],
       metadata: {
         methods: [],
         confidence: 0
@@ -514,11 +617,16 @@ class EnhancedResumeParser {
         }
         
         // Merge arrays (combine and deduplicate)
-        ['education', 'experience', 'skills', 'certifications'].forEach(field => {
+        ['education', 'experience', 'skills', 'certifications', 'optionalSections'].forEach(field => {
           if (data[field] && Array.isArray(data[field])) {
             merged[field] = [...merged[field], ...data[field]];
           }
         });
+        
+        // Merge section order (prefer the one with more sections)
+        if (data.sectionOrder && Array.isArray(data.sectionOrder) && data.sectionOrder.length > merged.sectionOrder.length) {
+          merged.sectionOrder = data.sectionOrder;
+        }
         
         totalConfidence += data.confidence || 0.5;
         methodCount++;
@@ -1817,6 +1925,244 @@ class EnhancedResumeParser {
       .filter(cert => cert && cert.length > 5);
     
     return certifications;
+  }
+
+  /**
+   * Parse certificates for optional sections (more detailed structure)
+   */
+  parseOptionalCertificatesRules(certificationsText) {
+    console.log('🏆 Parsing certificates for optional sections...');
+    const certificates = [];
+    const lines = certificationsText.split('\n').map(line => line.trim()).filter(line => line);
+    
+    let currentCert = null;
+    
+    for (const line of lines) {
+      // Skip headers
+      if (line.match(/^(certifications?|certificates?|seminars?|trainings?|licenses?):?$/i)) {
+        continue;
+      }
+      
+      // Check if this looks like a certificate name (title case, reasonable length)
+      if (line.length > 10 && line.length < 100 && 
+          (line.match(/certified|certificate|certification|license|training|seminar/i) || 
+           line.match(/^[A-Z][a-z]+(\s+[A-Z][a-z]*)*$/))) {
+        
+        // Save previous certificate if exists
+        if (currentCert) {
+          certificates.push(currentCert);
+        }
+        
+        // Start new certificate
+        currentCert = {
+          name: line,
+          issuer: '',
+          date: '',
+          description: ''
+        };
+        
+        // Try to extract date from the name
+        const dateMatch = line.match(/(\d{4}|\w+\s+\d{4})/);
+        if (dateMatch) {
+          currentCert.date = dateMatch[1];
+          currentCert.name = line.replace(dateMatch[0], '').trim();
+        }
+      } else if (currentCert && line.length > 5) {
+        // This might be issuer or description
+        if (!currentCert.issuer && line.match(/^[A-Z][a-zA-Z\s&.,]+$/)) {
+          currentCert.issuer = line;
+        } else if (!currentCert.description) {
+          currentCert.description = line;
+        }
+      }
+    }
+    
+    // Add the last certificate
+    if (currentCert) {
+      certificates.push(currentCert);
+    }
+    
+    console.log('🏆 Parsed certificates:', certificates);
+    return certificates;
+  }
+
+  /**
+   * Parse projects for optional sections
+   */
+  parseProjectsRules(projectsText) {
+    console.log('💼 Parsing projects for optional sections...');
+    const projects = [];
+    const lines = projectsText.split('\n').map(line => line.trim()).filter(line => line);
+    
+    let currentProject = null;
+    
+    for (const line of lines) {
+      // Skip headers
+      if (line.match(/^(projects?|personal\s+projects?|work\s+projects?):?$/i)) {
+        continue;
+      }
+      
+      // Check if this looks like a project name
+      if (line.length > 5 && line.length < 80 && 
+          (line.match(/^[A-Z][a-zA-Z\s\-&.()]+$/) || line.includes('Project') || line.includes('System'))) {
+        
+        // Save previous project if exists
+        if (currentProject) {
+          projects.push(currentProject);
+        }
+        
+        // Start new project
+        currentProject = {
+          name: line,
+          description: '',
+          technologies: '',
+          startDate: '',
+          endDate: '',
+          url: ''
+        };
+      } else if (currentProject && line.length > 10) {
+        // This might be description or technologies
+        if (line.match(/technologies?|tech\s+stack|built\s+with|using/i)) {
+          currentProject.technologies = line.replace(/^(technologies?|tech\s+stack|built\s+with|using):?\s*/i, '');
+        } else if (line.match(/https?:\/\/|github|gitlab|bitbucket/i)) {
+          currentProject.url = line;
+        } else if (!currentProject.description) {
+          currentProject.description = line;
+        }
+      }
+    }
+    
+    // Add the last project
+    if (currentProject) {
+      projects.push(currentProject);
+    }
+    
+    console.log('💼 Parsed projects:', projects);
+    return projects;
+  }
+
+  /**
+   * Parse awards for optional sections
+   */
+  parseAwardsRules(awardsText) {
+    console.log('🥇 Parsing awards for optional sections...');
+    const awards = [];
+    const lines = awardsText.split('\n').map(line => line.trim()).filter(line => line);
+    
+    let currentAward = null;
+    
+    for (const line of lines) {
+      // Skip headers
+      if (line.match(/^(awards?|achievements?|honors?|recognitions?):?$/i)) {
+        continue;
+      }
+      
+      // Check if this looks like an award name
+      if (line.length > 5 && line.length < 100 && 
+          (line.match(/award|achievement|honor|recognition|winner|champion|medal|prize/i) ||
+           line.match(/^[A-Z][a-zA-Z\s\-&.()]+$/))) {
+        
+        // Save previous award if exists
+        if (currentAward) {
+          awards.push(currentAward);
+        }
+        
+        // Start new award
+        currentAward = {
+          title: line,
+          issuer: '',
+          date: '',
+          description: ''
+        };
+        
+        // Try to extract date from the title
+        const dateMatch = line.match(/(\d{4}|\w+\s+\d{4})/);
+        if (dateMatch) {
+          currentAward.date = dateMatch[1];
+          currentAward.title = line.replace(dateMatch[0], '').trim();
+        }
+      } else if (currentAward && line.length > 5) {
+        // This might be issuer or description
+        if (!currentAward.issuer && line.match(/^[A-Z][a-zA-Z\s&.,]+$/)) {
+          currentAward.issuer = line;
+        } else if (!currentAward.description) {
+          currentAward.description = line;
+        }
+      }
+    }
+    
+    // Add the last award
+    if (currentAward) {
+      awards.push(currentAward);
+    }
+    
+    console.log('🥇 Parsed awards:', awards);
+    return awards;
+  }
+
+  /**
+   * Parse volunteer experience for optional sections
+   */
+  parseVolunteerRules(volunteerText) {
+    console.log('❤️ Parsing volunteer experience for optional sections...');
+    const volunteer = [];
+    const lines = volunteerText.split('\n').map(line => line.trim()).filter(line => line);
+    
+    let currentVolunteer = null;
+    
+    for (const line of lines) {
+      // Skip headers
+      if (line.match(/^(volunteer|volunteering|community\s+service|social\s+work):?$/i)) {
+        continue;
+      }
+      
+      // Check if this looks like an organization or role
+      if (line.length > 5 && line.length < 80 && 
+          (line.match(/volunteer|community|charity|foundation|organization|ngo|non.profit/i) ||
+           line.match(/^[A-Z][a-zA-Z\s\-&.()]+$/))) {
+        
+        // Save previous volunteer experience if exists
+        if (currentVolunteer) {
+          volunteer.push(currentVolunteer);
+        }
+        
+        // Start new volunteer experience
+        currentVolunteer = {
+          organization: line.match(/volunteer|community|charity|foundation|organization|ngo/i) ? line : '',
+          role: line.match(/volunteer|community|charity|foundation|organization|ngo/i) ? '' : line,
+          startDate: '',
+          endDate: '',
+          description: '',
+          location: ''
+        };
+      } else if (currentVolunteer && line.length > 5) {
+        // This might be role, location, or description
+        if (!currentVolunteer.role && !line.match(/\d{4}/) && line.length < 50) {
+          currentVolunteer.role = line;
+        } else if (line.match(/\b\d{4}\b/)) {
+          // Extract dates
+          const years = line.match(/\d{4}/g);
+          if (years && years.length >= 1) {
+            currentVolunteer.startDate = years[0];
+            if (years.length > 1) {
+              currentVolunteer.endDate = years[1];
+            }
+          }
+        } else if (line.match(/city|province|country|philippines|manila|cebu|davao/i)) {
+          currentVolunteer.location = line;
+        } else if (!currentVolunteer.description) {
+          currentVolunteer.description = line;
+        }
+      }
+    }
+    
+    // Add the last volunteer experience
+    if (currentVolunteer) {
+      volunteer.push(currentVolunteer);
+    }
+    
+    console.log('❤️ Parsed volunteer experience:', volunteer);
+    return volunteer;
   }
 
   /**

@@ -40,9 +40,19 @@ function transformToJobseekerFormat(resumeData, application) {
       degree: edu.degree || '',
       school: edu.school || edu.institution || '',
       startDate: edu.startDate || '',
-      endDate: edu.endDate || ''
+      endDate: edu.endDate || '',
+      description: edu.description || '',
+      location: edu.location || ''
     })),
-    skills: resumeObj.skills || []
+    skills: resumeObj.skills || [],
+    optionalSections: resumeObj.optionalSections || [],
+    sectionOrder: resumeObj.sectionOrder || [
+      { id: 'personal', type: 'personal', title: 'Personal Information' },
+      { id: 'summary', type: 'summary', title: 'Professional Summary' },
+      { id: 'experience', type: 'experience', title: 'Work Experience' },
+      { id: 'education', type: 'education', title: 'Educational Background' },
+      { id: 'skills', type: 'skills', title: 'Skills' }
+    ]
   };
 }
 
