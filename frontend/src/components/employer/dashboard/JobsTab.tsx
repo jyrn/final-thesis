@@ -21,7 +21,7 @@ interface JobsTabProps {
   onFilterChange: (filterType: string, value: string) => void;
   onViewJob: (job: Job) => void;
   onEditJob: (job: Job) => void;
-  onDeleteJob: (jobId: string | number, hiredApplicantIds?: number[]) => void;
+  onDeleteJob: (jobId: string | number, hiredApplicantIds?: string[]) => void;
   onCreateJob: (jobData: Partial<Job>) => void;
   onUpdateJob: (jobData: Partial<Job>) => void;
   isLoading?: boolean;
@@ -85,7 +85,7 @@ export const JobsTab: React.FC<JobsTabProps> = ({
     setIsDeleteModalOpen(true);
   };
 
-  const handleConfirmDelete = (jobId: string | number, hiredApplicantIds: number[]) => {
+  const handleConfirmDelete = (jobId: string | number, hiredApplicantIds: string[]) => {
     onDeleteJob(jobId, hiredApplicantIds);
     setIsDeleteModalOpen(false);
     setJobToDelete(null);

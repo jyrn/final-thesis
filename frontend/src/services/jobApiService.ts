@@ -29,6 +29,8 @@ export interface JobPostingData {
   requirements: string[];
   responsibilities: string[];
   benefits: string[];
+  educationLevel?: string;
+  preferredCourse?: string;
   status?: string;
   maxApplications?: number;
 }
@@ -196,6 +198,8 @@ class JobApiService {
       postedDate: job.postedDate,
       description: job.description,
       requirements: job.requirements || [],
+      educationLevel: job.educationLevel,
+      preferredCourse: job.preferredCourse,
       matchScore: job.matchScore,
       matchingSkills: job.matchingSkills,
       isRemote: job.isRemote || job.workplaceType === 'Remote',
@@ -230,6 +234,8 @@ class JobApiService {
       requirements: Array.isArray(jobData.requirements) ? jobData.requirements.filter((req: string) => req.trim()) : [],
       responsibilities: Array.isArray(jobData.responsibilities) ? jobData.responsibilities.filter((resp: string) => resp.trim()) : [],
       benefits: Array.isArray(jobData.benefits) ? jobData.benefits.filter((ben: string) => ben.trim()) : [],
+      educationLevel: jobData.educationLevel || '',
+      preferredCourse: jobData.preferredCourse || '',
       status: jobData.status || 'active',
       maxApplications: jobData.maxApplications ? parseInt(jobData.maxApplications) : undefined
     };

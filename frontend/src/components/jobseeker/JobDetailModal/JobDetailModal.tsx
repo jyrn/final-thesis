@@ -1,5 +1,5 @@
 import React from 'react';
-import { FiX, FiMapPin, FiClock, FiDollarSign, FiUsers, FiCalendar, FiBriefcase, FiTrendingUp, FiStar, FiHome, FiGlobe, FiBookmark } from 'react-icons/fi';
+import { FiX, FiMapPin, FiClock, FiUsers, FiCalendar, FiBriefcase, FiTrendingUp, FiStar, FiHome, FiGlobe } from 'react-icons/fi';
 import styles from './JobDetailModal.module.css';
 import { getImageSrc } from '../../../utils/imageUtils';
 
@@ -185,8 +185,30 @@ const JobDetailModal: React.FC<JobDetailModalProps> = ({ job, isOpen, onClose, o
               </div>
             </div>
 
+            {(job.educationLevel || job.preferredCourse) && (
+              <div className={styles.section}>
+                <h3 className={styles.sectionTitle}>Education Requirements</h3>
+                <div className={styles.sectionContent}>
+                  <div className={styles.educationRequirements}>
+                    {job.educationLevel && (
+                      <div className={styles.educationItem}>
+                        <span className={styles.educationLabel}>Education Level:</span>
+                        <span className={styles.educationValue}>{job.educationLevel}</span>
+                      </div>
+                    )}
+                    {job.preferredCourse && (
+                      <div className={styles.educationItem}>
+                        <span className={styles.educationLabel}>Preferred Course/Field:</span>
+                        <span className={styles.educationValue}>{job.preferredCourse}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+
             <div className={styles.section}>
-              <h3 className={styles.sectionTitle}>Requirements</h3>
+              <h3 className={styles.sectionTitle}>Required Skills and Experience</h3>
               <div className={styles.sectionContent}>
                 <ul className={styles.requirementsList}>
                   {job.requirements?.map((req, index) => (

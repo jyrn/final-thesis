@@ -24,29 +24,54 @@ export interface JobPosting {
 }
 
 export interface Applicant {
-  id: number;
+  id: string;
   name: string;
-  position: string;
-  status: string;
-  date: string;
-  match: number;
-  matchPercentage?: number;
-  experience: string;
-  skills: string[];
-  email?: string;
+  email: string;
   phone?: string;
-  resumeUrl: string;
-  statusType?: StatusType;
-  priority?: PriorityUrgency;
-  jobTitle?: string;
-  jobId?: string;
+  address?: string;
   appliedDate: string;
-  matchScore: number;
-  lastActivity?: string;
+  status: 'pending' | 'reviewed' | 'interview' | 'hired' | 'rejected';
+  resumeData?: {
+    personalInfo?: {
+      name?: string;
+      email?: string;
+      phone?: string;
+      address?: string;
+    };
+    summary?: string;
+    skills?: string[];
+    experience?: Array<{
+      company: string;
+      position: string;
+      duration?: string;
+      description?: string;
+    }>;
+  };
+  profilePicture?: string;
+  skills?: string[];
+  education?: Array<{
+    degree?: string;
+    school?: string;
+    major?: string;
+    course?: string;
+    location?: string;
+    startDate?: string;
+    endDate?: string;
+    _id?: string;
+  }>;
+  jobId?: string;
   avatar?: string;
-  location?: string;
-  salary?: string;
-  expectedSalary?: string;
+  position?: string;
+  jobTitle?: string;
+  matchScore?: number;
+  matchPercentage?: number;
+  match?: number;
+  experience?: Array<{
+    company: string;
+    position: string;
+    duration?: string;
+    description?: string;
+  }>;
 }
 
 export interface Employer {

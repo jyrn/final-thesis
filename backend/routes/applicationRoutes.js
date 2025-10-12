@@ -4,7 +4,10 @@ const Application = require('../models/Application');
 const { verifyToken } = require('../middleware/authMiddleware');
 const path = require('path');
 
-// ------------------ SUBMIT APPLICATION ------------------
+
+// @route   POST /api/applications
+// @desc    Create a new job application
+// @access  Private
 router.post('/', verifyToken, async (req, res) => {
   try {
     const { jobId, resumeData, coverLetter } = req.body;
@@ -46,6 +49,14 @@ router.post('/', verifyToken, async (req, res) => {
       };
     };
 
+
+
+
+    console.log(`🎓 Education processing for user ${uid}:`, {
+      originalEducation: resumeData.education,
+      isArray: Array.isArray(resumeData.education)
+    });
+
     // Enhanced resume
     const enhancedResumeData = {
       ...resumeData,
@@ -56,11 +67,7 @@ router.post('/', verifyToken, async (req, res) => {
           (jobSeekerProfile ? `${jobSeekerProfile.firstName} ${jobSeekerProfile.lastName}` : 'Unknown Applicant'),
         email: resumeData.personalInfo?.email || jobSeekerProfile?.email || ''
       },
-      education: {
-        tertiary: mapEducationData(resumeData.education?.tertiary),
-        secondary: mapEducationData(resumeData.education?.secondary),
-        primary: mapEducationData(resumeData.education?.primary)
-      }
+      education: resumeData.education || []
     };
 
     // Fetch actual resume data from Resume collection
@@ -68,9 +75,13 @@ router.post('/', verifyToken, async (req, res) => {
     let resumeFileInfo = null;
     let actualResumeData = null;
     
+    console.log(`🔍 Looking for Resume data for user ${uid}, currentResumeId: ${jobSeekerProfile?.currentResumeId}`);
+    
     if (jobSeekerProfile?.currentResumeId) {
       const resume = await Resume.findById(jobSeekerProfile.currentResumeId);
+      console.log(`📄 Found resume by currentResumeId:`, !!resume);
       if (resume) {
+        console.log(`📚 Resume education data:`, resume.education);
         // Get file info
         if (resume.fileUrl) {
           resumeFileInfo = {
@@ -80,12 +91,15 @@ router.post('/', verifyToken, async (req, res) => {
           };
         }
         // Get actual resume content (skills, experience, etc.)
+        const resumeEducation = resume.education || [];
+        console.log(`🎓 Processed education:`, { resumeEducation });
+        
         actualResumeData = {
           personalInfo: resume.personalInfo,
           summary: resume.summary,
           skills: resume.skills || [],
           workExperience: resume.workExperience || [],
-          education: resume.education || []
+          education: resumeEducation
         };
       }
     } else {
@@ -93,8 +107,10 @@ router.post('/', verifyToken, async (req, res) => {
         $or: [{ jobSeekerUid: uid }, { uid: uid }],
         isActive: true
       }).sort({ uploadedAt: -1 });
-
+      
+      console.log(`📄 Found recent resume by uid search:`, !!recentResume);
       if (recentResume) {
+        console.log(`📚 Recent resume education data:`, recentResume.education);
         // Get file info
         if (recentResume.fileUrl) {
           resumeFileInfo = {
@@ -104,12 +120,15 @@ router.post('/', verifyToken, async (req, res) => {
           };
         }
         // Get actual resume content (skills, experience, etc.)
+        const recentResumeEducation = recentResume.education || [];
+        console.log(`🎓 Processed recent education:`, { recentResumeEducation });
+        
         actualResumeData = {
           personalInfo: recentResume.personalInfo,
           summary: recentResume.summary,
           skills: recentResume.skills || [],
           workExperience: recentResume.workExperience || [],
-          education: recentResume.education || []
+          education: recentResumeEducation
         };
       }
     }
@@ -131,6 +150,16 @@ router.post('/', verifyToken, async (req, res) => {
         address: actualResumeData.personalInfo?.fullAddress || actualResumeData.personalInfo?.address || enhancedResumeData.personalInfo?.address
       }
     } : enhancedResumeData;
+
+    // Ensure education field is always present, even if empty
+    if (!finalResumeData.education) {
+      finalResumeData.education = [];
+    }
+
+    console.log(`📋 Final resume data for application:`, {
+      hasEducation: !!finalResumeData.education,
+      educationData: finalResumeData.education
+    });
 
     const application = new Application({
       jobId,

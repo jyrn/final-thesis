@@ -26,7 +26,9 @@ const defaultJobData = {
   benefits: [''],
   department: '',
   workplaceType: '',
-  status: 'active'
+  status: 'active',
+  educationLevel: '',
+  preferredCourse: ''
 };
 
 export const JobFormModal: React.FC<JobFormModalProps> = ({
@@ -63,7 +65,9 @@ export const JobFormModal: React.FC<JobFormModalProps> = ({
         benefits: job.benefits && job.benefits.length > 0 ? job.benefits : [''],
         department: job.department || '',
         workplaceType: job.workplaceType || (job.remote ? '' : ''),
-        status: job.status || ''
+        status: job.status || '',
+        educationLevel: job.educationLevel || '',
+        preferredCourse: job.preferredCourse || ''
       };
     }
     return defaultJobData;
@@ -109,7 +113,9 @@ export const JobFormModal: React.FC<JobFormModalProps> = ({
           benefits: job.benefits && job.benefits.length > 0 ? job.benefits : [''],
           department: job.department || '',
           workplaceType: job.workplaceType || (job.remote ? '' : ''),
-          status: job.status || ''
+          status: job.status || '',
+          educationLevel: job.educationLevel || '',
+          preferredCourse: job.preferredCourse || ''
         };
         
         setFormData(newFormData);
@@ -278,6 +284,8 @@ export const JobFormModal: React.FC<JobFormModalProps> = ({
       requirements: filteredRequirements,
       responsibilities: filteredResponsibilities,
       benefits: filteredBenefits,
+      educationLevel: formData.educationLevel,
+      preferredCourse: formData.preferredCourse,
       ...(isEditing && job ? { id: job.id } : {})
     };
 
@@ -565,6 +573,34 @@ export const JobFormModal: React.FC<JobFormModalProps> = ({
                   </div>
 
                   <div className={styles.compactGroup}>
+                    <label className={styles.compactLabel}>Education Level</label>
+                    <select
+                      className={styles.compactSelect}
+                      value={formData.educationLevel}
+                      onChange={(e) => handleInputChange('educationLevel', e.target.value)}
+                    >
+                      <option value="">Not Specified</option>
+                      <option value="High School">High School</option>
+                      <option value="Associate Degree">Associate Degree</option>
+                      <option value="Bachelor's Degree">Bachelor's Degree</option>
+                      <option value="Master's Degree">Master's Degree</option>
+                      <option value="Doctorate">Doctorate</option>
+                      <option value="Professional Certification">Professional Certification</option>
+                    </select>
+                  </div>
+
+                  <div className={styles.compactGroup}>
+                    <label className={styles.compactLabel}>Preferred Course/Field</label>
+                    <input
+                      type="text"
+                      className={styles.compactInput}
+                      value={formData.preferredCourse}
+                      onChange={(e) => handleInputChange('preferredCourse', e.target.value)}
+                      placeholder="e.g. Computer Science, Engineering"
+                    />
+                  </div>
+
+                  <div className={styles.compactGroup}>
                     <label className={styles.compactLabel}>Salary Range</label>
                     <div className={styles.compactSalaryRange}>
                       <div className={styles.compactSalaryInput}>
@@ -630,7 +666,7 @@ export const JobFormModal: React.FC<JobFormModalProps> = ({
                   
                   <div className={styles.compactGroup}>
                     <label className={styles.compactLabel}>
-                      Requirements <span className={styles.required}>*</span>
+                      Required Skills and Experience <span className={styles.required}>*</span>
                     </label>
                     <div className={styles.compactListContainer}>
                       {formData.requirements.map((requirement, index) => (
@@ -640,7 +676,7 @@ export const JobFormModal: React.FC<JobFormModalProps> = ({
                             className={styles.compactInput}
                             value={requirement}
                             onChange={(e) => handleRequirementChange(index, e.target.value)}
-                            placeholder="e.g. React, TypeScript, 3+ years"
+                            placeholder="e.g. 3+ years React experience, TypeScript proficiency"
                           />
                           {formData.requirements.length > 1 && (
                             <button

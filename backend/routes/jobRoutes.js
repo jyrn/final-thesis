@@ -165,6 +165,8 @@ router.get('/employer/my-jobs', verifyToken, requireRole('employer'), async (req
       requirements: job.requirements,
       responsibilities: job.responsibilities,
       benefits: job.benefits,
+      educationLevel: job.educationLevel,
+      preferredCourse: job.preferredCourse,
       status: job.status,
       applicationCount: job.applicationCount,
       applicantCount: job.applicationCount, // Add this for frontend compatibility
@@ -273,6 +275,8 @@ router.post('/', verifyToken, requireRole('employer'), async (req, res) => {
       requirements,
       responsibilities,
       benefits,
+      educationLevel,
+      preferredCourse,
       status = 'active',
       maxApplications
     } = req.body;
@@ -324,6 +328,8 @@ router.post('/', verifyToken, requireRole('employer'), async (req, res) => {
       requirements: Array.isArray(requirements) ? requirements.filter(req => req.trim()) : [],
       responsibilities: Array.isArray(responsibilities) ? responsibilities.filter(resp => resp.trim()) : [],
       benefits: Array.isArray(benefits) ? benefits.filter(ben => ben.trim()) : [],
+      educationLevel: educationLevel || '',
+      preferredCourse: preferredCourse || '',
       status,
       maxApplications: maxApplications ? parseInt(maxApplications) : null
     };
@@ -353,7 +359,9 @@ router.post('/', verifyToken, requireRole('employer'), async (req, res) => {
         remote: job.remote,
         requirements: job.requirements,
         responsibilities: job.responsibilities,
-        benefits: job.benefits
+        benefits: job.benefits,
+        educationLevel: job.educationLevel,
+        preferredCourse: job.preferredCourse
       }
     });
   } catch (error) {
@@ -409,6 +417,8 @@ router.put('/:id', verifyToken, requireRole('employer'), async (req, res) => {
       requirements,
       responsibilities,
       benefits,
+      educationLevel,
+      preferredCourse,
       status,
       maxApplications
     } = req.body;
@@ -428,6 +438,8 @@ router.put('/:id', verifyToken, requireRole('employer'), async (req, res) => {
     if (requirements) job.requirements = Array.isArray(requirements) ? requirements.filter(req => req.trim()) : [];
     if (responsibilities) job.responsibilities = Array.isArray(responsibilities) ? responsibilities.filter(resp => resp.trim()) : [];
     if (benefits) job.benefits = Array.isArray(benefits) ? benefits.filter(ben => ben.trim()) : [];
+    if (educationLevel !== undefined) job.educationLevel = educationLevel || '';
+    if (preferredCourse !== undefined) job.preferredCourse = preferredCourse || '';
     if (status) job.status = status;
     if (maxApplications !== undefined) job.maxApplications = maxApplications ? parseInt(maxApplications) : null;
 

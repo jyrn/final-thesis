@@ -2386,6 +2386,22 @@ const CreateResumeTab: React.FC<CreateResumeTabProps> = ({
     <div className={dashboardStyles.tabContent}>
       <div className={styles.contentWrapper}>
       
+      {/* Resume Creation Disclaimer */}
+      <div className={styles.disclaimerBanner}>
+        <div className={styles.disclaimerContent}>
+          <div className={styles.disclaimerIcon}>
+            <FiFileText />
+          </div>
+          <div className={styles.disclaimerText}>
+            <h3 className={styles.disclaimerTitle}>Resume Required for Job Matching</h3>
+            <p className={styles.disclaimerMessage}>
+              Creating a complete resume is essential for accurate job matching results. Our system analyzes your skills, experience, and qualifications 
+              from your resume to match you with the most suitable job opportunities. Without a resume, job matching functionality will be limited.
+            </p>
+          </div>
+        </div>
+      </div>
+      
       {/* Generation Modal */}
       {showGeneratingModal && (
         <div className={styles.modalOverlay}>
