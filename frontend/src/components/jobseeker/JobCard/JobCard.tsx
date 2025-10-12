@@ -202,6 +202,18 @@ const JobCard: React.FC<JobCardProps> = ({
           <div className={styles.detailItem}>
             <span>{job.workplaceType || (job.remote ? 'Remote' : 'On-site')}</span>
           </div>
+          {job.educationLevel && (
+            <div className={styles.detailItem}>
+              <FiTrendingUp className={styles.detailIcon} />
+              <span>{job.educationLevel}</span>
+            </div>
+          )}
+          {job.preferredCourse && (
+            <div className={styles.detailItem}>
+              <FiBriefcase className={styles.detailIcon} />
+              <span>{job.preferredCourse}</span>
+            </div>
+          )}
         </div>
         
         

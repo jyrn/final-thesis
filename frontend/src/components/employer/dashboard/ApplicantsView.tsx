@@ -16,9 +16,9 @@ interface ApplicantsViewProps {
   };
   onFilterChange: (filterType: string, value: string) => void;
   onViewApplicantDetails: (applicant: Applicant) => void;
-  onDownloadResume: (applicantId: number) => void;
-  onApproveApplicant: (applicantId: number) => void;
-  onRejectApplicant: (applicantId: number) => void;
+  onDownloadResume: (applicantId: string) => void;
+  onApproveApplicant: (applicantId: string) => void;
+  onRejectApplicant: (applicantId: string) => void;
 }
 
 export const ApplicantsView: React.FC<ApplicantsViewProps> = ({
@@ -128,7 +128,7 @@ export const ApplicantsView: React.FC<ApplicantsViewProps> = ({
                   Applied for: <span className={styles.positionName}>{applicant.position}</span>
                 </p>
                 <p className={styles.appliedDate}>
-                  Applied on {new Date(applicant.appliedDate).toLocaleDateString()} • {applicant.experience}
+                  Applied on {new Date(applicant.appliedDate).toLocaleDateString()} • {applicant.experience?.length || 0} years experience
                 </p>
               </div>
               <div className={styles.matchSection}>

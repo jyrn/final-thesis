@@ -330,6 +330,25 @@ const ApplicationJobModal: React.FC<ApplicationJobModalProps> = ({
               </div>
             </div>
 
+            {/* Education Requirements */}
+            {(job.educationLevel || job.preferredCourse) && (
+              <div className={styles.section}>
+                <h3 className={styles.sectionTitle}>Education Requirements</h3>
+                <div className={styles.educationRequirements}>
+                  {job.educationLevel && (
+                    <div className={styles.educationItem}>
+                      <strong>Education Level:</strong> {job.educationLevel}
+                    </div>
+                  )}
+                  {job.preferredCourse && (
+                    <div className={styles.educationItem}>
+                      <strong>Preferred Course/Field:</strong> {job.preferredCourse}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
             {/* Requirements */}
             {job.requirements && job.requirements.length > 0 && (
               <div className={styles.section}>

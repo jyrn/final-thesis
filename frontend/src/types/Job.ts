@@ -45,6 +45,10 @@ export interface Job {
   responsibilities?: string[]
   benefits?: string[]
   
+  // Education requirements
+  educationLevel?: string
+  preferredCourse?: string
+  
   // Dates and status
   postedDate: string
   lastUpdated?: string

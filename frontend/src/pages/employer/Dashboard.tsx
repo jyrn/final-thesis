@@ -316,6 +316,8 @@ const EmployerDashboard: React.FC = () => {
           requirements: job.requirements || [],
           responsibilities: job.responsibilities || [],
           benefits: job.benefits || [],
+          educationLevel: job.educationLevel || '',
+          preferredCourse: job.preferredCourse || '',
           postedDate: job.createdAt || job.postedDate || new Date().toISOString(),
           lastUpdated: job.updatedAt,
           posted: job.createdAt || job.postedDate || new Date().toISOString(),
@@ -470,7 +472,7 @@ const EmployerDashboard: React.FC = () => {
   }, [isAuthReady, currentUser, isCheckingVerification, userVerificationStatus]);
 
   // Use real applications data only
-  const enhancedApplicants: Applicant[] = applications.sort((a, b) => b.matchPercentage - a.matchPercentage);
+  const enhancedApplicants: Applicant[] = applications.sort((a, b) => (b.matchPercentage || 0) - (a.matchPercentage || 0));
 
 
   // Filter and sort applicants based on search and filters
@@ -507,9 +509,9 @@ const EmployerDashboard: React.FC = () => {
       case 'newest':
         return dateB - dateA;
       case 'match-high':
-        return b.match - a.match;
+        return (b.match || 0) - (a.match || 0);
       case 'match-low':
-        return a.match - b.match;
+        return (a.match || 0) - (b.match || 0);
       default:
         return dateB - dateA; // Default to newest first
     }
@@ -598,7 +600,7 @@ const EmployerDashboard: React.FC = () => {
   };
 
   // Handle applicant actions with backend integration
-  const handleApproveApplicant = async (applicantId: number) => {
+  const handleApproveApplicant = async (applicantId: string) => {
     try {
       if (!currentUser) {
         alert('Please log in again to update application status');
@@ -637,7 +639,7 @@ const EmployerDashboard: React.FC = () => {
     }
   };
 
-  const handleRejectApplicant = async (applicantId: number) => {
+  const handleRejectApplicant = async (applicantId: string) => {
     try {
       if (!currentUser) {
         alert('Please log in again to update application status');
@@ -676,7 +678,7 @@ const EmployerDashboard: React.FC = () => {
     }
   };
 
-  const handleViewResume = async (applicantId: number) => {
+  const handleViewResume = async (applicantId: string) => {
     try {
       const applicant = enhancedApplicants.find(app => app.id === applicantId);
       if (!applicant) {
@@ -727,7 +729,7 @@ const EmployerDashboard: React.FC = () => {
     setSelectedApplicant(null);
   };
 
-  const handleDownloadResume = async (applicantId: number) => {
+  const handleDownloadResume = async (applicantId: string) => {
     try {
       const applicant = enhancedApplicants.find(a => a.id === applicantId);
       if (!applicant) {
@@ -828,6 +830,8 @@ const EmployerDashboard: React.FC = () => {
         requirements: jobData.requirements || [],
         responsibilities: jobData.responsibilities || [],
         benefits: jobData.benefits || [],
+        educationLevel: jobData.educationLevel || '',
+        preferredCourse: jobData.preferredCourse || '',
         status: jobData.status || 'active'
       };
 
@@ -850,6 +854,8 @@ const EmployerDashboard: React.FC = () => {
         requirements: createdJob.requirements || jobData.requirements || [],
         responsibilities: createdJob.responsibilities || jobData.responsibilities || [],
         benefits: createdJob.benefits || jobData.benefits || [],
+        educationLevel: createdJob.educationLevel || jobData.educationLevel || '',
+        preferredCourse: createdJob.preferredCourse || jobData.preferredCourse || '',
         urgency: 'medium' as const,
         matchQuality: 85,
         department: createdJob.department || jobData.department || 'General',
@@ -907,6 +913,8 @@ const EmployerDashboard: React.FC = () => {
         requirements: jobData.requirements || [],
         responsibilities: jobData.responsibilities || [],
         benefits: jobData.benefits || [],
+        educationLevel: jobData.educationLevel || '',
+        preferredCourse: jobData.preferredCourse || '',
         status: jobData.status || 'active',
         salaryMin: minSalary,
         salaryMax: maxSalary
@@ -922,7 +930,9 @@ const EmployerDashboard: React.FC = () => {
             ...jobData,
             requirements: jobData.requirements || [],
             responsibilities: jobData.responsibilities || [],
-            benefits: jobData.benefits || []
+            benefits: jobData.benefits || [],
+            educationLevel: jobData.educationLevel || '',
+            preferredCourse: jobData.preferredCourse || ''
           };
         }
         return job;
@@ -961,14 +971,27 @@ const EmployerDashboard: React.FC = () => {
     setPendingJobUpdate(null);
   };
 
-  const handleDeleteJob = async (jobId: number, hiredApplicantIds?: number[]) => {
+  const handleDeleteJob = async (jobId: number, hiredApplicantIds?: string[]) => {
     try {
       setIsLoadingJobs(true);
       
       await jobApiService.deleteJob(jobId.toString());
       
-      // Update local state
+      // Update local state - remove job from job postings
       setJobPostings(prev => prev.filter(job => job.id !== jobId));
+      
+      // Remove applications for the deleted job from applicants list
+      setApplications(prev => prev.filter(app => app.jobId !== jobId.toString()));
+      
+      // If the deleted job was currently selected in applicants tab, clear the selection
+      if (selectedJob && selectedJob.id === jobId) {
+        setSelectedJob(null);
+        setApplicantFilters(prev => ({
+          ...prev,
+          jobId: '',
+          status: ''
+        }));
+      }
       
       // In a real app, you would also update applicant statuses based on hiredApplicantIds
     } catch (error) {

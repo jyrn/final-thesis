@@ -298,6 +298,13 @@
   font-weight: bold;
 }
 
+.fieldHint {
+  color: #6b7280;
+  font-weight: 400;
+  font-size: 0.8125rem;
+  font-style: italic;
+}
+
 /* Checkbox styling for Present options */
 .presentCheckbox {
   display: flex;
@@ -720,6 +727,54 @@
 .buttonIcon {
   width: 16px;
   height: 16px;
+}
+
+/* Disclaimer Banner */
+.disclaimerBanner {
+  background: linear-gradient(135deg, #fef3c7, #fde68a);
+  border: 1px solid #f59e0b;
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+  box-shadow: 0 2px 8px rgba(245, 158, 11, 0.15);
+}
+
+.disclaimerContent {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+}
+
+.disclaimerIcon {
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  background: rgba(245, 158, 11, 0.2);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #d97706;
+  font-size: 1.25rem;
+}
+
+.disclaimerText {
+  flex: 1;
+}
+
+.disclaimerTitle {
+  margin: 0 0 0.5rem 0;
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: #92400e;
+}
+
+.disclaimerMessage {
+  margin: 0;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  color: #78350f;
+  font-weight: 500;
 }
 
 /* Resume Status Banner */
@@ -1412,6 +1467,24 @@
 
 .experienceItem .formTextarea {
   margin-bottom: 0;
+}
+
+/* Field Description Styles */
+.fieldDescription {
+  font-size: 0.875rem;
+  color: #6b7280;
+  line-height: 1.5;
+  margin-bottom: 0.75rem;
+  padding: 0.75rem 1rem;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  font-weight: 400;
+}
+
+.fieldDescription strong {
+  color: #374151;
+  font-weight: 600;
 }
 
 /* Modal Styles */

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Job } from '@/types/Job';
-import { FiX, FiMapPin, FiClock, FiUsers, FiCalendar, FiBriefcase, FiTag, FiEdit3, FiSave, FiEdit2, FiTrash2 } from 'react-icons/fi';
+import { FiX, FiMapPin, FiClock, FiUsers, FiBriefcase, FiTag, FiEdit3, FiTrash2 } from 'react-icons/fi';
 import styles from './JobDetailsModal.module.css';
 
 interface JobDetailsModalProps {
@@ -23,7 +23,6 @@ export const JobDetailsModal: React.FC<JobDetailsModalProps> = (props) => {
     onClose,
     onEdit,
     onDelete,
-    onUpdateJob,
     onViewApplicants,
     profilePicture
   } = props;
@@ -44,15 +43,7 @@ export const JobDetailsModal: React.FC<JobDetailsModalProps> = (props) => {
       onClose(); // Close the modal after navigating to applicants
     }
   }, [onViewApplicants, onClose]);
-  const [isEditingDescription, setIsEditingDescription] = useState(false);
-  const [editedDescription, setEditedDescription] = useState('');
   
-  // Update edited description when job changes
-  React.useEffect(() => {
-    if (job?.description) {
-      setEditedDescription(job.description);
-    }
-  }, [job]);
   
   if (!isOpen || !job) return null;
 
@@ -248,9 +239,27 @@ export const JobDetailsModal: React.FC<JobDetailsModalProps> = (props) => {
             </div>
           </div>
 
+        {(job.educationLevel || job.preferredCourse) && (
+          <div className={styles.section}>
+            <h3 className={styles.sectionTitle}>Education Requirements</h3>
+            <div className={styles.educationRequirements}>
+              {job.educationLevel && (
+                <div className={styles.educationItem}>
+                  <strong>Education Level:</strong> {job.educationLevel}
+                </div>
+              )}
+              {job.preferredCourse && (
+                <div className={styles.educationItem}>
+                  <strong>Preferred Course/Field:</strong> {job.preferredCourse}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
         {job.requirements && job.requirements.length > 0 && (
           <div className={styles.section}>
-            <h3 className={styles.sectionTitle}>Requirements</h3>
+            <h3 className={styles.sectionTitle}>Required Skills and Experience</h3>
             <div className={styles.requirements}>
               {job.requirements.map((req, index) => (
                 <span key={index} className={styles.requirementTag}>

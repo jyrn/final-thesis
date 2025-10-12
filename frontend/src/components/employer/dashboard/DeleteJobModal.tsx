@@ -15,7 +15,7 @@ interface DeleteJobModalProps {
   applicants: Applicant[];
   isOpen: boolean;
   onClose: () => void;
-  onConfirmDelete: (jobId: string | number, hiredApplicantIds: number[]) => void;
+  onConfirmDelete: (jobId: string | number, hiredApplicantIds: string[]) => void;
 }
 
 export const DeleteJobModal: React.FC<DeleteJobModalProps> = ({
@@ -25,7 +25,7 @@ export const DeleteJobModal: React.FC<DeleteJobModalProps> = ({
   onClose,
   onConfirmDelete
 }) => {
-  const [selectedApplicants, setSelectedApplicants] = useState<number[]>([]);
+  const [selectedApplicants, setSelectedApplicants] = useState<string[]>([]);
   const [step, setStep] = useState<'warning' | 'selectApplicants'>('warning');
 
   if (!isOpen || !job) return null;
@@ -51,7 +51,7 @@ export const DeleteJobModal: React.FC<DeleteJobModalProps> = ({
     onClose();
   };
 
-  const toggleApplicantSelection = (applicantId: number) => {
+  const toggleApplicantSelection = (applicantId: string) => {
     setSelectedApplicants(prev => 
       prev.includes(applicantId)
         ? prev.filter(id => id !== applicantId)
@@ -93,7 +93,7 @@ export const DeleteJobModal: React.FC<DeleteJobModalProps> = ({
                   </p>
                   {jobApplicants.length > 0 && (
                     <p className={styles.applicantInfo}>
-                      This job has <strong>{jobApplicants.length} active applicant{jobApplicants.length !== 1 ? 's' : ''}</strong>.
+                      This job has <strong>{jobApplicants.length} applicant{jobApplicants.length !== 1 ? 's' : ''}</strong>.
                     </p>
                   )}
                   {jobApplicants.length > 0 && (
@@ -149,7 +149,7 @@ export const DeleteJobModal: React.FC<DeleteJobModalProps> = ({
                         <h4 className={styles.applicantName}>{applicant.name}</h4>
                         <p className={styles.applicantMeta}>
                           Applied {new Date(applicant.appliedDate).toLocaleDateString()} • 
-                          {applicant.match}% match • {applicant.experience}
+                          {applicant.match}% match • {applicant.experience?.length || 0} years experience
                         </p>
                         <div className={styles.applicantSkills}>
                           {applicant.skills.slice(0, 3).map((skill, index) => (

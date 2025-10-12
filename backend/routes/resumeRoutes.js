@@ -424,7 +424,15 @@ router.get('/current', verifyToken, async (req, res) => {
         summary: resume.summary,
         skills: resume.skills,
         workExperience: resume.workExperience,
-        education: resume.education
+        education: resume.education,
+        optionalSections: resume.optionalSections || [],
+        sectionOrder: resume.sectionOrder || [
+          { id: 'personal', type: 'personal', title: 'Personal Information' },
+          { id: 'summary', type: 'summary', title: 'Professional Summary' },
+          { id: 'experience', type: 'experience', title: 'Work Experience' },
+          { id: 'education', type: 'education', title: 'Educational Background' },
+          { id: 'skills', type: 'skills', title: 'Skills' }
+        ]
       }
     });
 
@@ -564,9 +572,14 @@ router.post('/create', verifyToken, async (req, res) => {
       existingResume.skills = resumeData.skills;
       existingResume.workExperience = processWorkExperience(resumeData.experience);
       existingResume.education = processEducationDates(resumeData.education);
+      existingResume.optionalSections = resumeData.optionalSections || [];
+      existingResume.sectionOrder = resumeData.sectionOrder || existingResume.sectionOrder;
       existingResume.updatedAt = new Date();
       // Increment version on update
       existingResume.version = (existingResume.version || 1) + 1;
+      
+      console.log('💾 Saving optional sections (UPDATE):', existingResume.optionalSections.length, 'sections');
+      console.log('💾 Section types:', existingResume.optionalSections.map(s => s.type));
       
       await existingResume.save();
       var resume = existingResume;
@@ -609,6 +622,14 @@ router.post('/create', verifyToken, async (req, res) => {
         skills: resumeData.skills,
         workExperience: processWorkExperience(resumeData.experience),
         education: processEducationDates(resumeData.education),
+        optionalSections: resumeData.optionalSections || [],
+        sectionOrder: resumeData.sectionOrder || [
+          { id: 'personal', type: 'personal', title: 'Personal Information' },
+          { id: 'summary', type: 'summary', title: 'Professional Summary' },
+          { id: 'experience', type: 'experience', title: 'Work Experience' },
+          { id: 'education', type: 'education', title: 'Educational Background' },
+          { id: 'skills', type: 'skills', title: 'Skills' }
+        ],
         version: 1, // Start new resumes at version 1
         isActive: true
       });
@@ -628,6 +649,9 @@ router.post('/create', verifyToken, async (req, res) => {
           barangay: resumeData.personalInfo.barangayName
         }
       });
+      
+      console.log('💾 Saving optional sections (NEW):', newResume.optionalSections.length, 'sections');
+      console.log('💾 Section types:', newResume.optionalSections.map(s => s.type));
 
       await newResume.save();
       var resume = newResume;
@@ -922,7 +946,9 @@ router.post('/parse', verifyToken, async (req, res) => {
   try {
     const multer = require('multer');
     const resumeParsingService = require('../services/resumeParsingService');
-    const enhancedResumeParser = require('../services/enhancedResumeParser');
+    const EnhancedResumeParser = require('../services/enhancedResumeParser');
+    const enhancedResumeParser = new EnhancedResumeParser();
+    console.log('🔄 Routes loaded with enhanced parser v2.0.1');
     
     // Configure multer for memory storage
     const upload = multer({
@@ -975,8 +1001,12 @@ router.post('/parse', verifyToken, async (req, res) => {
             dataKeys: Object.keys(parseResult.data),
             personalInfo: parseResult.data.personalInfo,
             educationCount: parseResult.data.education?.length || 0,
-            educationSample: parseResult.data.education?.[0] || null
+            educationSample: parseResult.data.education?.[0] || null,
+            optionalSectionsCount: parseResult.data.optionalSections?.length || 0,
+            optionalSectionTypes: parseResult.data.optionalSections?.map(s => s.type) || []
           });
+          
+          console.log('🔍 DEBUG: Optional Sections Details:', parseResult.data.optionalSections);
           
           res.json({
             success: true,

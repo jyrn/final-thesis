@@ -99,6 +99,21 @@ const JobSchema = new mongoose.Schema({
     trim: true
   }],
   
+  // Education Requirements
+  educationLevel: {
+    type: String,
+    required: false,
+    enum: ['', 'High School', 'Associate Degree', 'Bachelor\'s Degree', 'Master\'s Degree', 'Doctorate', 'Professional Certification'],
+    default: ''
+  },
+  preferredCourse: {
+    type: String,
+    required: false,
+    trim: true,
+    maxlength: 200,
+    default: ''
+  },
+  
   // Job Status & Management
   status: {
     type: String,
@@ -225,6 +240,8 @@ JobSchema.methods.getPublicData = function() {
     requirements: this.requirements,
     responsibilities: this.responsibilities,
     benefits: this.benefits,
+    educationLevel: this.educationLevel,
+    preferredCourse: this.preferredCourse,
     postedDate: this.postedDate,
     lastUpdated: this.lastUpdated,
     applicationCount: this.applicationCount,

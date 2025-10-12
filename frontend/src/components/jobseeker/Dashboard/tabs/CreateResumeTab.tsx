@@ -777,6 +777,8 @@ const CreateResumeTab: React.FC<CreateResumeTabProps> = ({
       if (response.ok) {
         const result = await response.json();
         console.log('Loaded resume data from database:', result.data);
+        console.log('🔍 DATABASE DEBUG: Optional Sections from DB:', result.data.optionalSections);
+        console.log('🔍 DATABASE DEBUG: Section Order from DB:', result.data.sectionOrder);
         
         // Transform database data back to form format
         const dbData = result.data;
@@ -833,6 +835,9 @@ const CreateResumeTab: React.FC<CreateResumeTabProps> = ({
         };
         
         console.log('Transformed data for form:', transformedData);
+        console.log('🔍 DATABASE DEBUG: Transformed Optional Sections:', transformedData.optionalSections);
+        console.log('🔍 DATABASE DEBUG: Transformed Section Order:', transformedData.sectionOrder);
+        
         setResumeData(transformedData);
         setHasExistingResume(true);
         setIsPDFReady(true); // Resume exists, PDF is ready
@@ -890,51 +895,13 @@ const CreateResumeTab: React.FC<CreateResumeTabProps> = ({
     }
   }, []);
 
-  // Check if all required fields are filled
+  // Check if all required fields are filled (only name and skills)
   const isFormValid = () => {
-    const { personalInfo, summary, experience, education, skills } = resumeData;
+    const { personalInfo, skills } = resumeData;
     
-    // Check personal info
-    if (!personalInfo.firstName || !personalInfo.lastName || !personalInfo.email || !personalInfo.phone || !personalInfo.region || !personalInfo.province || !personalInfo.city || !personalInfo.barangay || !personalInfo.address || !personalInfo.zipCode || !personalInfo.age || !personalInfo.birthday) {
+    // Check personal info - only name is required
+    if (!personalInfo.firstName || !personalInfo.lastName) {
       return false;
-    }
-    
-    // Check summary
-    if (!summary.trim()) {
-      return false;
-    }
-    
-    // Check at least one experience with company and position
-    const hasValidExperience = experience.some(exp => exp.company.trim() && exp.position.trim());
-    if (!hasValidExperience) {
-      return false;
-    }
-    
-    // Validate experience dates
-    for (let i = 0; i < experience.length; i++) {
-      const exp = experience[i];
-      if (exp.company.trim() || exp.position.trim()) { // Only validate if experience has content
-        const validation = validateExperienceDates(exp.startDate, exp.endDate);
-        if (!validation.isValid) {
-          return false;
-        }
-      }
-    }
-    
-    // Check at least one education entry
-    if (!education.some(edu => edu.degree && edu.school)) {
-      return false;
-    }
-    
-    // Validate education dates
-    for (let i = 0; i < education.length; i++) {
-      const edu = education[i];
-      if (edu.degree.trim() || edu.school.trim()) { // Only validate if education has content
-        const validation = validateEducationDates(edu.startDate, edu.endDate);
-        if (!validation.isValid) {
-          return false;
-        }
-      }
     }
     
     // Check at least one skill
@@ -2132,8 +2099,13 @@ const CreateResumeTab: React.FC<CreateResumeTabProps> = ({
           success: result.success,
           hasData: !!result.data,
           dataKeys: result.data ? Object.keys(result.data) : [],
-          personalInfoKeys: result.data?.personalInfo ? Object.keys(result.data.personalInfo) : []
+          personalInfoKeys: result.data?.personalInfo ? Object.keys(result.data.personalInfo) : [],
+          hasOptionalSections: !!result.data?.optionalSections,
+          optionalSectionsCount: result.data?.optionalSections?.length || 0,
+          optionalSectionTypes: result.data?.optionalSections?.map((s: any) => s.type) || []
         });
+        
+        console.log('🔍 FRONTEND DEBUG: Optional Sections from API:', result.data?.optionalSections);
         
         if (result.success && result.data) {
           // Auto-fill form with parsed data
@@ -2331,7 +2303,24 @@ const CreateResumeTab: React.FC<CreateResumeTabProps> = ({
     
     // Update certifications
     if (parsedData.certifications && parsedData.certifications.length > 0) {
-      const validCertifications = parsedData.certifications.filter((cert: string) => cert.trim());
+      const validCertifications = parsedData.certifications.filter((cert: any) => {
+        // Handle both string and object formats
+        if (typeof cert === 'string') {
+          return cert.trim();
+        } else if (cert && typeof cert === 'object' && cert.name) {
+          return cert.name.trim();
+        }
+        return false;
+      }).map((cert: any) => {
+        // Convert objects to strings for the form
+        if (typeof cert === 'string') {
+          return cert;
+        } else if (cert && typeof cert === 'object') {
+          return cert.name || '';
+        }
+        return '';
+      });
+      
       if (validCertifications.length > 0) {
         setResumeData(prev => ({
           ...prev,
@@ -2341,6 +2330,11 @@ const CreateResumeTab: React.FC<CreateResumeTabProps> = ({
     }
     
     // Update optional sections
+    console.log('🔍 FRONTEND DEBUG: Checking for optional sections...');
+    console.log('🔍 parsedData.optionalSections exists:', !!parsedData.optionalSections);
+    console.log('🔍 parsedData.optionalSections length:', parsedData.optionalSections?.length || 0);
+    console.log('🔍 parsedData.optionalSections content:', parsedData.optionalSections);
+    
     if (parsedData.optionalSections && parsedData.optionalSections.length > 0) {
       console.log('🔍 Processing optional sections:', parsedData.optionalSections);
       
@@ -2532,6 +2526,22 @@ const CreateResumeTab: React.FC<CreateResumeTabProps> = ({
   return (
     <div className={dashboardStyles.tabContent}>
       <div className={styles.contentWrapper}>
+      
+      {/* Resume Creation Disclaimer */}
+      <div className={styles.disclaimerBanner}>
+        <div className={styles.disclaimerContent}>
+          <div className={styles.disclaimerIcon}>
+            <FiFileText />
+          </div>
+          <div className={styles.disclaimerText}>
+            <h3 className={styles.disclaimerTitle}>Resume Required for Job Matching</h3>
+            <p className={styles.disclaimerMessage}>
+              Creating a complete resume is essential for accurate job matching results. Our system analyzes your skills, experience, and qualifications 
+              from your resume to match you with the most suitable job opportunities. Without a resume, job matching functionality will be limited.
+            </p>
+          </div>
+        </div>
+      </div>
       
       {/* Generation Modal */}
       {showGeneratingModal && (
@@ -2739,7 +2749,7 @@ const CreateResumeTab: React.FC<CreateResumeTabProps> = ({
           <div className={styles.contactFieldsContainer}>
             <div className={styles.formGroup}>
               <label>
-                Email Address <span className={styles.required}>*</span>
+                Email Address
               </label>
               <input
                 type="email"
@@ -2754,7 +2764,7 @@ const CreateResumeTab: React.FC<CreateResumeTabProps> = ({
             </div>
             <div className={styles.formGroup}>
               <label>
-                Phone Number <span className={styles.required}>*</span>
+                Phone Number
               </label>
               <input
                 type="tel"
@@ -2775,7 +2785,7 @@ const CreateResumeTab: React.FC<CreateResumeTabProps> = ({
       <div className={styles.formGrid}>
         <div className={styles.formGroup}>
           <label>
-            Region ({regions.length} available) <span className={styles.required}>*</span>
+            Region ({regions.length} available)
           </label>
           <select
             value={resumeData.personalInfo.region}
@@ -2800,7 +2810,7 @@ const CreateResumeTab: React.FC<CreateResumeTabProps> = ({
         </div>
         <div className={styles.formGroup}>
           <label>
-            Province ({provinces.length} available) <span className={styles.required}>*</span>
+            Province ({provinces.length} available)
           </label>
           <select
             value={resumeData.personalInfo.province}
@@ -2826,7 +2836,7 @@ const CreateResumeTab: React.FC<CreateResumeTabProps> = ({
         </div>
         <div className={styles.formGroup}>
           <label>
-            City/Municipality ({cities.length} available) <span className={styles.required}>*</span>
+            City/Municipality ({cities.length} available)
           </label>
           <select
             value={resumeData.personalInfo.city}
@@ -2852,7 +2862,7 @@ const CreateResumeTab: React.FC<CreateResumeTabProps> = ({
         </div>
         <div className={styles.formGroup}>
           <label>
-            Barangay ({barangays.length} available) <span className={styles.required}>*</span>
+            Barangay ({barangays.length} available)
           </label>
           <select
             value={resumeData.personalInfo.barangay}
@@ -2880,7 +2890,7 @@ const CreateResumeTab: React.FC<CreateResumeTabProps> = ({
         </div>
         <div className={styles.formGroup}>
           <label>
-            Street Address <span className={styles.required}>*</span>
+            Street Address
           </label>
           <input
             type="text"
@@ -2892,7 +2902,7 @@ const CreateResumeTab: React.FC<CreateResumeTabProps> = ({
         </div>
         <div className={styles.formGroup}>
           <label>
-            Zip Code <span className={styles.required}>*</span>
+            Zip Code
           </label>
           <input
             type="text"
@@ -2904,7 +2914,7 @@ const CreateResumeTab: React.FC<CreateResumeTabProps> = ({
         </div>
         <div className={styles.formGroup}>
           <label>
-            Birthday <span className={styles.required}>*</span>
+            Birthday
           </label>
           <input
             type="date"
@@ -2916,7 +2926,7 @@ const CreateResumeTab: React.FC<CreateResumeTabProps> = ({
         </div>
         <div className={styles.formGroup}>
           <label>
-            Age <span className={styles.required}>*</span>
+            Age
           </label>
           <input
             type="number"
@@ -3015,7 +3025,7 @@ const CreateResumeTab: React.FC<CreateResumeTabProps> = ({
                     </div>
                     <div style={{ display: 'flex', gap: '15px' }}>
                       <div className={styles.formGroup} style={{ flex: '1' }}>
-                        <label>Start date <span className={styles.required}>*</span></label>
+                        <label>Start date</label>
                         <input
                           type="month"
                           value={exp.startDate || ''}
@@ -3888,7 +3898,7 @@ const CreateResumeTab: React.FC<CreateResumeTabProps> = ({
           <div className={styles.sectionContainer}>
             <div className={styles.sectionHeader}>
               <FiStar className={styles.sectionIcon} />
-              <h2 className={styles.sectionTitle}>Skills</h2>
+              <h2 className={styles.sectionTitle}>Skills <span className={styles.required}>*</span></h2>
             </div>
             <div className={styles.skillsList}>
               {resumeData.skills.map((skill, index) => (

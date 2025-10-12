@@ -178,6 +178,8 @@ const ApplicationsTab: React.FC<any> = ({
         applicantCount: jobDetail?.applicantCount,
         salaryMin: jobDetail?.salaryMin,
         salaryMax: jobDetail?.salaryMax,
+        educationLevel: jobDetail?.educationLevel,
+        preferredCourse: jobDetail?.preferredCourse,
         // Include any other fields from the full job data
         ...jobDetail
       };
