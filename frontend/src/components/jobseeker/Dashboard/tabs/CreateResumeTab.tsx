@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { FiDownload, FiSave, FiUser, FiBriefcase, FiFileText, FiPlus, FiMinus, FiEdit3, FiSave as FiSaveIcon, FiX, FiMail, FiPhone, FiMapPin, FiClock, FiCalendar, FiTrash2, FiStar, FiUpload, FiCheck } from 'react-icons/fi';
+import { FiDownload, FiSave, FiUser, FiBriefcase, FiFileText, FiPlus, FiMinus, FiEdit3, FiSave as FiSaveIcon, FiX, FiMail, FiPhone, FiMapPin, FiClock, FiCalendar, FiTrash2, FiStar, FiUpload, FiCheck, FiChevronUp, FiChevronDown } from 'react-icons/fi';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import { auth } from '../../../../config/firebase';
@@ -164,6 +164,52 @@ interface EducationLevel {
   description: string;
 }
 
+interface Certificate {
+  name: string;
+  issuer: string;
+  date: string;
+  description: string;
+}
+
+interface Project {
+  name: string;
+  description: string;
+  technologies: string;
+  startDate: string;
+  endDate: string;
+  url?: string;
+}
+
+interface Award {
+  title: string;
+  issuer: string;
+  date: string;
+  description: string;
+}
+
+interface VolunteerExperience {
+  organization: string;
+  role: string;
+  startDate: string;
+  endDate: string;
+  description: string;
+  location: string;
+}
+
+interface OptionalSection {
+  id: string;
+  type: 'certificates' | 'projects' | 'awards' | 'volunteer';
+  title: string;
+  data: Certificate[] | Project[] | Award[] | VolunteerExperience[];
+}
+
+interface SectionOrder {
+  id: string;
+  type: 'personal' | 'summary' | 'experience' | 'education' | 'skills' | 'optional';
+  title: string;
+  optionalType?: string;
+}
+
 interface ResumeData {
   personalInfo: PersonalInfo;
   summary: string;
@@ -171,6 +217,8 @@ interface ResumeData {
   education: EducationLevel[];
   skills: string[];
   certifications: string[];
+  optionalSections: OptionalSection[];
+  sectionOrder: SectionOrder[];
 }
 
 interface CreateResumeTabProps {
@@ -279,7 +327,15 @@ const CreateResumeTab: React.FC<CreateResumeTabProps> = ({
       description: ''
     }],
     skills: [''],
-    certifications: ['']
+    certifications: [''],
+    optionalSections: [],
+    sectionOrder: [
+      { id: 'personal', type: 'personal', title: 'Personal Information' },
+      { id: 'summary', type: 'summary', title: 'Professional Summary' },
+      { id: 'experience', type: 'experience', title: 'Work Experience' },
+      { id: 'education', type: 'education', title: 'Educational Background' },
+      { id: 'skills', type: 'skills', title: 'Skills' }
+    ]
   });
 
   const [isSaving, setIsSaving] = useState(false);
@@ -731,7 +787,15 @@ const CreateResumeTab: React.FC<CreateResumeTabProps> = ({
             endDate: edu.endDate === 'present' ? 'present' : (edu.endDate ? `${edu.endDate}-01` : '')
           })),
           skills: dbData.skills || [''],
-          certifications: [''] // Not stored in DB yet, keep empty
+          certifications: [''], // Not stored in DB yet, keep empty
+          optionalSections: dbData.optionalSections || [],
+          sectionOrder: dbData.sectionOrder || [
+            { id: 'personal', type: 'personal', title: 'Personal Information' },
+            { id: 'summary', type: 'summary', title: 'Professional Summary' },
+            { id: 'experience', type: 'experience', title: 'Work Experience' },
+            { id: 'education', type: 'education', title: 'Educational Background' },
+            { id: 'skills', type: 'skills', title: 'Skills' }
+          ]
         };
         
         console.log('Transformed data for form:', transformedData);
@@ -962,6 +1026,220 @@ const CreateResumeTab: React.FC<CreateResumeTabProps> = ({
         certifications: prev.certifications.filter((_, i) => i !== index)
       }));
     }
+  };
+
+  // Optional Section Management Functions
+  const addOptionalSection = (type: 'certificates' | 'projects' | 'awards' | 'volunteer') => {
+    const sectionTitles = {
+      certificates: 'Certificates & Seminars',
+      projects: 'Projects',
+      awards: 'Awards & Achievements',
+      volunteer: 'Volunteer Experience'
+    };
+
+    const emptyData = {
+      certificates: [{ name: '', issuer: '', date: '', description: '' }],
+      projects: [{ name: '', description: '', technologies: '', startDate: '', endDate: '', url: '' }],
+      awards: [{ title: '', issuer: '', date: '', description: '' }],
+      volunteer: [{ organization: '', role: '', startDate: '', endDate: '', description: '', location: '' }]
+    };
+
+    const newSection: OptionalSection = {
+      id: `${type}-${Date.now()}`,
+      type,
+      title: sectionTitles[type],
+      data: emptyData[type] as any
+    };
+
+    const newOptionalSections = [...resumeData.optionalSections, newSection];
+    const newSectionOrder = [...resumeData.sectionOrder, {
+      id: newSection.id,
+      type: 'optional' as const,
+      title: sectionTitles[type],
+      optionalType: type
+    }];
+
+    updateResumeData('optionalSections', newOptionalSections);
+    setResumeData(prev => ({ ...prev, sectionOrder: newSectionOrder }));
+  };
+
+  const removeOptionalSection = (sectionId: string) => {
+    const newOptionalSections = resumeData.optionalSections.filter(section => section.id !== sectionId);
+    const newSectionOrder = resumeData.sectionOrder.filter(section => section.id !== sectionId);
+    
+    updateResumeData('optionalSections', newOptionalSections);
+    setResumeData(prev => ({ ...prev, sectionOrder: newSectionOrder }));
+  };
+
+  const updateOptionalSection = (sectionId: string, data: any) => {
+    const newOptionalSections = resumeData.optionalSections.map(section => 
+      section.id === sectionId ? { ...section, data } : section
+    );
+    updateResumeData('optionalSections', newOptionalSections);
+  };
+
+  // Get available section types that haven't been added yet
+  const getAvailableSectionTypes = () => {
+    const existingTypes = resumeData.optionalSections.map(section => section.type);
+    const allTypes = ['certificates', 'projects', 'awards', 'volunteer'] as const;
+    return allTypes.filter(type => !existingTypes.includes(type));
+  };
+
+  // Certificate Functions
+  const addCertificate = (sectionId: string) => {
+    const section = resumeData.optionalSections.find(s => s.id === sectionId);
+    if (section && section.type === 'certificates') {
+      const newData = [...(section.data as Certificate[]), { name: '', issuer: '', date: '', description: '' }];
+      updateOptionalSection(sectionId, newData);
+    }
+  };
+
+  const updateCertificate = (sectionId: string, index: number, field: keyof Certificate, value: string) => {
+    const section = resumeData.optionalSections.find(s => s.id === sectionId);
+    if (section && section.type === 'certificates') {
+      const newData = (section.data as Certificate[]).map((cert, i) => 
+        i === index ? { ...cert, [field]: value } : cert
+      );
+      updateOptionalSection(sectionId, newData);
+    }
+  };
+
+  const removeCertificate = (sectionId: string, index: number) => {
+    const section = resumeData.optionalSections.find(s => s.id === sectionId);
+    if (section && section.type === 'certificates' && (section.data as Certificate[]).length > 1) {
+      const newData = (section.data as Certificate[]).filter((_, i) => i !== index);
+      updateOptionalSection(sectionId, newData);
+    }
+  };
+
+  // Project Functions
+  const addProject = (sectionId: string) => {
+    const section = resumeData.optionalSections.find(s => s.id === sectionId);
+    if (section && section.type === 'projects') {
+      const newData = [...(section.data as Project[]), { name: '', description: '', technologies: '', startDate: '', endDate: '', url: '' }];
+      updateOptionalSection(sectionId, newData);
+    }
+  };
+
+  const updateProject = (sectionId: string, index: number, field: keyof Project, value: string) => {
+    const section = resumeData.optionalSections.find(s => s.id === sectionId);
+    if (section && section.type === 'projects') {
+      const newData = (section.data as Project[]).map((project, i) => 
+        i === index ? { ...project, [field]: value } : project
+      );
+      updateOptionalSection(sectionId, newData);
+    }
+  };
+
+  const removeProject = (sectionId: string, index: number) => {
+    const section = resumeData.optionalSections.find(s => s.id === sectionId);
+    if (section && section.type === 'projects' && (section.data as Project[]).length > 1) {
+      const newData = (section.data as Project[]).filter((_, i) => i !== index);
+      updateOptionalSection(sectionId, newData);
+    }
+  };
+
+  // Award Functions
+  const addAward = (sectionId: string) => {
+    const section = resumeData.optionalSections.find(s => s.id === sectionId);
+    if (section && section.type === 'awards') {
+      const newData = [...(section.data as Award[]), { title: '', issuer: '', date: '', description: '' }];
+      updateOptionalSection(sectionId, newData);
+    }
+  };
+
+  const updateAward = (sectionId: string, index: number, field: keyof Award, value: string) => {
+    const section = resumeData.optionalSections.find(s => s.id === sectionId);
+    if (section && section.type === 'awards') {
+      const newData = (section.data as Award[]).map((award, i) => 
+        i === index ? { ...award, [field]: value } : award
+      );
+      updateOptionalSection(sectionId, newData);
+    }
+  };
+
+  const removeAward = (sectionId: string, index: number) => {
+    const section = resumeData.optionalSections.find(s => s.id === sectionId);
+    if (section && section.type === 'awards' && (section.data as Award[]).length > 1) {
+      const newData = (section.data as Award[]).filter((_, i) => i !== index);
+      updateOptionalSection(sectionId, newData);
+    }
+  };
+
+  // Volunteer Functions
+  const addVolunteerExperience = (sectionId: string) => {
+    const section = resumeData.optionalSections.find(s => s.id === sectionId);
+    if (section && section.type === 'volunteer') {
+      const newData = [...(section.data as VolunteerExperience[]), { organization: '', role: '', startDate: '', endDate: '', description: '', location: '' }];
+      updateOptionalSection(sectionId, newData);
+    }
+  };
+
+  const updateVolunteerExperience = (sectionId: string, index: number, field: keyof VolunteerExperience, value: string) => {
+    const section = resumeData.optionalSections.find(s => s.id === sectionId);
+    if (section && section.type === 'volunteer') {
+      const newData = (section.data as VolunteerExperience[]).map((vol, i) => 
+        i === index ? { ...vol, [field]: value } : vol
+      );
+      updateOptionalSection(sectionId, newData);
+    }
+  };
+
+  const removeVolunteerExperience = (sectionId: string, index: number) => {
+    const section = resumeData.optionalSections.find(s => s.id === sectionId);
+    if (section && section.type === 'volunteer' && (section.data as VolunteerExperience[]).length > 1) {
+      const newData = (section.data as VolunteerExperience[]).filter((_, i) => i !== index);
+      updateOptionalSection(sectionId, newData);
+    }
+  };
+
+  // Section Reordering Functions
+  const moveSectionUp = (index: number) => {
+    if (index > 1) { // Skip personal info (index 0)
+      const newOrder = [...resumeData.sectionOrder];
+      [newOrder[index - 1], newOrder[index]] = [newOrder[index], newOrder[index - 1]];
+      setResumeData(prev => ({ ...prev, sectionOrder: newOrder }));
+      setHasUnsavedChanges(true);
+    }
+  };
+
+  const moveSectionDown = (index: number) => {
+    if (index > 0 && index < resumeData.sectionOrder.length - 1) { // Skip personal info
+      const newOrder = [...resumeData.sectionOrder];
+      [newOrder[index], newOrder[index + 1]] = [newOrder[index + 1], newOrder[index]];
+      setResumeData(prev => ({ ...prev, sectionOrder: newOrder }));
+      setHasUnsavedChanges(true);
+    }
+  };
+
+  // Function to render section controls
+  const renderSectionControls = (sectionIndex: number, canMove = true) => {
+    if (sectionIndex === 0) return null; // No controls for personal info
+    
+    return (
+      <div className={styles.sectionControls}>
+        {canMove && (
+          <>
+            <button
+              onClick={() => moveSectionUp(sectionIndex)}
+              className={styles.moveButton}
+              title="Move section up"
+              disabled={sectionIndex <= 1}
+            >
+              <FiChevronUp />
+            </button>
+            <button
+              onClick={() => moveSectionDown(sectionIndex)}
+              className={styles.moveButton}
+              title="Move section down"
+              disabled={sectionIndex >= resumeData.sectionOrder.length - 1}
+            >
+              <FiChevronDown />
+            </button>
+          </>
+        )}
+      </div>
+    );
   };
 
   const generatePDF = (filename?: string, returnBlob = false) => {
@@ -1238,6 +1516,239 @@ const CreateResumeTab: React.FC<CreateResumeTabProps> = ({
       });
       yPosition += 5;
     }
+
+    // Optional Sections (in the order specified by sectionOrder)
+    resumeData.optionalSections.forEach(section => {
+      if (section.type === 'certificates') {
+        const validCertificates = (section.data as Certificate[]).filter(cert => cert.name && cert.issuer);
+        if (validCertificates.length > 0) {
+          addSectionHeader('Certificates & Seminars');
+          
+          validCertificates.forEach((cert, index) => {
+            checkPageBreak(20);
+            
+            // Certificate name - bold
+            doc.setFontSize(9);
+            doc.setFont('helvetica', 'bold');
+            doc.setTextColor(blackColor[0], blackColor[1], blackColor[2]);
+            doc.text(cert.name, margin, yPosition);
+            
+            // Date (right aligned)
+            if (cert.date) {
+              const certDate = new Date(cert.date + '-01');
+              const dateText = certDate.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+              doc.setFontSize(9);
+              doc.setFont('helvetica', 'normal');
+              const dateWidth = doc.getTextWidth(dateText);
+              doc.text(dateText, pageWidth - margin - dateWidth, yPosition);
+            }
+            yPosition += 4;
+            
+            // Issuer - italic
+            doc.setFontSize(9);
+            doc.setFont('helvetica', 'italic');
+            doc.text(cert.issuer, margin, yPosition);
+            yPosition += 4;
+            
+            // Description
+            if (cert.description) {
+              doc.setFontSize(9);
+              doc.setFont('helvetica', 'normal');
+              const descLines = doc.splitTextToSize(cert.description, contentWidth - 8);
+              checkPageBreak(descLines.length * 4 + 2);
+              doc.text(descLines, margin + 8, yPosition);
+              yPosition += descLines.length * 4;
+            }
+            
+            if (index < validCertificates.length - 1) {
+              yPosition += 6;
+            }
+          });
+        }
+      }
+
+      if (section.type === 'projects') {
+        const validProjects = (section.data as Project[]).filter(project => project.name && project.description);
+        if (validProjects.length > 0) {
+          addSectionHeader('Projects');
+          
+          validProjects.forEach((project, index) => {
+            checkPageBreak(25);
+            
+            // Project name - bold
+            doc.setFontSize(9);
+            doc.setFont('helvetica', 'bold');
+            doc.setTextColor(blackColor[0], blackColor[1], blackColor[2]);
+            doc.text(project.name, margin, yPosition);
+            
+            // Date range (right aligned)
+            let dateText = '';
+            if (project.startDate && project.endDate) {
+              const startDate = new Date(project.startDate + '-01');
+              const endDate = new Date(project.endDate + '-01');
+              const startMonth = startDate.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+              const endMonth = endDate.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+              dateText = `${startMonth} - ${endMonth}`;
+            } else if (project.startDate) {
+              const startDate = new Date(project.startDate + '-01');
+              const startMonth = startDate.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+              dateText = startMonth;
+            }
+            
+            if (dateText) {
+              doc.setFontSize(9);
+              doc.setFont('helvetica', 'normal');
+              const dateWidth = doc.getTextWidth(dateText);
+              doc.text(dateText, pageWidth - margin - dateWidth, yPosition);
+            }
+            yPosition += 4;
+            
+            // Technologies - italic
+            if (project.technologies) {
+              doc.setFontSize(9);
+              doc.setFont('helvetica', 'italic');
+              doc.text(`Technologies: ${project.technologies}`, margin, yPosition);
+              yPosition += 4;
+            }
+            
+            // URL
+            if (project.url) {
+              doc.setFontSize(8);
+              doc.setFont('helvetica', 'normal');
+              doc.setTextColor(0, 0, 255); // Blue for URL
+              doc.text(project.url, margin, yPosition);
+              doc.setTextColor(blackColor[0], blackColor[1], blackColor[2]); // Reset color
+              yPosition += 4;
+            }
+            
+            // Description
+            if (project.description) {
+              doc.setFontSize(9);
+              doc.setFont('helvetica', 'normal');
+              const descLines = doc.splitTextToSize(project.description, contentWidth - 8);
+              checkPageBreak(descLines.length * 4 + 2);
+              doc.text(descLines, margin + 8, yPosition);
+              yPosition += descLines.length * 4;
+            }
+            
+            if (index < validProjects.length - 1) {
+              yPosition += 8;
+            }
+          });
+        }
+      }
+
+      if (section.type === 'awards') {
+        const validAwards = (section.data as Award[]).filter(award => award.title && award.issuer);
+        if (validAwards.length > 0) {
+          addSectionHeader('Awards & Achievements');
+          
+          validAwards.forEach((award, index) => {
+            checkPageBreak(15);
+            
+            // Award title - bold
+            doc.setFontSize(9);
+            doc.setFont('helvetica', 'bold');
+            doc.setTextColor(blackColor[0], blackColor[1], blackColor[2]);
+            doc.text(award.title, margin, yPosition);
+            
+            // Date (right aligned)
+            if (award.date) {
+              const awardDate = new Date(award.date + '-01');
+              const dateText = awardDate.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+              doc.setFontSize(9);
+              doc.setFont('helvetica', 'normal');
+              const dateWidth = doc.getTextWidth(dateText);
+              doc.text(dateText, pageWidth - margin - dateWidth, yPosition);
+            }
+            yPosition += 4;
+            
+            // Issuer - italic
+            doc.setFontSize(9);
+            doc.setFont('helvetica', 'italic');
+            doc.text(award.issuer, margin, yPosition);
+            yPosition += 4;
+            
+            // Description
+            if (award.description) {
+              doc.setFontSize(9);
+              doc.setFont('helvetica', 'normal');
+              const descLines = doc.splitTextToSize(award.description, contentWidth - 8);
+              checkPageBreak(descLines.length * 4 + 2);
+              doc.text(descLines, margin + 8, yPosition);
+              yPosition += descLines.length * 4;
+            }
+            
+            if (index < validAwards.length - 1) {
+              yPosition += 6;
+            }
+          });
+        }
+      }
+
+      if (section.type === 'volunteer') {
+        const validVolunteer = (section.data as VolunteerExperience[]).filter(vol => vol.organization && vol.role);
+        if (validVolunteer.length > 0) {
+          addSectionHeader('Volunteer Experience');
+          
+          validVolunteer.forEach((vol, index) => {
+            checkPageBreak(20);
+            
+            // Role - bold
+            doc.setFontSize(9);
+            doc.setFont('helvetica', 'bold');
+            doc.setTextColor(blackColor[0], blackColor[1], blackColor[2]);
+            doc.text(vol.role, margin, yPosition);
+            
+            // Date range (right aligned)
+            let dateText = '';
+            if (vol.startDate && vol.endDate && vol.endDate !== 'present') {
+              const startDate = new Date(vol.startDate + '-01');
+              const endDate = new Date(vol.endDate + '-01');
+              const startMonth = startDate.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+              const endMonth = endDate.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+              dateText = `${startMonth} - ${endMonth}`;
+            } else if (vol.startDate) {
+              const startDate = new Date(vol.startDate + '-01');
+              const startMonth = startDate.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+              dateText = `${startMonth} - Present`;
+            }
+            
+            if (dateText) {
+              doc.setFontSize(9);
+              doc.setFont('helvetica', 'normal');
+              const dateWidth = doc.getTextWidth(dateText);
+              doc.text(dateText, pageWidth - margin - dateWidth, yPosition);
+            }
+            yPosition += 4;
+            
+            // Organization - italic
+            doc.setFontSize(9);
+            doc.setFont('helvetica', 'italic');
+            let orgText = vol.organization;
+            if (vol.location) {
+              orgText += `, ${vol.location}`;
+            }
+            doc.text(orgText, margin, yPosition);
+            yPosition += 4;
+            
+            // Description
+            if (vol.description) {
+              doc.setFontSize(9);
+              doc.setFont('helvetica', 'normal');
+              const descLines = doc.splitTextToSize(vol.description, contentWidth - 8);
+              checkPageBreak(descLines.length * 4 + 2);
+              doc.text(descLines, margin + 8, yPosition);
+              yPosition += descLines.length * 4;
+            }
+            
+            if (index < validVolunteer.length - 1) {
+              yPosition += 8;
+            }
+          });
+        }
+      }
+    });
     
     // Return blob for database storage or save file for download
     if (returnBlob) {
@@ -1258,7 +1769,7 @@ const CreateResumeTab: React.FC<CreateResumeTabProps> = ({
     setGenerationStep('generating');
     
     try {
-      const cleanedData = {
+      const cleanedData: ResumeData = {
         ...resumeData,
         experience: resumeData.experience.filter(exp => exp.company || exp.position),
         skills: resumeData.skills.filter(skill => skill.trim() !== ''),
@@ -1305,7 +1816,7 @@ const CreateResumeTab: React.FC<CreateResumeTabProps> = ({
 
   const handleSaveSection = () => {
     // Update parent state only (no localStorage)
-    const cleanedData = {
+    const cleanedData: ResumeData = {
       ...resumeData,
       experience: resumeData.experience.filter(exp => exp.company || exp.position),
       skills: resumeData.skills.filter(skill => skill.trim() !== ''),
@@ -1421,13 +1932,21 @@ const CreateResumeTab: React.FC<CreateResumeTabProps> = ({
   };
 
   const clearResumeData = () => {
-    const emptyData = {
+    const emptyData: ResumeData = {
       personalInfo: { firstName: '', lastName: '', email: '', phone: '', region: '', province: '', city: '', barangay: '', address: '', zipCode: '', age: '', birthday: '', photo: '' },
       summary: '',
       experience: [{ company: '', position: '', duration: '', description: '', location: '', startDate: '', endDate: '' }],
       education: [{ degree: '', school: '', location: '', startDate: '', endDate: '', description: '' }],
       skills: [''],
-      certifications: ['']
+      certifications: [''],
+      optionalSections: [],
+      sectionOrder: [
+        { id: 'personal', type: 'personal', title: 'Personal Information' },
+        { id: 'summary', type: 'summary', title: 'Professional Summary' },
+        { id: 'experience', type: 'experience', title: 'Work Experience' },
+        { id: 'education', type: 'education', title: 'Educational Background' },
+        { id: 'skills', type: 'skills', title: 'Skills' }
+      ]
     };
     setResumeData(emptyData);
     setHasExistingResume(false);
@@ -1854,10 +2373,11 @@ const CreateResumeTab: React.FC<CreateResumeTabProps> = ({
       </div>
 
       {/* Personal Information */}
-      <div className={styles.sectionHeader}>
-        <FiUser className={styles.sectionIcon} />
-        <h2 className={styles.sectionTitle}>Personal Information</h2>
-      </div>
+      <div className={styles.sectionContainer}>
+        <div className={styles.sectionHeader}>
+          <FiUser className={styles.sectionIcon} />
+          <h2 className={styles.sectionTitle}>Personal Information</h2>
+        </div>
       
       {/* Photo and Name Section */}
       <div className={styles.photoAndNameSection}>
@@ -2142,302 +2662,726 @@ const CreateResumeTab: React.FC<CreateResumeTabProps> = ({
           />
         </div>
       </div>
-
-      {/* Professional Summary */}
-      <div className={styles.sectionHeader}>
-        <FiFileText className={styles.sectionIcon} />
-        <h2 className={styles.sectionTitle}>Professional Summary</h2>
-      </div>
-      <div className={styles.formGroup}>
-        <label>Summary</label>
-        <textarea
-          value={resumeData.summary}
-          onChange={(e) => updateSummary(e.target.value)}
-          placeholder="Write a brief professional summary about yourself..."
-          className={styles.formTextarea}
-        />
       </div>
 
-      {/* Work Experience */}
-      <div className={styles.sectionHeader}>
-        <FiBriefcase className={styles.sectionIcon} />
-        <h2 className={styles.sectionTitle}>Work Experience</h2>
-      </div>
-      {resumeData.experience.map((exp, index) => (
-        <div key={index} className={styles.itemContainer}>
-          <div className={styles.itemHeader}>
-            <h3 className={styles.itemTitle}>Experience {index + 1}</h3>
-            {resumeData.experience.length > 1 && (
-              <button 
-                onClick={() => removeExperience(index)}
-                className={styles.removeButton}
-              >
-                <FiTrash2 />
-              </button>
-            )}
-          </div>
-          <div className={styles.formGrid}>
-            <div className={styles.formGroup}>
-              <label>Job title</label>
-              <input
-                type="text"
-                value={exp.position}
-                onChange={(e) => updateExperience(index, 'position', e.target.value)}
-                placeholder="Junior Accountant"
-                className={styles.formInput}
-              />
-            </div>
-            <div className={styles.formGroup}>
-              <label>Employer</label>
-              <input
-                type="text"
-                value={exp.company}
-                onChange={(e) => updateExperience(index, 'company', e.target.value)}
-                placeholder="Company name"
-                className={styles.formInput}
-              />
-            </div>
-          </div>
-          <div className={styles.formGrid}>
-            <div className={styles.formGroup}>
-              <label>Location</label>
-              <input
-                type="text"
-                value={exp.location || ''}
-                onChange={(e) => updateExperience(index, 'location', e.target.value)}
-                placeholder="Makati City, Metro Manila, Philippines"
-                className={styles.formInput}
-              />
-            </div>
-            <div style={{ display: 'flex', gap: '15px' }}>
-              <div className={styles.formGroup} style={{ flex: '1' }}>
-                <label>Start date <span className={styles.required}>*</span></label>
-                <input
-                  type="month"
-                  value={exp.startDate || ''}
-                  onChange={(e) => updateExperience(index, 'startDate', e.target.value)}
-                  className={`${styles.formInput} ${getExperienceValidationError(index) ? styles.inputError : ''}`}
-                  style={{ width: '100%' }}
-                  title="Select month and year (MM/YYYY format)"
-                  max={new Date().toISOString().slice(0, 7)} // Prevent future dates
+      {/* Dynamic Section Rendering */}
+      {resumeData.sectionOrder.slice(1).map((section, index) => {
+        const sectionIndex = index + 1; // Adjust for skipping personal info
+        
+        if (section.type === 'summary') {
+          return (
+            <div key={section.id} className={styles.sectionContainer}>
+              <div className={styles.sectionHeader}>
+                <FiFileText className={styles.sectionIcon} />
+                <h2 className={styles.sectionTitle}>Professional Summary</h2>
+                {renderSectionControls(sectionIndex)}
+              </div>
+              <div className={styles.formGroup}>
+                <label>Summary</label>
+                <textarea
+                  value={resumeData.summary}
+                  onChange={(e) => updateSummary(e.target.value)}
+                  placeholder="Write a brief professional summary about yourself..."
+                  className={styles.formTextarea}
                 />
               </div>
-              <div className={styles.formGroup} style={{ flex: '1' }}>
-                <label>End date</label>
-                <div className={styles.dateInputContainer}>
-                  <input
-                    type="month"
-                    value={exp.endDate === 'present' ? '' : (exp.endDate || '')}
-                    onChange={(e) => updateExperience(index, 'endDate', e.target.value)}
-                    className={`${styles.formInput} ${getExperienceValidationError(index) ? styles.inputError : ''}`}
-                    style={{ width: '100%' }}
-                    title="Select month and year (MM/YYYY format)"
-                    max={new Date().toISOString().slice(0, 7)} // Prevent future dates
-                    disabled={exp.endDate === 'present'}
-                  />
-                  <label className={styles.presentCheckbox}>
-                    <input
-                      type="checkbox"
-                      checked={exp.endDate === 'present'}
-                      onChange={(e) => {
-                        if (e.target.checked) {
-                          updateExperience(index, 'endDate', 'present');
-                        } else {
-                          updateExperience(index, 'endDate', '');
-                        }
-                      }}
-                    />
-                    <span>Currently working here</span>
-                  </label>
-                  {getExperienceValidationError(index) && (
-                    <div className={styles.errorText}>
-                      {getExperienceValidationError(index)}
-                    </div>
-                  )}
-                </div>
-              </div>
             </div>
-          </div>
-          <div className={styles.formGroup}>
-            <label>Description</label>
-            <textarea
-              value={exp.description}
-              onChange={(e) => updateExperience(index, 'description', e.target.value)}
-              placeholder="Describe your responsibilities and achievements..."
-              className={styles.formTextarea}
-            />
-          </div>
-        </div>
-      ))}
-      <button 
-        onClick={addExperience}
-        className={styles.addButton}
-      >
-        <FiPlus /> Add Experience
-      </button>
-
-      {/* Educational Background */}
-      <div className={styles.sectionHeader}>
-        <FiFileText className={styles.sectionIcon} />
-        <h2 className={styles.sectionTitle}>Educational Background</h2>
-      </div>
-      
-      {resumeData.education.map((edu, index) => (
-        <div key={index} className={styles.itemContainer}>
-          <div className={styles.itemHeader}>
-            <h3 className={styles.itemTitle}>Education {index + 1}</h3>
-            {resumeData.education.length > 1 && (
+          );
+        }
+        
+        if (section.type === 'experience') {
+          return (
+            <div key={section.id} className={styles.sectionContainer}>
+              <div className={styles.sectionHeader}>
+                <FiBriefcase className={styles.sectionIcon} />
+                <h2 className={styles.sectionTitle}>Work Experience</h2>
+                {renderSectionControls(sectionIndex)}
+              </div>
+              {resumeData.experience.map((exp, expIndex) => (
+                <div key={expIndex} className={styles.itemContainer}>
+                  <div className={styles.itemHeader}>
+                    <h3 className={styles.itemTitle}>Experience {expIndex + 1}</h3>
+                    {resumeData.experience.length > 1 && (
+                      <button 
+                        onClick={() => removeExperience(expIndex)}
+                        className={styles.removeButton}
+                      >
+                        <FiTrash2 />
+                      </button>
+                    )}
+                  </div>
+                  <div className={styles.formGrid}>
+                    <div className={styles.formGroup}>
+                      <label>Job title</label>
+                      <input
+                        type="text"
+                        value={exp.position}
+                        onChange={(e) => updateExperience(expIndex, 'position', e.target.value)}
+                        placeholder="Junior Accountant"
+                        className={styles.formInput}
+                      />
+                    </div>
+                    <div className={styles.formGroup}>
+                      <label>Employer</label>
+                      <input
+                        type="text"
+                        value={exp.company}
+                        onChange={(e) => updateExperience(expIndex, 'company', e.target.value)}
+                        placeholder="Company name"
+                        className={styles.formInput}
+                      />
+                    </div>
+                  </div>
+                  <div className={styles.formGrid}>
+                    <div className={styles.formGroup}>
+                      <label>Location</label>
+                      <input
+                        type="text"
+                        value={exp.location || ''}
+                        onChange={(e) => updateExperience(expIndex, 'location', e.target.value)}
+                        placeholder="Makati City, Metro Manila, Philippines"
+                        className={styles.formInput}
+                      />
+                    </div>
+                    <div style={{ display: 'flex', gap: '15px' }}>
+                      <div className={styles.formGroup} style={{ flex: '1' }}>
+                        <label>Start date <span className={styles.required}>*</span></label>
+                        <input
+                          type="month"
+                          value={exp.startDate || ''}
+                          onChange={(e) => updateExperience(expIndex, 'startDate', e.target.value)}
+                          className={`${styles.formInput} ${getExperienceValidationError(expIndex) ? styles.inputError : ''}`}
+                          style={{ width: '100%' }}
+                          title="Select month and year (MM/YYYY format)"
+                          max={new Date().toISOString().slice(0, 7)}
+                        />
+                      </div>
+                      <div className={styles.formGroup} style={{ flex: '1' }}>
+                        <label>End date</label>
+                        <div className={styles.dateInputContainer}>
+                          <input
+                            type="month"
+                            value={exp.endDate === 'present' ? '' : (exp.endDate || '')}
+                            onChange={(e) => updateExperience(expIndex, 'endDate', e.target.value)}
+                            className={`${styles.formInput} ${getExperienceValidationError(expIndex) ? styles.inputError : ''}`}
+                            style={{ width: '100%' }}
+                            title="Select month and year (MM/YYYY format)"
+                            max={new Date().toISOString().slice(0, 7)}
+                            disabled={exp.endDate === 'present'}
+                          />
+                          <label className={styles.presentCheckbox}>
+                            <input
+                              type="checkbox"
+                              checked={exp.endDate === 'present'}
+                              onChange={(e) => {
+                                if (e.target.checked) {
+                                  updateExperience(expIndex, 'endDate', 'present');
+                                } else {
+                                  updateExperience(expIndex, 'endDate', '');
+                                }
+                              }}
+                            />
+                            <span>Currently working here</span>
+                          </label>
+                          {getExperienceValidationError(expIndex) && (
+                            <div className={styles.errorText}>
+                              {getExperienceValidationError(expIndex)}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div className={styles.formGroup}>
+                    <label>Description</label>
+                    <textarea
+                      value={exp.description}
+                      onChange={(e) => updateExperience(expIndex, 'description', e.target.value)}
+                      placeholder="Describe your responsibilities and achievements..."
+                      className={styles.formTextarea}
+                    />
+                  </div>
+                </div>
+              ))}
               <button 
-                onClick={() => removeEducation(index)}
-                className={styles.removeButton}
+                onClick={addExperience}
+                className={styles.addButton}
               >
-                <FiTrash2 />
+                <FiPlus /> Add Experience
               </button>
-            )}
-          </div>
-          <div className={styles.formGrid}>
-            <div className={styles.formGroup}>
-              <label>School name</label>
-              <input
-                type="text"
-                value={edu.school}
-                onChange={(e) => updateEducation(index, 'school', e.target.value)}
-                placeholder="De La Salle University"
-                className={styles.formInput}
-              />
             </div>
-            <div className={styles.formGroup}>
-              <label>Location</label>
-              <input
-                type="text"
-                value={edu.location}
-                onChange={(e) => updateEducation(index, 'location', e.target.value)}
-                placeholder="Manila, Philippines"
-                className={styles.formInput}
-              />
-            </div>
-          </div>
-          <div className={styles.formGrid}>
-            <div className={styles.formGroup}>
-              <label>Degree</label>
-              <input
-                type="text"
-                value={edu.degree}
-                onChange={(e) => updateEducation(index, 'degree', e.target.value)}
-                placeholder="Bachelor of Science in Computer Science"
-                className={styles.formInput}
-              />
-            </div>
-            <div style={{ display: 'flex', gap: '15px' }}>
-              <div className={styles.formGroup} style={{ flex: '1' }}>
-                <label>Start year</label>
-                <YearPicker
-                  value={edu.startDate ? new Date(edu.startDate + '-01').getFullYear().toString() : ''}
-                  onChange={(year) => {
-                    if (year) {
-                      updateEducation(index, 'startDate', `${year}-01`);
-                    } else {
-                      updateEducation(index, 'startDate', '');
-                    }
-                  }}
-                  minYear={1950}
-                  maxYear={new Date().getFullYear()}
-                  placeholder="Select start year"
-                  className={getEducationValidationError(index) ? styles.inputError : ''}
-                />
+          );
+        }
+        
+        if (section.type === 'education') {
+          return (
+            <div key={section.id} className={styles.sectionContainer}>
+              <div className={styles.sectionHeader}>
+                <FiFileText className={styles.sectionIcon} />
+                <h2 className={styles.sectionTitle}>Educational Background</h2>
+                {renderSectionControls(sectionIndex)}
               </div>
-              <div className={styles.formGroup} style={{ flex: '1' }}>
-                <label>End year</label>
-                <div className={styles.dateInputContainer}>
-                  <YearPicker
-                    value={edu.endDate === 'present' ? '' : (edu.endDate ? new Date(edu.endDate + '-01').getFullYear().toString() : '')}
-                    onChange={(year) => {
-                      if (year) {
-                        updateEducation(index, 'endDate', `${year}-01`);
-                      } else {
-                        updateEducation(index, 'endDate', '');
-                      }
-                    }}
-                    minYear={1950}
-                    maxYear={new Date().getFullYear() + 10}
-                    placeholder="Select end year"
-                    disabled={edu.endDate === 'present'}
-                    className={getEducationValidationError(index) ? styles.inputError : ''}
-                  />
-                  <label className={styles.presentCheckbox}>
-                    <input
-                      type="checkbox"
-                      checked={edu.endDate === 'present'}
-                      onChange={(e) => {
-                        if (e.target.checked) {
-                          updateEducation(index, 'endDate', 'present');
-                        } else {
-                          updateEducation(index, 'endDate', '');
-                        }
-                      }}
-                    />
-                    <span>Currently studying here</span>
-                  </label>
-                  {getEducationValidationError(index) && (
-                    <div className={styles.errorText}>
-                      {getEducationValidationError(index)}
+              {resumeData.education.map((edu, eduIndex) => (
+                <div key={eduIndex} className={styles.itemContainer}>
+                  <div className={styles.itemHeader}>
+                    <h3 className={styles.itemTitle}>Education {eduIndex + 1}</h3>
+                    {resumeData.education.length > 1 && (
+                      <button 
+                        onClick={() => removeEducation(eduIndex)}
+                        className={styles.removeButton}
+                      >
+                        <FiTrash2 />
+                      </button>
+                    )}
+                  </div>
+                  <div className={styles.formGrid}>
+                    <div className={styles.formGroup}>
+                      <label>School name</label>
+                      <input
+                        type="text"
+                        value={edu.school}
+                        onChange={(e) => updateEducation(eduIndex, 'school', e.target.value)}
+                        placeholder="De La Salle University"
+                        className={styles.formInput}
+                      />
                     </div>
-                  )}
+                    <div className={styles.formGroup}>
+                      <label>Location</label>
+                      <input
+                        type="text"
+                        value={edu.location}
+                        onChange={(e) => updateEducation(eduIndex, 'location', e.target.value)}
+                        placeholder="Manila, Philippines"
+                        className={styles.formInput}
+                      />
+                    </div>
+                  </div>
+                  <div className={styles.formGrid}>
+                    <div className={styles.formGroup}>
+                      <label>Degree</label>
+                      <input
+                        type="text"
+                        value={edu.degree}
+                        onChange={(e) => updateEducation(eduIndex, 'degree', e.target.value)}
+                        placeholder="Bachelor of Science in Computer Science"
+                        className={styles.formInput}
+                      />
+                    </div>
+                    <div style={{ display: 'flex', gap: '15px' }}>
+                      <div className={styles.formGroup} style={{ flex: '1' }}>
+                        <label>Start year</label>
+                        <YearPicker
+                          value={edu.startDate ? new Date(edu.startDate + '-01').getFullYear().toString() : ''}
+                          onChange={(year) => {
+                            if (year) {
+                              updateEducation(eduIndex, 'startDate', `${year}-01`);
+                            } else {
+                              updateEducation(eduIndex, 'startDate', '');
+                            }
+                          }}
+                          minYear={1950}
+                          maxYear={new Date().getFullYear()}
+                          placeholder="Select start year"
+                          className={getEducationValidationError(eduIndex) ? styles.inputError : ''}
+                        />
+                      </div>
+                      <div className={styles.formGroup} style={{ flex: '1' }}>
+                        <label>End year</label>
+                        <div className={styles.dateInputContainer}>
+                          <YearPicker
+                            value={edu.endDate === 'present' ? '' : (edu.endDate ? new Date(edu.endDate + '-01').getFullYear().toString() : '')}
+                            onChange={(year) => {
+                              if (year) {
+                                updateEducation(eduIndex, 'endDate', `${year}-01`);
+                              } else {
+                                updateEducation(eduIndex, 'endDate', '');
+                              }
+                            }}
+                            minYear={1950}
+                            maxYear={new Date().getFullYear() + 10}
+                            placeholder="Select end year"
+                            disabled={edu.endDate === 'present'}
+                            className={getEducationValidationError(eduIndex) ? styles.inputError : ''}
+                          />
+                          <label className={styles.presentCheckbox}>
+                            <input
+                              type="checkbox"
+                              checked={edu.endDate === 'present'}
+                              onChange={(e) => {
+                                if (e.target.checked) {
+                                  updateEducation(eduIndex, 'endDate', 'present');
+                                } else {
+                                  updateEducation(eduIndex, 'endDate', '');
+                                }
+                              }}
+                            />
+                            <span>Currently studying here</span>
+                          </label>
+                          {getEducationValidationError(eduIndex) && (
+                            <div className={styles.errorText}>
+                              {getEducationValidationError(eduIndex)}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div className={styles.formGroup}>
+                    <label>Description</label>
+                    <textarea
+                      value={edu.description}
+                      onChange={(e) => updateEducation(eduIndex, 'description', e.target.value)}
+                      placeholder="GPA, honors, relevant coursework, achievements..."
+                      className={styles.formTextarea}
+                    />
+                  </div>
+                </div>
+              ))}
+              <button 
+                onClick={addEducation}
+                className={styles.addButton}
+              >
+                <FiPlus /> Add Education
+              </button>
+            </div>
+          );
+        }
+        
+        if (section.type === 'skills') {
+          return (
+            <div key={section.id} className={styles.sectionContainer}>
+              <div className={styles.sectionHeader}>
+                <FiStar className={styles.sectionIcon} />
+                <h2 className={styles.sectionTitle}>Skills</h2>
+                {renderSectionControls(sectionIndex)}
+              </div>
+              <div className={styles.skillsList}>
+                {resumeData.skills.map((skill, skillIndex) => (
+                  <div key={skillIndex} className={styles.skillItem}>
+                    <input
+                      type="text"
+                      value={skill}
+                      onChange={(e) => updateSkill(skillIndex, e.target.value)}
+                      placeholder="Enter a skill"
+                      className={styles.formInput}
+                    />
+                    {resumeData.skills.length > 1 && (
+                      <button 
+                        onClick={() => removeSkill(skillIndex)}
+                        className={styles.removeButton}
+                      >
+                        <FiTrash2 />
+                      </button>
+                    )}
+                  </div>
+                ))}
+              </div>
+              <button 
+                onClick={addSkill}
+                className={styles.addButton}
+              >
+                <FiPlus /> Add Skill
+              </button>
+            </div>
+          );
+        }
+        
+        // Handle optional sections
+        if (section.type === 'optional') {
+          const optionalSection = resumeData.optionalSections.find(opt => opt.id === section.id);
+          if (!optionalSection) return null;
+          
+          return (
+            <div key={section.id} className={styles.sectionContainer}>
+              <div className={styles.sectionOrderControls}>
+                <div className={styles.sectionHeader}>
+                  {optionalSection.type === 'certificates' && <FiStar className={styles.sectionIcon} />}
+                  {optionalSection.type === 'projects' && <FiFileText className={styles.sectionIcon} />}
+                  {optionalSection.type === 'awards' && <FiStar className={styles.sectionIcon} />}
+                  {optionalSection.type === 'volunteer' && <FiUser className={styles.sectionIcon} />}
+                  <h2 className={styles.sectionTitle}>{optionalSection.title}</h2>
+                  <div className={styles.sectionControls}>
+                    {renderSectionControls(sectionIndex)}
+                    <button
+                      onClick={() => removeOptionalSection(optionalSection.id)}
+                      className={styles.removeButton}
+                      title="Remove section"
+                    >
+                      <FiTrash2 />
+                    </button>
+                  </div>
                 </div>
               </div>
-            </div>
-          </div>
-          <div className={styles.formGroup}>
-            <label>Description</label>
-            <textarea
-              value={edu.description}
-              onChange={(e) => updateEducation(index, 'description', e.target.value)}
-              placeholder="GPA, honors, relevant coursework, achievements..."
-              className={styles.formTextarea}
-            />
-          </div>
-        </div>
-      ))}
-      <button 
-        onClick={addEducation}
-        className={styles.addButton}
-      >
-        <FiPlus /> Add Education
-      </button>
+              
+              {/* Certificates Section */}
+              {optionalSection.type === 'certificates' && (
+                <>
+                  {(optionalSection.data as Certificate[]).map((cert, index) => (
+                    <div key={index} className={styles.itemContainer}>
+                      <div className={styles.itemHeader}>
+                        <h3 className={styles.itemTitle}>Certificate {index + 1}</h3>
+                        {(optionalSection.data as Certificate[]).length > 1 && (
+                          <button 
+                            onClick={() => removeCertificate(optionalSection.id, index)}
+                            className={styles.removeButton}
+                          >
+                            <FiTrash2 />
+                          </button>
+                        )}
+                      </div>
+                      <div className={styles.formGrid}>
+                        <div className={styles.formGroup}>
+                          <label>Certificate Name</label>
+                          <input
+                            type="text"
+                            value={cert.name}
+                            onChange={(e) => updateCertificate(optionalSection.id, index, 'name', e.target.value)}
+                            placeholder="AWS Certified Solutions Architect"
+                            className={styles.formInput}
+                          />
+                        </div>
+                        <div className={styles.formGroup}>
+                          <label>Issuing Organization</label>
+                          <input
+                            type="text"
+                            value={cert.issuer}
+                            onChange={(e) => updateCertificate(optionalSection.id, index, 'issuer', e.target.value)}
+                            placeholder="Amazon Web Services"
+                            className={styles.formInput}
+                          />
+                        </div>
+                      </div>
+                      <div className={styles.formGroup}>
+                        <label>Date Obtained</label>
+                        <input
+                          type="month"
+                          value={cert.date}
+                          onChange={(e) => updateCertificate(optionalSection.id, index, 'date', e.target.value)}
+                          className={styles.formInput}
+                        />
+                      </div>
+                      <div className={styles.formGroup}>
+                        <label>Description</label>
+                        <textarea
+                          value={cert.description}
+                          onChange={(e) => updateCertificate(optionalSection.id, index, 'description', e.target.value)}
+                          placeholder="Brief description of the certification and its relevance..."
+                          className={styles.formTextarea}
+                        />
+                      </div>
+                    </div>
+                  ))}
+                  <button 
+                    onClick={() => addCertificate(optionalSection.id)}
+                    className={styles.addButton}
+                  >
+                    <FiPlus /> Add Certificate
+                  </button>
+                </>
+              )}
 
-      {/* Skills */}
-      <div className={styles.sectionHeader}>
-        <FiStar className={styles.sectionIcon} />
-        <h2 className={styles.sectionTitle}>Skills</h2>
-      </div>
-      <div className={styles.skillsList}>
-        {resumeData.skills.map((skill, index) => (
-          <div key={index} className={styles.skillItem}>
-            <input
-              type="text"
-              value={skill}
-              onChange={(e) => updateSkill(index, e.target.value)}
-              placeholder="Enter a skill"
+              {/* Projects Section */}
+              {optionalSection.type === 'projects' && (
+                <>
+                  {(optionalSection.data as Project[]).map((project, index) => (
+                    <div key={index} className={styles.itemContainer}>
+                      <div className={styles.itemHeader}>
+                        <h3 className={styles.itemTitle}>Project {index + 1}</h3>
+                        {(optionalSection.data as Project[]).length > 1 && (
+                          <button 
+                            onClick={() => removeProject(optionalSection.id, index)}
+                            className={styles.removeButton}
+                          >
+                            <FiTrash2 />
+                          </button>
+                        )}
+                      </div>
+                      <div className={styles.formGrid}>
+                        <div className={styles.formGroup}>
+                          <label>Project Name</label>
+                          <input
+                            type="text"
+                            value={project.name}
+                            onChange={(e) => updateProject(optionalSection.id, index, 'name', e.target.value)}
+                            placeholder="E-commerce Website"
+                            className={styles.formInput}
+                          />
+                        </div>
+                        <div className={styles.formGroup}>
+                          <label>Technologies Used</label>
+                          <input
+                            type="text"
+                            value={project.technologies}
+                            onChange={(e) => updateProject(optionalSection.id, index, 'technologies', e.target.value)}
+                            placeholder="React, Node.js, MongoDB"
+                            className={styles.formInput}
+                          />
+                        </div>
+                      </div>
+                      <div className={styles.formGrid}>
+                        <div className={styles.formGroup}>
+                          <label>Start Date</label>
+                          <input
+                            type="month"
+                            value={project.startDate}
+                            onChange={(e) => updateProject(optionalSection.id, index, 'startDate', e.target.value)}
+                            className={styles.formInput}
+                          />
+                        </div>
+                        <div className={styles.formGroup}>
+                          <label>End Date</label>
+                          <input
+                            type="month"
+                            value={project.endDate}
+                            onChange={(e) => updateProject(optionalSection.id, index, 'endDate', e.target.value)}
+                            className={styles.formInput}
+                          />
+                        </div>
+                      </div>
+                      <div className={styles.formGroup}>
+                        <label>Project URL (Optional)</label>
+                        <input
+                          type="url"
+                          value={project.url || ''}
+                          onChange={(e) => updateProject(optionalSection.id, index, 'url', e.target.value)}
+                          placeholder="https://github.com/username/project"
+                          className={styles.formInput}
+                        />
+                      </div>
+                      <div className={styles.formGroup}>
+                        <label>Description</label>
+                        <textarea
+                          value={project.description}
+                          onChange={(e) => updateProject(optionalSection.id, index, 'description', e.target.value)}
+                          placeholder="Describe the project, your role, and key achievements..."
+                          className={styles.formTextarea}
+                        />
+                      </div>
+                    </div>
+                  ))}
+                  <button 
+                    onClick={() => addProject(optionalSection.id)}
+                    className={styles.addButton}
+                  >
+                    <FiPlus /> Add Project
+                  </button>
+                </>
+              )}
+
+              {/* Awards Section */}
+              {optionalSection.type === 'awards' && (
+                <>
+                  {(optionalSection.data as Award[]).map((award, index) => (
+                    <div key={index} className={styles.itemContainer}>
+                      <div className={styles.itemHeader}>
+                        <h3 className={styles.itemTitle}>Award {index + 1}</h3>
+                        {(optionalSection.data as Award[]).length > 1 && (
+                          <button 
+                            onClick={() => removeAward(optionalSection.id, index)}
+                            className={styles.removeButton}
+                          >
+                            <FiTrash2 />
+                          </button>
+                        )}
+                      </div>
+                      <div className={styles.formGrid}>
+                        <div className={styles.formGroup}>
+                          <label>Award Title</label>
+                          <input
+                            type="text"
+                            value={award.title}
+                            onChange={(e) => updateAward(optionalSection.id, index, 'title', e.target.value)}
+                            placeholder="Employee of the Month"
+                            className={styles.formInput}
+                          />
+                        </div>
+                        <div className={styles.formGroup}>
+                          <label>Issuing Organization</label>
+                          <input
+                            type="text"
+                            value={award.issuer}
+                            onChange={(e) => updateAward(optionalSection.id, index, 'issuer', e.target.value)}
+                            placeholder="ABC Company"
+                            className={styles.formInput}
+                          />
+                        </div>
+                      </div>
+                      <div className={styles.formGroup}>
+                        <label>Date Received</label>
+                        <input
+                          type="month"
+                          value={award.date}
+                          onChange={(e) => updateAward(optionalSection.id, index, 'date', e.target.value)}
+                          className={styles.formInput}
+                        />
+                      </div>
+                      <div className={styles.formGroup}>
+                        <label>Description</label>
+                        <textarea
+                          value={award.description}
+                          onChange={(e) => updateAward(optionalSection.id, index, 'description', e.target.value)}
+                          placeholder="Description of the achievement and its significance..."
+                          className={styles.formTextarea}
+                        />
+                      </div>
+                    </div>
+                  ))}
+                  <button 
+                    onClick={() => addAward(optionalSection.id)}
+                    className={styles.addButton}
+                  >
+                    <FiPlus /> Add Award
+                  </button>
+                </>
+              )}
+
+              {/* Volunteer Experience Section */}
+              {optionalSection.type === 'volunteer' && (
+                <>
+                  {(optionalSection.data as VolunteerExperience[]).map((vol, index) => (
+                    <div key={index} className={styles.itemContainer}>
+                      <div className={styles.itemHeader}>
+                        <h3 className={styles.itemTitle}>Volunteer Experience {index + 1}</h3>
+                        {(optionalSection.data as VolunteerExperience[]).length > 1 && (
+                          <button 
+                            onClick={() => removeVolunteerExperience(optionalSection.id, index)}
+                            className={styles.removeButton}
+                          >
+                            <FiTrash2 />
+                          </button>
+                        )}
+                      </div>
+                      <div className={styles.formGrid}>
+                        <div className={styles.formGroup}>
+                          <label>Organization</label>
+                          <input
+                            type="text"
+                            value={vol.organization}
+                            onChange={(e) => updateVolunteerExperience(optionalSection.id, index, 'organization', e.target.value)}
+                            placeholder="Red Cross"
+                            className={styles.formInput}
+                          />
+                        </div>
+                        <div className={styles.formGroup}>
+                          <label>Role</label>
+                          <input
+                            type="text"
+                            value={vol.role}
+                            onChange={(e) => updateVolunteerExperience(optionalSection.id, index, 'role', e.target.value)}
+                            placeholder="Volunteer Coordinator"
+                            className={styles.formInput}
+                          />
+                        </div>
+                      </div>
+                      <div className={styles.formGrid}>
+                        <div className={styles.formGroup}>
+                          <label>Location</label>
+                          <input
+                            type="text"
+                            value={vol.location}
+                            onChange={(e) => updateVolunteerExperience(optionalSection.id, index, 'location', e.target.value)}
+                            placeholder="Manila, Philippines"
+                            className={styles.formInput}
+                          />
+                        </div>
+                        <div style={{ display: 'flex', gap: '15px' }}>
+                          <div className={styles.formGroup} style={{ flex: '1' }}>
+                            <label>Start Date</label>
+                            <input
+                              type="month"
+                              value={vol.startDate}
+                              onChange={(e) => updateVolunteerExperience(optionalSection.id, index, 'startDate', e.target.value)}
+                              className={styles.formInput}
+                            />
+                          </div>
+                          <div className={styles.formGroup} style={{ flex: '1' }}>
+                            <label>End Date</label>
+                            <input
+                              type="month"
+                              value={vol.endDate === 'present' ? '' : vol.endDate}
+                              onChange={(e) => updateVolunteerExperience(optionalSection.id, index, 'endDate', e.target.value)}
+                              className={styles.formInput}
+                              disabled={vol.endDate === 'present'}
+                            />
+                            <label className={styles.presentCheckbox}>
+                              <input
+                                type="checkbox"
+                                checked={vol.endDate === 'present'}
+                                onChange={(e) => {
+                                  if (e.target.checked) {
+                                    updateVolunteerExperience(optionalSection.id, index, 'endDate', 'present');
+                                  } else {
+                                    updateVolunteerExperience(optionalSection.id, index, 'endDate', '');
+                                  }
+                                }}
+                              />
+                              <span>Currently volunteering here</span>
+                            </label>
+                          </div>
+                        </div>
+                      </div>
+                      <div className={styles.formGroup}>
+                        <label>Description</label>
+                        <textarea
+                          value={vol.description}
+                          onChange={(e) => updateVolunteerExperience(optionalSection.id, index, 'description', e.target.value)}
+                          placeholder="Describe your volunteer activities and impact..."
+                          className={styles.formTextarea}
+                        />
+                      </div>
+                    </div>
+                  ))}
+                  <button 
+                    onClick={() => addVolunteerExperience(optionalSection.id)}
+                    className={styles.addButton}
+                  >
+                    <FiPlus /> Add Volunteer Experience
+                  </button>
+                </>
+              )}
+            </div>
+          );
+        }
+        
+        return null;
+      })}
+
+      {/* Add Section Feature */}
+      {getAvailableSectionTypes().length > 0 && (
+        <div className={styles.addSectionContainer}>
+          <div className={styles.sectionHeader}>
+            <FiPlus className={styles.sectionIcon} />
+            <h2 className={styles.sectionTitle}>Add Section</h2>
+          </div>
+          <div className={styles.addSectionDropdown}>
+            <select 
+              onChange={(e) => {
+                if (e.target.value) {
+                  addOptionalSection(e.target.value as 'certificates' | 'projects' | 'awards' | 'volunteer');
+                  e.target.value = ''; // Reset dropdown
+                }
+              }}
               className={styles.formInput}
-            />
-            {resumeData.skills.length > 1 && (
-              <button 
-                onClick={() => removeSkill(index)}
-                className={styles.removeButton}
-              >
-                <FiTrash2 />
-              </button>
-            )}
+              defaultValue=""
+            >
+              <option value="" disabled>Choose a section to add...</option>
+              {getAvailableSectionTypes().map(type => {
+                const titles = {
+                  certificates: 'Certificates & Seminars',
+                  projects: 'Projects',
+                  awards: 'Awards & Achievements',
+                  volunteer: 'Volunteer Experience'
+                };
+                return (
+                  <option key={type} value={type}>
+                    {titles[type]}
+                  </option>
+                );
+              })}
+            </select>
           </div>
-        ))}
-      </div>
-      <button 
-        onClick={addSkill}
-        className={styles.addButton}
-      >
-        <FiPlus /> Add Skill
-      </button>
-
+        </div>
+      )}
 
       {/* Action Buttons */}
       <div className={styles.actionSection}>

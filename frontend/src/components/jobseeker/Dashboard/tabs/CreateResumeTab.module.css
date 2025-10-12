@@ -149,8 +149,8 @@
   background: #ffffff;
   border: 2px solid #e2e8f0;
   border-radius: 12px;
-  padding: 1.5rem;
-  margin-bottom: 1.5rem;
+  padding: 2rem;
+  margin-bottom: 2rem;
   position: relative;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
   transition: all 0.2s ease;
@@ -1896,6 +1896,269 @@
 .clearButton:active {
   transform: translateY(0);
   box-shadow: 0 2px 6px rgba(239, 68, 68, 0.3);
+}
+
+/* Add Section Feature Styles */
+.addSectionContainer {
+  margin-bottom: 2rem;
+  padding: 1.5rem;
+  background: linear-gradient(135deg, #f8fafc, #e2e8f0);
+  border: 2px dashed #cbd5e1;
+  border-radius: 12px;
+  transition: all 0.3s ease;
+}
+
+.addSectionContainer:hover {
+  border-color: #3b82f6;
+  background: linear-gradient(135deg, #f0f9ff, #dbeafe);
+  transform: translateY(-1px);
+}
+
+.addSectionDropdown {
+  margin-top: 1rem;
+}
+
+.addSectionDropdown select {
+  width: 100%;
+  max-width: 400px;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.addSectionDropdown select:focus {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+/* Section Reordering Controls */
+.sectionOrderControls {
+  position: relative;
+  margin-bottom: 1.5rem;
+}
+
+/* Section Container */
+.sectionContainer {
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 2rem;
+  margin-bottom: 2rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  transition: all 0.2s ease;
+}
+
+.sectionContainer:hover {
+  border-color: #cbd5e1;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+/* Dynamic Section Spacing */
+.sectionHeader {
+  margin-bottom: 1.5rem;
+}
+
+.sectionHeader:not(:first-child) {
+  margin-top: 0;
+}
+
+.sectionControls {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-left: auto;
+}
+
+.moveButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: 1px solid #e5e7eb;
+  background: white;
+  color: #6b7280;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 14px;
+}
+
+.moveButton:hover:not(:disabled) {
+  background: #f3f4f6;
+  border-color: #d1d5db;
+  color: #374151;
+  transform: translateY(-1px);
+}
+
+.moveButton:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.moveButton:disabled:hover {
+  background: white;
+  border-color: #e5e7eb;
+  color: #6b7280;
+}
+
+/* Optional Section Specific Styles */
+.optionalSectionContainer {
+  margin-bottom: 2rem;
+}
+
+.optionalSectionHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  padding: 1rem 1.5rem;
+  background: linear-gradient(135deg, #f1f5f9, #e2e8f0);
+  border-radius: 8px;
+  border-left: 4px solid #3b82f6;
+}
+
+.optionalSectionTitle {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #1e293b;
+  margin: 0;
+}
+
+.optionalSectionIcon {
+  width: 24px;
+  height: 24px;
+  color: #3b82f6;
+}
+
+/* Certificate Section Styles */
+.certificateItem {
+  background: #fefefe;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 1.25rem;
+  margin-bottom: 1rem;
+  transition: all 0.2s ease;
+}
+
+.certificateItem:hover {
+  border-color: #cbd5e1;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+/* Project Section Styles */
+.projectItem {
+  background: #fefefe;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 1.25rem;
+  margin-bottom: 1rem;
+  transition: all 0.2s ease;
+}
+
+.projectItem:hover {
+  border-color: #cbd5e1;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+/* Award Section Styles */
+.awardItem {
+  background: #fefefe;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 1.25rem;
+  margin-bottom: 1rem;
+  transition: all 0.2s ease;
+}
+
+.awardItem:hover {
+  border-color: #cbd5e1;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+/* Volunteer Section Styles */
+.volunteerItem {
+  background: #fefefe;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 1.25rem;
+  margin-bottom: 1rem;
+  transition: all 0.2s ease;
+}
+
+.volunteerItem:hover {
+  border-color: #cbd5e1;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+/* Section Reordering Visual Feedback */
+.sectionReordering {
+  opacity: 0.7;
+  transform: scale(0.98);
+  transition: all 0.2s ease;
+}
+
+/* Enhanced Section Headers for Optional Sections */
+.sectionHeader .sectionControls {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* Responsive Design for Optional Sections */
+@media (max-width: 768px) {
+  .addSectionContainer {
+    padding: 1rem;
+    margin-bottom: 1.5rem;
+  }
+  
+  .sectionControls {
+    flex-direction: column;
+    gap: 0.25rem;
+    align-items: flex-end;
+  }
+  
+  .moveButton {
+    width: 28px;
+    height: 28px;
+    font-size: 12px;
+  }
+  
+  .optionalSectionHeader {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+    padding: 1rem;
+  }
+  
+  .sectionControls {
+    align-self: flex-end;
+    flex-direction: row;
+  }
+}
+
+@media (max-width: 480px) {
+  .addSectionDropdown select {
+    font-size: 0.875rem;
+  }
+  
+  .moveButton {
+    width: 24px;
+    height: 24px;
+    font-size: 10px;
+  }
+  
+  .optionalSectionTitle {
+    font-size: 1.125rem;
+  }
+  
+  .optionalSectionIcon {
+    width: 20px;
+    height: 20px;
+  }
 }
 
 /* Responsive adjustments for clear button */
