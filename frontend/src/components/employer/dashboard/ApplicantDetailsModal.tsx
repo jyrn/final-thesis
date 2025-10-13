@@ -99,6 +99,11 @@ export const ApplicantDetailsModal: React.FC<ApplicantDetailsModalProps> = ({
   const [isLoadingApplication, setIsLoadingApplication] = useState(false);
   const [resumePreviewUrl, setResumePreviewUrl] = useState<string | null>(null);
   const [isFullScreenPreview, setIsFullScreenPreview] = useState(false);
+  const [availableResumes, setAvailableResumes] = useState<{
+    generated?: { url: string; label: string };
+    uploaded?: { url: string; label: string };
+  }>({});
+  const [activeResumeType, setActiveResumeType] = useState<'generated' | 'uploaded'>('generated');
 
   // Fetch detailed application data when modal opens
   useEffect(() => {
@@ -169,8 +174,50 @@ export const ApplicantDetailsModal: React.FC<ApplicantDetailsModalProps> = ({
       if (response.ok) {
         const data = await response.json();
         
-        if (data.success && data.generatePDF) {
-          // Generate PDF using the same logic as CreateResumeTab
+        // Check if cloud URLs are available (multiple resumes)
+        if (data.success && data.useCloudUrl && data.resumes) {
+          setAvailableResumes(data.resumes);
+          
+          // Set initial resume to view (prefer generated, fallback to uploaded)
+          if (data.resumes.generated) {
+            try {
+              // Try to fetch as blob first (to avoid download headers)
+              const pdfResponse = await fetch(data.resumes.generated.url, { mode: 'cors' });
+              if (pdfResponse.ok) {
+                const arrayBuffer = await pdfResponse.arrayBuffer();
+                // Create a new blob with explicit PDF mime type for inline viewing
+                const pdfBlob = new Blob([arrayBuffer], { type: 'application/pdf' });
+                const blobUrl = URL.createObjectURL(pdfBlob);
+                setResumePreviewUrl(blobUrl);
+              } else {
+                setResumePreviewUrl(data.resumes.generated.url);
+              }
+            } catch (fetchError) {
+              setResumePreviewUrl(data.resumes.generated.url);
+            }
+            setActiveResumeType('generated');
+          } else if (data.resumes.uploaded) {
+            try {
+              // Try to fetch as blob first (to avoid download headers)
+              const pdfResponse = await fetch(data.resumes.uploaded.url, { mode: 'cors' });
+              if (pdfResponse.ok) {
+                const arrayBuffer = await pdfResponse.arrayBuffer();
+                // Create a new blob with explicit PDF mime type for inline viewing
+                const pdfBlob = new Blob([arrayBuffer], { type: 'application/pdf' });
+                const blobUrl = URL.createObjectURL(pdfBlob);
+                setResumePreviewUrl(blobUrl);
+              } else {
+                setResumePreviewUrl(data.resumes.uploaded.url);
+              }
+            } catch (fetchError) {
+              setResumePreviewUrl(data.resumes.uploaded.url);
+            }
+            setActiveResumeType('uploaded');
+          }
+          
+          setIsFullScreenPreview(true);
+        } else if (data.success && data.generatePDF) {
+          // Fallback: Generate PDF using the same logic as CreateResumeTab
           const { generateResumePDF } = await import('../../../utils/pdfGenerator');
           const pdfBlob = generateResumePDF(data.resumeData, undefined, true) as Blob;
           
@@ -178,20 +225,16 @@ export const ApplicantDetailsModal: React.FC<ApplicantDetailsModalProps> = ({
             const url = URL.createObjectURL(pdfBlob);
             setResumePreviewUrl(url);
             setIsFullScreenPreview(true);
-            console.log('✅ Resume PDF generated and loaded successfully');
-          } else {
-            console.error('❌ Failed to generate PDF blob');
           }
-        } else {
-          console.error('❌ Invalid response format:', data);
         }
       } else {
-        console.error('❌ Failed to fetch resume, status:', response.status);
         try {
           const errorData = await response.json();
-          console.error('Resume fetch error:', errorData.error || errorData.message);
+          if (errorData.error === 'Resume visibility restricted by job seeker') {
+            alert('This job seeker has restricted resume visibility.');
+          }
         } catch (parseError) {
-          console.error('Could not parse error response');
+          // Ignore parse errors
         }
       }
     } catch (error) {
@@ -201,6 +244,44 @@ export const ApplicantDetailsModal: React.FC<ApplicantDetailsModalProps> = ({
 
   const handleBackToDetails = () => {
     setIsFullScreenPreview(false);
+  };
+
+  const switchResume = async (type: 'generated' | 'uploaded') => {
+    try {
+      if (type === 'generated' && availableResumes.generated) {
+        try {
+          const pdfResponse = await fetch(availableResumes.generated.url, { mode: 'cors' });
+          if (pdfResponse.ok) {
+            const arrayBuffer = await pdfResponse.arrayBuffer();
+            const pdfBlob = new Blob([arrayBuffer], { type: 'application/pdf' });
+            const blobUrl = URL.createObjectURL(pdfBlob);
+            setResumePreviewUrl(blobUrl);
+          } else {
+            setResumePreviewUrl(availableResumes.generated.url);
+          }
+        } catch (fetchError) {
+          setResumePreviewUrl(availableResumes.generated.url);
+        }
+        setActiveResumeType('generated');
+      } else if (type === 'uploaded' && availableResumes.uploaded) {
+        try {
+          const pdfResponse = await fetch(availableResumes.uploaded.url, { mode: 'cors' });
+          if (pdfResponse.ok) {
+            const arrayBuffer = await pdfResponse.arrayBuffer();
+            const pdfBlob = new Blob([arrayBuffer], { type: 'application/pdf' });
+            const blobUrl = URL.createObjectURL(pdfBlob);
+            setResumePreviewUrl(blobUrl);
+          } else {
+            setResumePreviewUrl(availableResumes.uploaded.url);
+          }
+        } catch (fetchError) {
+          setResumePreviewUrl(availableResumes.uploaded.url);
+        }
+        setActiveResumeType('uploaded');
+      }
+    } catch (error) {
+      // Ignore errors
+    }
   };
 
   const handleDownloadResume = async () => {
@@ -217,29 +298,57 @@ export const ApplicantDetailsModal: React.FC<ApplicantDetailsModalProps> = ({
 
       if (response.ok) {
         const data = await response.json();
-        if (data.success && data.downloadPDF) {
-          // Generate PDF using the same logic as CreateResumeTab
+        
+        // Check if cloud URLs are available for direct download
+        if (data.success && data.useCloudUrl && data.resumes) {
+          console.log('✅ Downloading from cloud:', data.resumes);
+          
+          // Download both resumes if available
+          if (data.resumes.generated) {
+            const fileName = `${data.applicantName.replace(/[^a-zA-Z0-9]/g, '_')}_Generated_Resume.pdf`;
+            const link = document.createElement('a');
+            link.href = data.resumes.generated.url;
+            link.download = fileName;
+            link.target = '_blank';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+          }
+          
+          if (data.resumes.uploaded) {
+            // Small delay to avoid browser blocking multiple downloads
+            setTimeout(() => {
+              const fileName = `${data.applicantName.replace(/[^a-zA-Z0-9]/g, '_')}_Original_Resume.pdf`;
+              const link = document.createElement('a');
+              link.href = data.resumes.uploaded.url;
+              link.download = fileName;
+              link.target = '_blank';
+              document.body.appendChild(link);
+              link.click();
+              document.body.removeChild(link);
+            }, 500);
+          }
+        } else if (data.success && data.downloadPDF) {
+          // Fallback: Generate PDF using the same logic as CreateResumeTab
           const { generateResumePDF } = await import('../../../utils/pdfGenerator');
           const fileName = `${data.applicantName.replace(/[^a-zA-Z0-9]/g, '_')}_Resume.pdf`;
-          generateResumePDF(data.resumeData, fileName, false); // This will trigger download
-          console.log('✅ Resume downloaded successfully:', fileName);
+          generateResumePDF(data.resumeData, fileName, false);
         } else {
-          console.error('❌ Invalid response format:', data);
           alert(data.error || 'Invalid response format');
         }
       } else {
-        console.error('❌ Failed to download resume, status:', response.status);
         try {
           const errorData = await response.json();
-          console.error('Resume download error:', errorData.error || errorData.message);
-          alert(errorData.error || errorData.message || 'Resume not found or unable to download');
+          if (errorData.error === 'Resume visibility restricted by job seeker') {
+            alert('This job seeker has restricted resume visibility.');
+          } else {
+            alert(errorData.error || errorData.message || 'Resume not found or unable to download');
+          }
         } catch (parseError) {
-          console.error('Could not parse error response');
           alert('Error downloading resume');
         }
       }
     } catch (error) {
-      console.error('Error downloading resume:', error);
       alert('Error downloading resume');
     }
   };
@@ -321,14 +430,113 @@ export const ApplicantDetailsModal: React.FC<ApplicantDetailsModalProps> = ({
           </div>
         </div>
 
+        {/* Resume Tabs (if multiple resumes available) */}
+        {(availableResumes.generated || availableResumes.uploaded) && (
+          <div style={{
+            display: 'flex',
+            gap: '8px',
+            padding: '12px 20px',
+            borderBottom: '1px solid #e5e7eb',
+            backgroundColor: '#f9fafb'
+          }}>
+            {availableResumes.generated && (
+              <button
+                onClick={() => switchResume('generated')}
+                style={{
+                  padding: '8px 16px',
+                  border: 'none',
+                  borderRadius: '6px',
+                  backgroundColor: activeResumeType === 'generated' ? '#3b82f6' : 'white',
+                  color: activeResumeType === 'generated' ? 'white' : '#374151',
+                  fontWeight: activeResumeType === 'generated' ? '600' : '400',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s',
+                  boxShadow: activeResumeType === 'generated' ? '0 2px 4px rgba(59, 130, 246, 0.3)' : '0 1px 2px rgba(0,0,0,0.1)'
+                }}
+              >
+                📄 {availableResumes.generated.label}
+              </button>
+            )}
+            {availableResumes.uploaded && (
+              <button
+                onClick={() => switchResume('uploaded')}
+                style={{
+                  padding: '8px 16px',
+                  border: 'none',
+                  borderRadius: '6px',
+                  backgroundColor: activeResumeType === 'uploaded' ? '#3b82f6' : 'white',
+                  color: activeResumeType === 'uploaded' ? 'white' : '#374151',
+                  fontWeight: activeResumeType === 'uploaded' ? '600' : '400',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s',
+                  boxShadow: activeResumeType === 'uploaded' ? '0 2px 4px rgba(59, 130, 246, 0.3)' : '0 1px 2px rgba(0,0,0,0.1)'
+                }}
+              >
+                📎 {availableResumes.uploaded.label}
+              </button>
+            )}
+          </div>
+        )}
+
         {/* PDF Resume Content */}
-        <div className={styles.pdfContent}>
+        <div className={styles.pdfContent} style={{ position: 'relative' }}>
           {resumePreviewUrl ? (
-            <iframe 
-              src={resumePreviewUrl} 
-              className={styles.pdfIframe}
-              title="Resume Preview"
-            />
+            <>
+              <iframe
+                src={resumePreviewUrl}
+                width="100%"
+                height="100%"
+                style={{ border: 'none', minHeight: '600px' }}
+                title="Resume Preview"
+                onLoad={() => console.log('✅ Resume PDF loaded successfully')}
+                onError={(e) => console.error('❌ Resume PDF failed to load:', e)}
+              />
+              {/* Fallback button if iframe doesn't work */}
+              <div style={{
+                position: 'absolute',
+                top: '16px',
+                right: '16px',
+                zIndex: 10
+              }}>
+                <button
+                  onClick={async () => {
+                    const url = activeResumeType === 'generated' 
+                      ? availableResumes.generated?.url 
+                      : availableResumes.uploaded?.url;
+                    if (url) {
+                      try {
+                        // Fetch as blob and open in new tab
+                        const response = await fetch(url, { mode: 'cors' });
+                        const blob = await response.blob();
+                        const blobUrl = URL.createObjectURL(new Blob([blob], { type: 'application/pdf' }));
+                        window.open(blobUrl, '_blank');
+                      } catch (error) {
+                        console.error('Error opening in new tab:', error);
+                        // Fallback to direct URL
+                        window.open(url, '_blank');
+                      }
+                    }
+                  }}
+                  style={{
+                    padding: '8px 16px',
+                    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                    color: '#374151',
+                    border: '1px solid #e5e7eb',
+                    borderRadius: '6px',
+                    cursor: 'pointer',
+                    fontSize: '13px',
+                    fontWeight: '500',
+                    boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px'
+                  }}
+                >
+                  <FiEye size={14} />
+                  Open in New Tab
+                </button>
+              </div>
+            </>
           ) : (
             <div className={styles.loadingPlaceholder}>
               <div className={styles.loadingContent}>

@@ -50,6 +50,22 @@ const profilePhotoUpload = multer({
   }
 });
 
+// Separate multer instance for PDF resume uploads
+const resumePdfUpload = multer({
+  storage: memoryStorage,
+  fileFilter: (req, file, cb) => {
+    // Accept only PDF files
+    if (file.mimetype === 'application/pdf') {
+      cb(null, true);
+    } else {
+      cb(new Error('Only PDF files are allowed'), false);
+    }
+  },
+  limits: {
+    fileSize: 10 * 1024 * 1024 // 10MB limit for PDF resumes
+  }
+});
+
 // @route   POST /api/jobseekers/resume-data
 // @desc    Save resume data to jobseeker profile
 // @access  Private
@@ -545,7 +561,7 @@ router.post('/upload-profile-photo', verifyToken, requireRole('jobseeker'), prof
       const cloudResult = await cloudStorageService.uploadImageBuffer(
         uploadedFile.buffer, 
         uploadedFile.originalname, 
-        `profile-photos/${req.user.uid}`
+        `users/${req.user.uid}/photos`
       );
       
       // Update jobseeker profile with cloud URL
@@ -697,11 +713,11 @@ router.post('/upload-resume-photo', verifyToken, profilePhotoUpload.single('resu
 
     console.log(`📷 [${requestId}] Uploading resume photo to cloud storage`);
 
-    // Upload to cloud storage using image-specific method with resume-photos folder
+    // Upload to cloud storage using image-specific method
     const cloudResult = await cloudStorageService.uploadImageBuffer(
       uploadedFile.buffer, 
       uploadedFile.originalname, 
-      `resume-photos/${req.user.uid}`
+      `users/${req.user.uid}/photos`
     );
     
     console.log(`✅ [${requestId}] Resume photo uploaded successfully: ${cloudResult.publicId}`);
@@ -721,6 +737,72 @@ router.post('/upload-resume-photo', verifyToken, profilePhotoUpload.single('resu
     res.status(500).json({
       success: false,
       message: error.message || 'Failed to upload resume photo'
+    });
+  }
+});
+
+// @route   POST /api/jobseekers/upload-original-resume
+// @desc    Upload original resume PDF to cloud storage
+// @access  Private
+router.post('/upload-original-resume', verifyToken, resumePdfUpload.single('originalResume'), async (req, res) => {
+  const requestId = Math.random().toString(36).substr(2, 9);
+  console.log(`📄 [${requestId}] Original resume upload request received`);
+
+  try {
+    const { uid } = req.user;
+    const uploadedFile = req.file;
+
+    console.log(`📄 [${requestId}] File details:`, {
+      hasFile: !!uploadedFile,
+      originalname: uploadedFile?.originalname,
+      mimetype: uploadedFile?.mimetype,
+      size: uploadedFile?.size,
+      buffer: uploadedFile?.buffer ? 'Present' : 'Missing'
+    });
+
+    if (!uploadedFile) {
+      return res.status(400).json({
+        success: false,
+        message: 'No resume file was uploaded'
+      });
+    }
+
+    // Validate file type
+    if (uploadedFile.mimetype !== 'application/pdf') {
+      return res.status(400).json({
+        success: false,
+        message: 'Only PDF files are allowed'
+      });
+    }
+
+    console.log(`📄 [${requestId}] Uploading original resume to cloud storage`);
+
+    // Upload to cloud storage with user-specific folder structure
+    const cloudResult = await cloudStorageService.uploadBuffer(
+      uploadedFile.buffer, 
+      uploadedFile.originalname, 
+      `users/${req.user.uid}/resumes/original`,
+      'application/pdf'
+    );
+    
+    console.log(`✅ [${requestId}] Original resume uploaded successfully: ${cloudResult.publicId}`);
+
+    res.json({
+      success: true,
+      message: 'Original resume uploaded successfully',
+      data: {
+        cloudUrl: cloudResult.url,
+        publicId: cloudResult.publicId
+      }
+    });
+
+  } catch (error) {
+    console.error(`❌ [${requestId}] Original resume upload error:`, error);
+    console.error(`❌ [${requestId}] Error stack:`, error.stack);
+    res.status(500).json({
+      success: false,
+      message: error.message || 'Failed to upload original resume',
+      error: process.env.NODE_ENV === 'development' ? error.stack : undefined
     });
   }
 });

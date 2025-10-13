@@ -9,12 +9,9 @@ class ExperienceParser extends BaseParser {
   constructor() {
     super();
     this.version = '2.0.1';
-    console.log('💼 ExperienceParser v2.0.1 loaded');
   }
 
   parse(text, context = {}) {
-    console.log('💼 ExperienceParser: Starting extraction...');
-    
     const experience = [];
     
     // Extract experience section

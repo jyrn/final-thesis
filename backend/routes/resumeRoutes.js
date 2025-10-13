@@ -7,6 +7,7 @@ const Resume = require('../models/Resume');
 const MLResume = require('../models/MLResume');
 const JobSeeker = require('../models/JobSeeker');
 const { getImageUrl, isCloudUrl } = require('../utils/imageUtils');
+const cloudStorageService = require('../services/cloudStorageService');
 
 // Transform database resume data to jobseeker format
 function transformToJobseekerFormat(resumeData, application) {
@@ -475,7 +476,7 @@ router.post('/create', verifyToken, async (req, res) => {
     // Convert base64 PDF data to buffer
     const pdfBuffer = Buffer.from(pdfData, 'base64');
     
-    let filename, filePath;
+    let filename, filePath, cloudResult;
     
     // Helper function to construct full name
     const constructFullName = (personalInfo) => {
@@ -500,6 +501,25 @@ router.post('/create', verifyToken, async (req, res) => {
       });
     };
 
+    // Upload PDF to cloud storage
+    const fullName = constructFullName(resumeData.personalInfo);
+    const pdfFilename = `${fullName}_Resume_${Date.now()}.pdf`;
+    
+    try {
+      console.log('📤 Uploading resume PDF to cloud storage...');
+      cloudResult = await cloudStorageService.uploadBuffer(
+        pdfBuffer,
+        pdfFilename,
+        `users/${uid}/resumes`,
+        'application/pdf'
+      );
+      console.log('✅ Resume PDF uploaded to cloud:', cloudResult.publicId);
+    } catch (cloudError) {
+      console.error('❌ Cloud upload failed:', cloudError);
+      // Continue with local storage as fallback
+      cloudResult = null;
+    }
+
     if (existingResume) {
       // Update existing resume - reuse the same filename
       filename = existingResume.filename;
@@ -516,7 +536,7 @@ router.post('/create', verifyToken, async (req, res) => {
       fs.mkdirSync(uploadDir, { recursive: true });
     }
 
-    // Save PDF file (overwrite if updating)
+    // Save PDF file locally as backup (overwrite if updating)
     fs.writeFileSync(filePath, pdfBuffer);
 
     if (existingResume) {
@@ -578,6 +598,20 @@ router.post('/create', verifyToken, async (req, res) => {
       // Increment version on update
       existingResume.version = (existingResume.version || 1) + 1;
       
+      // Update cloud storage fields
+      if (cloudResult) {
+        existingResume.pdfCloudUrl = cloudResult.url;
+        existingResume.pdfPublicId = cloudResult.publicId;
+      }
+      // Update employer visibility consent (default true if not specified)
+      existingResume.showToEmployers = resumeData.showToEmployers !== undefined ? resumeData.showToEmployers : true;
+      
+      // Update uploaded resume fields if provided
+      if (resumeData.uploadedResumeUrl) {
+        existingResume.uploadedResumeUrl = resumeData.uploadedResumeUrl;
+      }
+      existingResume.showUploadedToEmployers = resumeData.showUploadedToEmployers || false;
+      
       console.log('💾 Saving optional sections (UPDATE):', existingResume.optionalSections.length, 'sections');
       console.log('💾 Section types:', existingResume.optionalSections.map(s => s.type));
       
@@ -631,7 +665,14 @@ router.post('/create', verifyToken, async (req, res) => {
           { id: 'skills', type: 'skills', title: 'Skills' }
         ],
         version: 1, // Start new resumes at version 1
-        isActive: true
+        isActive: true,
+        // Cloud storage fields
+        pdfCloudUrl: cloudResult ? cloudResult.url : null,
+        pdfPublicId: cloudResult ? cloudResult.publicId : null,
+        showToEmployers: resumeData.showToEmployers !== undefined ? resumeData.showToEmployers : true,
+        // Uploaded resume fields
+        uploadedResumeUrl: resumeData.uploadedResumeUrl || null,
+        showUploadedToEmployers: resumeData.showUploadedToEmployers || false
       });
 
       // Debug: Log what's being stored for new resume
@@ -804,7 +845,37 @@ router.get('/view/:applicationId', verifyToken, async (req, res) => {
       });
     }
 
-    // Transform resume data to match jobseeker format
+    // Check if user has consented to show resume to employers
+    if (resumeData.showToEmployers === false) {
+      return res.status(403).json({
+        success: false,
+        error: 'Resume visibility restricted by job seeker'
+      });
+    }
+
+    // Check if we have cloud URLs for resumes
+    const hasGeneratedResume = !!resumeData.pdfCloudUrl;
+    const hasUploadedResume = resumeData.showUploadedToEmployers && !!resumeData.uploadedResumeUrl;
+    
+    if (hasGeneratedResume || hasUploadedResume) {
+      return res.json({
+        success: true,
+        useCloudUrl: true,
+        resumes: {
+          generated: hasGeneratedResume ? {
+            url: resumeData.pdfCloudUrl,
+            label: 'Generated Resume'
+          } : null,
+          uploaded: hasUploadedResume ? {
+            url: resumeData.uploadedResumeUrl,
+            label: 'Original Resume'
+          } : null
+        },
+        applicantName: resumeData.personalInfo?.fullName || resumeData.personalInfo?.name || 'Applicant'
+      });
+    }
+
+    // Fallback: Transform resume data to match jobseeker format for frontend PDF generation
     const jobseekerFormat = transformToJobseekerFormat(resumeData, application);
     
     // Return resume data as JSON for frontend PDF generation
@@ -911,7 +982,42 @@ router.get('/download/:applicationId', verifyToken, async (req, res) => {
       });
     }
 
-    // Transform resume data to match jobseeker format
+    // Check if user has consented to show resume to employers
+    if (resumeData.showToEmployers === false) {
+      return res.status(403).json({
+        success: false,
+        error: 'Resume visibility restricted by job seeker'
+      });
+    }
+
+    // Check if we have cloud URLs for resumes
+    const hasGeneratedResume = !!resumeData.pdfCloudUrl;
+    const hasUploadedResume = resumeData.showUploadedToEmployers && !!resumeData.uploadedResumeUrl;
+    
+    if (hasGeneratedResume || hasUploadedResume) {
+      console.log('✅ Returning cloud-stored resume URLs for download:', {
+        generated: resumeData.pdfCloudUrl,
+        uploaded: hasUploadedResume ? resumeData.uploadedResumeUrl : null
+      });
+      
+      return res.json({
+        success: true,
+        useCloudUrl: true,
+        resumes: {
+          generated: hasGeneratedResume ? {
+            url: resumeData.pdfCloudUrl,
+            label: 'Generated Resume'
+          } : null,
+          uploaded: hasUploadedResume ? {
+            url: resumeData.uploadedResumeUrl,
+            label: 'Original Resume'
+          } : null
+        },
+        applicantName: resumeData.personalInfo?.fullName || resumeData.personalInfo?.name || 'Applicant'
+      });
+    }
+
+    // Fallback: Transform resume data to match jobseeker format
     const jobseekerFormat = transformToJobseekerFormat(resumeData, application);
     
     // Return resume data as JSON for frontend PDF generation and download

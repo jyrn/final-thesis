@@ -8,9 +8,12 @@
     "dev": "nodemon server.js",
     "test": "echo \"Error: no test specified\" && exit 1",
     "install-python-deps": "pip install PyPDF2 pytesseract Pillow PyMuPDF pdfplumber",
+    "install-ml-deps": "pip install -r requirements-advanced.txt",
     "setup": "npm install && npm run install-python-deps",
+    "setup-ml": "npm install && npm run install-ml-deps",
     "setup-resume-parsing": "python setup_resume_parsing.py",
-    "test-resume-parsing": "node test_resume_parsing.js"
+    "test-resume-parsing": "node test_resume_parsing.js",
+    "ml-status": "curl http://localhost:3001/api/ml-services/status"
   },
   "dependencies": {
     "@google-cloud/storage": "^7.17.2",
@@ -27,6 +30,7 @@
     "firebase-admin": "^11.11.1",
     "form-data": "^4.0.4",
     "jspdf": "^3.0.3",
+    "moment": "^2.30.1",
     "mongoose": "^7.8.7",
     "multer": "^2.0.2",
     "multer-storage-cloudinary": "^4.0.0",

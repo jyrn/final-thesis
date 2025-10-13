@@ -1,0 +1,49 @@
+# Advanced Resume Parsing Requirements
+# Install with: pip install -r requirements-advanced.txt
+
+# Core ML/NLP
+torch>=2.0.0
+transformers>=4.30.0
+spacy>=3.5.0
+
+# BERT and NER
+tokenizers>=0.13.0
+datasets>=2.12.0
+scikit-learn>=1.2.0
+
+# Document Processing
+pdf2image>=1.16.0
+pytesseract>=0.3.10
+opencv-python>=4.7.0
+Pillow>=9.5.0
+PyMuPDF>=1.22.0
+pdfplumber>=0.9.0
+
+# Layout Analysis (detectron2 is optional and not available on Windows via pip)
+# layoutparser>=0.3.4
+# detectron2>=0.6  # Optional, Linux/Mac only, requires manual installation
+
+# OCR Enhancement
+numpy>=1.24.0
+scipy>=1.10.0
+
+# Text Processing
+python-dateutil>=2.8.2
+dateparser>=1.1.8
+fuzzywuzzy>=0.18.0
+python-Levenshtein>=0.21.0
+
+# Web Framework
+Flask>=2.3.0
+Flask-CORS>=4.0.0
+
+# Database
+pymongo>=4.3.0
+
+# Utilities
+python-dotenv>=1.0.0
+requests>=2.31.0
+
+# Existing requirements (from original requirements.txt)
+PyPDF2>=3.0.0
+pdfminer.six>=20221105

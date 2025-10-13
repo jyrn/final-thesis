@@ -9,12 +9,9 @@ class EnhancedPersonalInfoParser extends BaseParser {
   constructor() {
     super();
     this.version = '2.1.0';
-    console.log('👤 EnhancedPersonalInfoParser v2.1.0 loaded');
   }
 
   parse(text, context = {}) {
-    console.log('👤 EnhancedPersonalInfoParser v2.1.0: Starting extraction...');
-    
     const personalInfo = {
       firstName: '',
       lastName: '',
@@ -36,7 +33,6 @@ class EnhancedPersonalInfoParser extends BaseParser {
       const emailMatch = text.match(pattern);
       if (emailMatch) {
         personalInfo.email = emailMatch[1].trim();
-        console.log('👤 Found email:', personalInfo.email);
         break;
       }
     }
@@ -54,7 +50,6 @@ class EnhancedPersonalInfoParser extends BaseParser {
       const phoneMatch = text.match(pattern);
       if (phoneMatch) {
         personalInfo.phone = phoneMatch[1].trim();
-        console.log('👤 Found phone:', personalInfo.phone);
         break;
       }
     }
@@ -71,7 +66,6 @@ class EnhancedPersonalInfoParser extends BaseParser {
       if (linkedinMatch) {
         personalInfo.linkedin = linkedinMatch[0].includes('http') ? 
           linkedinMatch[1] : `https://linkedin.com/in/${linkedinMatch[1]}`;
-        console.log('👤 Found LinkedIn:', personalInfo.linkedin);
         break;
       }
     }
@@ -87,7 +81,6 @@ class EnhancedPersonalInfoParser extends BaseParser {
       if (githubMatch) {
         personalInfo.github = githubMatch[0].includes('http') ? 
           githubMatch[1] : `https://github.com/${githubMatch[1]}`;
-        console.log('👤 Found GitHub:', personalInfo.github);
         break;
       }
     }
@@ -97,15 +90,10 @@ class EnhancedPersonalInfoParser extends BaseParser {
     if (nameResult.firstName) {
       personalInfo.firstName = nameResult.firstName;
       personalInfo.lastName = nameResult.lastName;
-      console.log(`👤 Found name: ${personalInfo.firstName} ${personalInfo.lastName}`);
-    } else {
-      console.log('👤 ⚠️ Could not extract name');
     }
 
     // Calculate confidence
     this.confidence = this.calculatePersonalInfoConfidence(personalInfo);
-    
-    console.log(`👤 EnhancedPersonalInfoParser: Extraction complete (confidence: ${this.confidence.toFixed(2)} )`);
     
     return {
       data: personalInfo,
@@ -120,14 +108,14 @@ class EnhancedPersonalInfoParser extends BaseParser {
     const lines = text.split('\n').filter(l => l.trim().length > 0);
     
     // Strategy 1: Look for names in first few lines
-    console.log('👤 Analyzing lines for name extraction:');
     for (let i = 0; i < Math.min(lines.length, 5); i++) {
       const line = lines[i].trim();
-      console.log(`👤   Line ${i + 1}: "${line}"`);
       
       // First, try to extract name from line even if it has contact info
       if (i === 0) {
         const namePatterns = [
+          // Pattern for "PATRICIA J. GALLEGO" (all caps with middle initial)
+          /^([A-Z]+\s+[A-Z]\.?\s+[A-Z]+)(?:\s|[+|])/,
           // Pattern for "Hannah Nicole L.Comia" (concatenated middle initial and last name)
           /^([A-Z][a-z]+\s+[A-Z][a-z]+\s+[A-Z]\.?[A-Z][a-z]+)/,
           /^([A-Z][a-z]+\s+[A-Z][a-z]+\s+[A-Z]\.?\s+[A-Z][a-z]+)/,
@@ -138,21 +126,22 @@ class EnhancedPersonalInfoParser extends BaseParser {
         for (const pattern of namePatterns) {
           const nameMatch = line.match(pattern);
           if (nameMatch) {
-            console.log(`👤   Found name in line ${i + 1}: "${nameMatch[1]}"`);
-            return this.splitName(nameMatch[1]);
+            const potentialName = nameMatch[1];
+            // Validate that it's not a university/institution name or URL text
+            if (!this.isInstitutionName(potentialName) && !this.isUrlText(potentialName)) {
+              return this.splitName(potentialName);
+            }
           }
         }
       }
       
       // Skip lines with too much contact info (but only after trying name extraction)
       if (this.hasContactInfo(line)) {
-        console.log(`👤   Skipping line ${i + 1}: contains contact info`);
         continue;
       }
       
       // Skip if line is too short to be a full name
       if (line.length < 8) {
-        console.log(`👤   Skipping line ${i + 1}: too short`);
         continue;
       }
       
@@ -181,14 +170,16 @@ class EnhancedPersonalInfoParser extends BaseParser {
         const match = line.match(pattern);
         if (match) {
           const fullName = match[1].trim();
-          return this.splitName(fullName);
+          // Validate that it's not a university/institution name
+          if (!this.isInstitutionName(fullName)) {
+            return this.splitName(fullName);
+          }
         }
       }
     }
     
     // Strategy 2: Look for name at the very beginning of text (even if line has contact info)
     const firstLine = lines[0] || '';
-    console.log(`👤 Checking first line for name: "${firstLine.substring(0, 100)}..."`);
     
     // Try to extract name from beginning of first line - handle different formats
     const namePatterns = [
@@ -203,18 +194,22 @@ class EnhancedPersonalInfoParser extends BaseParser {
     for (const pattern of namePatterns) {
       const nameAtStart = firstLine.match(pattern);
       if (nameAtStart) {
-        console.log(`👤 Found name at start of first line: "${nameAtStart[1]}"`);
-        return this.splitName(nameAtStart[1]);
+        const potentialName = nameAtStart[1];
+        if (!this.isInstitutionName(potentialName)) {
+          return this.splitName(potentialName);
+        }
       }
     }
-    
-    console.log('👤 No name found at start of first line, trying other strategies...');
     
     // Strategy 3: Look for name patterns anywhere in first 500 chars
     const topSection = text.substring(0, 500);
     const nameInText = topSection.match(/\b([A-Z][a-z]+\s+[A-Z][a-z]+)\b/);
     if (nameInText) {
-      return this.splitName(nameInText[1]);
+      const potentialName = nameInText[1];
+      // Validate before using
+      if (!this.isInstitutionName(potentialName) && !this.isUrlText(potentialName)) {
+        return this.splitName(potentialName);
+      }
     }
     
     return { firstName: '', lastName: '' };
@@ -284,6 +279,74 @@ class EnhancedPersonalInfoParser extends BaseParser {
       // 5+ parts: take first two as firstName, rest as lastName
       return { firstName: `${cleanParts[0]} ${cleanParts[1]}`, lastName: cleanParts.slice(2).join(' ') };
     }
+  }
+
+  /**
+   * Check if text is from a URL or link
+   */
+  isUrlText(text) {
+    const lowerText = text.toLowerCase().trim();
+    
+    // Common URL-related text
+    const urlKeywords = [
+      'linked in', 'linkedin', 'github', 'git hub',
+      'facebook', 'twitter', 'instagram', 'portfolio',
+      'website', 'http', 'https', 'www'
+    ];
+    
+    for (const keyword of urlKeywords) {
+      if (lowerText.includes(keyword)) {
+        return true;
+      }
+    }
+    
+    return false;
+  }
+
+  /**
+   * Check if a name is actually an institution/university name
+   */
+  isInstitutionName(name) {
+    const lowerName = name.toLowerCase().trim();
+    
+    // Reject names that start with "De La" or "De Las" (likely university fragments)
+    if (/^de\s+la\s*/i.test(name) || /^de\s+las\s*/i.test(name)) {
+      return true;
+    }
+    
+    // Common institution keywords
+    const institutionKeywords = [
+      'university', 'college', 'institute', 'school', 'academy',
+      'polytechnic', 'tech', 'state', 'national', 'centro',
+      'de la salle', 'de las', 'ateneo', 'santo tomas', 'far eastern',
+      'mapua', 'lyceum', 'adamson', 'letran', 'san beda',
+      'technological', 'sciences', 'medical', 'law school',
+      'business school', 'engineering', 'arts', 'education'
+    ];
+    
+    // Check if name contains institution keywords
+    for (const keyword of institutionKeywords) {
+      if (lowerName.includes(keyword)) {
+        return true;
+      }
+    }
+    
+    // Check for common Philippine university patterns
+    const philippineUniversities = [
+      /de\s+la\s+salle/i,
+      /de\s+las/i,
+      /santo\s+tomas/i,
+      /far\s+eastern/i,
+      /san\s+beda/i
+    ];
+    
+    for (const pattern of philippineUniversities) {
+      if (pattern.test(name)) {
+        return true;
+      }
+    }
+    
+    return false;
   }
 
   /**

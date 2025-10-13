@@ -9,11 +9,10 @@ cloudinary.config({
   api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 
-// Log configuration status
-console.log('🔧 Cloudinary Configuration Status:');
-console.log('- Cloud Name:', process.env.CLOUDINARY_CLOUD_NAME ? '✅ Set' : '❌ Missing');
-console.log('- API Key:', process.env.CLOUDINARY_API_KEY ? '✅ Set' : '❌ Missing');
-console.log('- API Secret:', process.env.CLOUDINARY_API_SECRET ? '✅ Set' : '❌ Missing');
+// Verify configuration (silent)
+if (!process.env.CLOUDINARY_CLOUD_NAME || !process.env.CLOUDINARY_API_KEY || !process.env.CLOUDINARY_API_SECRET) {
+  console.warn('Warning: Cloudinary configuration incomplete');
+}
 
 // Configure Cloudinary storage for multer
 const storage = new CloudinaryStorage({
@@ -90,14 +89,15 @@ class CloudStorageService {
         throw new Error('Cloudinary configuration is missing. Please check your environment variables.');
       }
       
-      // Determine resource type and folder based on file type
+      // Determine resource type based on file type
       const isImage = mimeType && mimeType.startsWith('image/');
+      const isPDF = mimeType === 'application/pdf';
       const resourceType = isImage ? 'image' : 'raw';
       
-      // Use different folder structure for profile photos
-      const cloudFolder = folder.includes('profile-photos') ? `jobseeker-profiles/${folder}` : `employer-documents/${folder}`;
+      // Use the folder path as-is (already formatted as users/{uid}/...)
+      const cloudFolder = folder;
       
-      console.log(`🔧 Resource type determined: ${resourceType} (isImage: ${isImage})`);
+      console.log(`🔧 Resource type determined: ${resourceType} (isImage: ${isImage}, isPDF: ${isPDF})`);
       console.log(`🔧 Upload folder: ${cloudFolder}`);
       
       return new Promise((resolve, reject) => {
@@ -110,8 +110,8 @@ class CloudStorageService {
           invalidate: true,
         };
         
-        // Add image-specific transformations for profile photos
-        if (isImage && folder.includes('profile-photos')) {
+        // Add image-specific transformations for photos
+        if (isImage && folder.includes('photos')) {
           uploadOptions.transformation = [
             { width: 400, height: 400, crop: 'fill', gravity: 'face' },
             { quality: 'auto', fetch_format: 'auto' }
@@ -149,10 +149,12 @@ class CloudStorageService {
   // Upload image buffer to Cloudinary (for profile pictures)
   async uploadImageBuffer(buffer, filename, folder = 'profile-pictures') {
     try {
+      console.log(`📷 uploadImageBuffer called with: filename=${filename}, folder=${folder}`);
+      
       return new Promise((resolve, reject) => {
         cloudinary.uploader.upload_stream(
           {
-            folder: `jobseeker-profiles/${folder}`,
+            folder: folder, // Use folder path as-is (already formatted as users/{uid}/photos)
             resource_type: 'image', // Use 'image' for profile pictures
             public_id: `${Date.now()}_${filename.replace(/\.[^/.]+$/, '')}`, // Remove extension from filename
             access_mode: 'public', // Ensure public access
@@ -165,8 +167,10 @@ class CloudStorageService {
           },
           (error, result) => {
             if (error) {
+              console.error('❌ Image upload error:', error);
               reject(error);
             } else {
+              console.log('✅ Image upload success:', result.public_id);
               resolve({
                 url: result.secure_url,
                 publicId: result.public_id,

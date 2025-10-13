@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { FiDownload, FiSave, FiUser, FiBriefcase, FiFileText, FiPlus, FiMinus, FiEdit3, FiSave as FiSaveIcon, FiX, FiMail, FiPhone, FiMapPin, FiClock, FiCalendar, FiTrash2, FiStar, FiUpload, FiCheck, FiChevronUp, FiChevronDown } from 'react-icons/fi';
+import { FiDownload, FiSave, FiUser, FiBriefcase, FiFileText, FiPlus, FiMinus, FiEdit3, FiSave as FiSaveIcon, FiX, FiMail, FiPhone, FiMapPin, FiClock, FiCalendar, FiTrash2, FiStar, FiUpload, FiCheck, FiChevronUp, FiChevronDown, FiAlertCircle } from 'react-icons/fi';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import { auth } from '../../../../config/firebase';
@@ -360,12 +360,31 @@ const CreateResumeTab: React.FC<CreateResumeTabProps> = ({
   const resumeFileInputRef = useRef<HTMLInputElement>(null);
   const [resumeUploading, setResumeUploading] = useState(false);
   const [resumeParseSuccess, setResumeParseSuccess] = useState(false);
-  
+  const [showToEmployers, setShowToEmployers] = useState(true); // Consent for employer visibility
+  const [uploadedResumeFile, setUploadedResumeFile] = useState<File | null>(null); // Store original uploaded PDF
+  const [uploadedResumeUrl, setUploadedResumeUrl] = useState<string | null>(null); // Cloud URL of uploaded PDF
+  const [showUploadedToEmployers, setShowUploadedToEmployers] = useState(false); // Show uploaded resume to employers
+  const [showUploadConsentModal, setShowUploadConsentModal] = useState(false); // Show consent modal after upload
+  const [pendingUploadFile, setPendingUploadFile] = useState<File | null>(null); // File waiting for consent
+  const [showStickyButton, setShowStickyButton] = useState(false); // New state variable
+  const [showInstructions, setShowInstructions] = useState(false); // Collapsible instructions
+
   // PSGC dropdown options
   const [regions, setRegions] = useState<any[]>([]);
   const [provinces, setProvinces] = useState<any[]>([]);
   const [cities, setCities] = useState<any[]>([]);
   const [barangays, setBarangays] = useState<any[]>([]);
+
+  // Scroll listener for sticky button
+  useEffect(() => {
+    const handleScroll = () => {
+      // Show sticky button when scrolled down more than 400px
+      setShowStickyButton(window.scrollY > 400);
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   // Load PSGC data on component mount
   useEffect(() => {
@@ -785,8 +804,6 @@ const CreateResumeTab: React.FC<CreateResumeTabProps> = ({
       if (response.ok) {
         const result = await response.json();
         console.log('Loaded resume data from database:', result.data);
-        console.log('🔍 DATABASE DEBUG: Optional Sections from DB:', result.data.optionalSections);
-        console.log('🔍 DATABASE DEBUG: Section Order from DB:', result.data.sectionOrder);
         
         // Transform database data back to form format
         const dbData = result.data;
@@ -843,12 +860,16 @@ const CreateResumeTab: React.FC<CreateResumeTabProps> = ({
         };
         
         console.log('Transformed data for form:', transformedData);
-        console.log('🔍 DATABASE DEBUG: Transformed Optional Sections:', transformedData.optionalSections);
-        console.log('🔍 DATABASE DEBUG: Transformed Section Order:', transformedData.sectionOrder);
         
         setResumeData(transformedData);
         setHasExistingResume(true);
         setIsPDFReady(true); // Resume exists, PDF is ready
+        
+        // Load uploaded resume data if it exists
+        if (dbData.uploadedResumeUrl) {
+          setUploadedResumeUrl(dbData.uploadedResumeUrl);
+          setShowUploadedToEmployers(dbData.showUploadedToEmployers || false);
+        }
         
         // Populate dependent dropdowns based on loaded PSGC codes
         const personalInfo = transformedData.personalInfo;
@@ -1857,8 +1878,11 @@ const CreateResumeTab: React.FC<CreateResumeTabProps> = ({
       // Convert blob to base64 for API transmission
       const pdfBase64 = await blobToBase64(pdfBlob);
       
+      // Use the already uploaded resume URL (uploaded when user consented)
+      const uploadedResumeCloudUrl = uploadedResumeUrl;
+      
       // Save to database via API
-      await saveResumeToDatabase(cleanedData, pdfBase64);
+      await saveResumeToDatabase(cleanedData, pdfBase64, uploadedResumeCloudUrl);
       
       // Show success message
       setGenerationStep('success');
@@ -1935,8 +1959,85 @@ const CreateResumeTab: React.FC<CreateResumeTabProps> = ({
     });
   };
 
+  // Handle consent modal response
+  const handleUploadConsentYes = async () => {
+    if (!pendingUploadFile) return;
+    
+    try {
+      console.log('📤 User consented - uploading original resume to cloud...');
+      const uploadResult = await uploadOriginalResumeToCloud(pendingUploadFile);
+      
+      if (uploadResult.success && uploadResult.data) {
+        setUploadedResumeFile(pendingUploadFile);
+        setUploadedResumeUrl(uploadResult.data.cloudUrl);
+        setShowUploadedToEmployers(true);
+        console.log('✅ Original resume uploaded:', uploadResult.data.cloudUrl);
+        alert('Your original resume has been saved and will be shown to employers!');
+      } else {
+        throw new Error(uploadResult.message || 'Upload failed');
+      }
+    } catch (error) {
+      console.error('❌ Failed to upload original resume:', error);
+      alert('Failed to upload your resume to cloud. You can still use the generated resume.');
+    } finally {
+      setShowUploadConsentModal(false);
+      setPendingUploadFile(null);
+    }
+  };
+
+  const handleUploadConsentNo = () => {
+    console.log('❌ User declined - not uploading original resume');
+    setShowUploadConsentModal(false);
+    setPendingUploadFile(null);
+    setShowUploadedToEmployers(false);
+  };
+
+  // Function to upload original resume PDF to cloud
+  const uploadOriginalResumeToCloud = async (file: File): Promise<{ success: boolean; data?: { cloudUrl: string; publicId: string }; message?: string }> => {
+    try {
+      const formData = new FormData();
+      formData.append('originalResume', file);
+
+      if (!auth.currentUser) {
+        throw new Error('User not authenticated');
+      }
+
+      const token = await auth.currentUser.getIdToken();
+
+      const response = await fetch('http://localhost:3001/api/jobseekers/upload-original-resume', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        },
+        body: formData
+      });
+
+      if (!response.ok) {
+        let errorMessage = `HTTP ${response.status}`;
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.message || errorData.error || errorMessage;
+          console.error('❌ Server error details:', errorData);
+        } catch (parseError) {
+          const errorText = await response.text();
+          errorMessage = errorText || errorMessage;
+        }
+        throw new Error(errorMessage);
+      }
+
+      const result = await response.json();
+      return result;
+    } catch (error) {
+      console.error('❌ Original resume upload error:', error);
+      return {
+        success: false,
+        message: error instanceof Error ? error.message : 'Failed to upload original resume'
+      };
+    }
+  };
+
   // Function to save resume to database
-  const saveResumeToDatabase = async (resumeData: ResumeData, pdfBase64: string) => {
+  const saveResumeToDatabase = async (resumeData: ResumeData, pdfBase64: string, uploadedResumeUrl: string | null = null) => {
     try {
       // Get Firebase ID token instead of localStorage
       console.log('=== DEBUGGING FIREBASE AUTHENTICATION ===');
@@ -1958,7 +2059,7 @@ const CreateResumeTab: React.FC<CreateResumeTabProps> = ({
       const { regionName, provinceName, cityName, barangayName } = getLocationDisplayNames();
       
       
-      // Create enhanced resume data with readable location names
+      // Create enhanced resume data with readable location names and consent
       const enhancedResumeData = {
         ...resumeData,
         personalInfo: {
@@ -1968,7 +2069,10 @@ const CreateResumeTab: React.FC<CreateResumeTabProps> = ({
           provinceName,
           cityName,
           barangayName
-        }
+        },
+        showToEmployers, // Add user consent for employer visibility
+        uploadedResumeUrl, // Add uploaded resume URL if available
+        showUploadedToEmployers // Add consent for showing uploaded resume
       };
 
       const response = await fetch('http://localhost:3001/api/resumes/create', {
@@ -2094,25 +2198,12 @@ const CreateResumeTab: React.FC<CreateResumeTabProps> = ({
         return;
       }
       
-      console.log(`📄 PDF file info: ${file.name}, Size: ${(file.size / 1024 / 1024).toFixed(2)}MB`);
       
       try {
         setResumeUploading(true);
         
         // Upload and parse resume using apiService
         const result = await apiService.parseResume(file);
-        console.log('📤 Resume parsing API response:', result);
-        console.log('📤 Response data structure:', {
-          success: result.success,
-          hasData: !!result.data,
-          dataKeys: result.data ? Object.keys(result.data) : [],
-          personalInfoKeys: result.data?.personalInfo ? Object.keys(result.data.personalInfo) : [],
-          hasOptionalSections: !!result.data?.optionalSections,
-          optionalSectionsCount: result.data?.optionalSections?.length || 0,
-          optionalSectionTypes: result.data?.optionalSections?.map((s: any) => s.type) || []
-        });
-        
-        console.log('🔍 FRONTEND DEBUG: Optional Sections from API:', result.data?.optionalSections);
         
         if (result.success && result.data) {
           // Auto-fill form with parsed data
@@ -2121,6 +2212,10 @@ const CreateResumeTab: React.FC<CreateResumeTabProps> = ({
           
           // Show success message briefly
           setTimeout(() => setResumeParseSuccess(false), 5000);
+          
+          // Store the file and show consent modal
+          setPendingUploadFile(file);
+          setShowUploadConsentModal(true);
         } else {
           throw new Error(result.error || 'Failed to parse resume data');
         }
@@ -2130,43 +2225,19 @@ const CreateResumeTab: React.FC<CreateResumeTabProps> = ({
         alert(`Failed to parse resume: ${error instanceof Error ? error.message : 'Unknown error'}`);
       } finally {
         setResumeUploading(false);
-        // Clear file input
-        if (resumeFileInputRef.current) {
-          resumeFileInputRef.current.value = '';
-        }
       }
     }
   };
 
   const autoFillFormData = (parsedData: any) => {
-    console.log('🔍 Auto-filling form with parsed data:', parsedData);
-    console.log('🔍 Data structure analysis:', {
-      hasPersonalInfo: !!parsedData.personalInfo,
-      personalInfoKeys: parsedData.personalInfo ? Object.keys(parsedData.personalInfo) : [],
-      personalInfoValues: parsedData.personalInfo || {},
-      hasEducation: !!parsedData.education,
-      educationCount: parsedData.education ? parsedData.education.length : 0,
-      educationSample: parsedData.education ? parsedData.education[0] : null
-    });
     
     // Update personal info
     if (parsedData.personalInfo) {
       const personalInfo = parsedData.personalInfo;
       
-      console.log('🔍 Personal info details:', {
-        firstName: personalInfo.firstName,
-        lastName: personalInfo.lastName,
-        email: personalInfo.email,
-        phone: personalInfo.phone,
-        address: personalInfo.address
-      });
       
       // Handle name parsing - try multiple approaches
       if (personalInfo.firstName && personalInfo.lastName) {
-        console.log('✅ Using parsed firstName and lastName:', {
-          firstName: personalInfo.firstName,
-          lastName: personalInfo.lastName
-        });
         updatePersonalInfo('firstName', personalInfo.firstName);
         updatePersonalInfo('lastName', personalInfo.lastName);
       } else if (personalInfo.fullName) {
@@ -2175,10 +2246,6 @@ const CreateResumeTab: React.FC<CreateResumeTabProps> = ({
         if (nameParts.length >= 2) {
           updatePersonalInfo('firstName', nameParts[0]);
           updatePersonalInfo('lastName', nameParts.slice(1).join(' '));
-          console.log('✅ Extracted from fullName:', {
-            firstName: nameParts[0],
-            lastName: nameParts.slice(1).join(' ')
-          });
         }
       } else if (personalInfo.name) {
         console.log('🔄 Parsing name field:', personalInfo.name);
@@ -2186,24 +2253,17 @@ const CreateResumeTab: React.FC<CreateResumeTabProps> = ({
         if (nameParts.length >= 2) {
           updatePersonalInfo('firstName', nameParts[0]);
           updatePersonalInfo('lastName', nameParts.slice(1).join(' '));
-          console.log('✅ Extracted from name:', {
-            firstName: nameParts[0],
-            lastName: nameParts.slice(1).join(' ')
-          });
         }
       } else {
         console.log('❌ No name information found in parsed data');
       }
       
       if (personalInfo.email) {
-        console.log('✅ Using parsed email:', personalInfo.email);
         updatePersonalInfo('email', personalInfo.email);
       }
       
       if (personalInfo.phone) {
-        console.log('✅ Raw parsed phone:', personalInfo.phone);
         const convertedPhone = convertToPhilippineFormat(personalInfo.phone);
-        console.log('✅ Converted phone to +63 format:', convertedPhone);
         updatePersonalInfo('phone', convertedPhone);
       }
       
@@ -2211,8 +2271,6 @@ const CreateResumeTab: React.FC<CreateResumeTabProps> = ({
       // The user can manually select PSGC dropdowns, but we'll put the parsed address in the street address field
       if (personalInfo.address) {
         updatePersonalInfo('address', personalInfo.address);
-        console.log('✅ Parsed address:', personalInfo.address);
-        console.log('📝 Note: Please manually select Region, Province, City, and Barangay from the dropdowns above');
       }
     } else {
       console.log('❌ No personalInfo found in parsed data');
@@ -2337,19 +2395,13 @@ const CreateResumeTab: React.FC<CreateResumeTabProps> = ({
     }
     
     // Update optional sections
-    console.log('🔍 FRONTEND DEBUG: Checking for optional sections...');
-    console.log('🔍 parsedData.optionalSections exists:', !!parsedData.optionalSections);
-    console.log('🔍 parsedData.optionalSections length:', parsedData.optionalSections?.length || 0);
-    console.log('🔍 parsedData.optionalSections content:', parsedData.optionalSections);
     
     if (parsedData.optionalSections && parsedData.optionalSections.length > 0) {
-      console.log('🔍 Processing optional sections:', parsedData.optionalSections);
       
       const newOptionalSections: OptionalSection[] = [];
       const newSectionOrder: SectionOrder[] = [...resumeData.sectionOrder];
       
       parsedData.optionalSections.forEach((section: any) => {
-        console.log(`🔍 Processing optional section: ${section.type} - ${section.title}`, section.data);
         
         switch (section.type) {
           case 'certificates':
@@ -2496,7 +2548,7 @@ const CreateResumeTab: React.FC<CreateResumeTabProps> = ({
             break;
             
           default:
-            console.log(`🔍 Unknown optional section type: ${section.type}`);
+            break;
         }
       });
       
@@ -2507,7 +2559,6 @@ const CreateResumeTab: React.FC<CreateResumeTabProps> = ({
           optionalSections: newOptionalSections,
           sectionOrder: newSectionOrder
         }));
-        console.log('✅ Added optional sections:', newOptionalSections.map(s => s.type));
       }
     }
     
@@ -2534,23 +2585,7 @@ const CreateResumeTab: React.FC<CreateResumeTabProps> = ({
     <div className={dashboardStyles.tabContent}>
       <div className={styles.contentWrapper}>
       
-      {/* Resume Creation Disclaimer */}
-      <div className={styles.disclaimerBanner}>
-        <div className={styles.disclaimerContent}>
-          <div className={styles.disclaimerIcon}>
-            <FiFileText />
-          </div>
-          <div className={styles.disclaimerText}>
-            <h3 className={styles.disclaimerTitle}>Resume Required for Job Matching</h3>
-            <p className={styles.disclaimerMessage}>
-              Creating a complete resume is essential for accurate job matching results. Our system analyzes your skills, experience, and qualifications 
-              from your resume to match you with the most suitable job opportunities. Without a resume, job matching functionality will be limited.
-            </p>
-          </div>
-        </div>
-      </div>
-      
-      {/* Generation Modal */}
+      {/* Header Section with Actions */}
       {showGeneratingModal && (
         <div className={styles.modalOverlay}>
           <div className={styles.modalContent}>
@@ -2591,63 +2626,414 @@ const CreateResumeTab: React.FC<CreateResumeTabProps> = ({
       )}
       
       
-      {/* Download PDF Section - Show when PDF is ready */}
-      {isPDFReady && (
-        <div className={styles.pdfReadyBanner}>
-          <div className={styles.pdfReadyContent}>
-            <div className={styles.pdfReadyMessage}>
-              <FiDownload className={styles.pdfReadyIcon} />
-              <span>Your resume is ready for download! Use the Download Resume PDF button below.</span>
-            </div>
+      {/* Header Section with Actions */}
+      <div style={{
+        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+        borderRadius: '16px',
+        padding: '32px',
+        marginBottom: '32px',
+        color: 'white',
+        boxShadow: '0 10px 30px rgba(102, 126, 234, 0.3)'
+      }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '20px' }}>
+          {/* Left: Title and Description */}
+          <div style={{ flex: '1', minWidth: '300px' }}>
+            <h1 style={{ fontSize: '28px', fontWeight: '700', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <FiFileText size={32} />
+              Create Your Resume
+            </h1>
+            <p style={{ fontSize: '15px', opacity: 0.95, marginBottom: '20px', lineHeight: '1.6' }}>
+              Build a professional resume in minutes. Upload an existing resume to auto-fill, or start from scratch.
+            </p>
+            
+            {/* Quick Upload Button */}
+            <input
+              type="file"
+              ref={resumeFileInputRef}
+              onChange={handleResumeUpload}
+              accept="application/pdf"
+              style={{ display: 'none' }}
+            />
+            <button
+              onClick={triggerResumeUpload}
+              disabled={resumeUploading}
+              style={{
+                padding: '12px 24px',
+                backgroundColor: 'rgba(255, 255, 255, 0.2)',
+                border: '2px solid rgba(255, 255, 255, 0.3)',
+                borderRadius: '10px',
+                color: 'white',
+                fontSize: '15px',
+                fontWeight: '600',
+                cursor: resumeUploading ? 'not-allowed' : 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '10px',
+                transition: 'all 0.3s',
+                backdropFilter: 'blur(10px)'
+              }}
+              onMouseEnter={(e) => {
+                if (!resumeUploading) {
+                  e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.3)';
+                  e.currentTarget.style.transform = 'translateY(-2px)';
+                }
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.2)';
+                e.currentTarget.style.transform = 'translateY(0)';
+              }}
+            >
+              {resumeUploading ? (
+                <>
+                  <div className={styles.spinner} style={{ borderColor: 'white', borderTopColor: 'transparent' }} />
+                  <span>Parsing Resume...</span>
+                </>
+              ) : (
+                <>
+                  <FiUpload size={20} />
+                  <span>Quick Start: Upload Resume</span>
+                </>
+              )}
+            </button>
+          </div>
+
+          {/* Right: Action Buttons */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', minWidth: '220px' }}>
+            <button 
+              onClick={handleSaveResume}
+              disabled={isSaving || !isFormValid()}
+              style={{
+                padding: '14px 24px',
+                backgroundColor: isSaving || !isFormValid() ? 'rgba(255, 255, 255, 0.1)' : 'white',
+                border: 'none',
+                borderRadius: '10px',
+                color: isSaving || !isFormValid() ? 'rgba(255, 255, 255, 0.5)' : '#667eea',
+                fontSize: '15px',
+                fontWeight: '700',
+                cursor: isSaving || !isFormValid() ? 'not-allowed' : 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '10px',
+                transition: 'all 0.3s',
+                boxShadow: isSaving || !isFormValid() ? 'none' : '0 4px 15px rgba(0, 0, 0, 0.2)'
+              }}
+              onMouseEnter={(e) => {
+                if (!isSaving && isFormValid()) {
+                  e.currentTarget.style.transform = 'translateY(-2px)';
+                  e.currentTarget.style.boxShadow = '0 6px 20px rgba(0, 0, 0, 0.3)';
+                }
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = 'translateY(0)';
+                e.currentTarget.style.boxShadow = '0 4px 15px rgba(0, 0, 0, 0.2)';
+              }}
+            >
+              <FiDownload size={18} />
+              {isSaving ? 'Generating...' : 'Save & Generate'}
+            </button>
+            
+            <button 
+              onClick={handleDownloadPDF}
+              disabled={!isPDFReady || hasUnsavedChanges || !isFormValid()}
+              style={{
+                padding: '12px 24px',
+                backgroundColor: 'rgba(255, 255, 255, 0.15)',
+                border: '2px solid rgba(255, 255, 255, 0.3)',
+                borderRadius: '10px',
+                color: (!isPDFReady || hasUnsavedChanges || !isFormValid()) ? 'rgba(255, 255, 255, 0.4)' : 'white',
+                fontSize: '14px',
+                fontWeight: '600',
+                cursor: (!isPDFReady || hasUnsavedChanges || !isFormValid()) ? 'not-allowed' : 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '8px',
+                transition: 'all 0.3s'
+              }}
+              onMouseEnter={(e) => {
+                if (isPDFReady && !hasUnsavedChanges && isFormValid()) {
+                  e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.25)';
+                }
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.15)';
+              }}
+            >
+              <FiDownload size={16} />
+              Download PDF
+            </button>
+            
+            <button 
+              onClick={handleClearAllFields}
+              style={{
+                padding: '10px 24px',
+                backgroundColor: 'transparent',
+                border: '2px solid rgba(255, 255, 255, 0.3)',
+                borderRadius: '10px',
+                color: 'white',
+                fontSize: '13px',
+                fontWeight: '600',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '8px',
+                transition: 'all 0.3s'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = 'rgba(255, 100, 100, 0.2)';
+                e.currentTarget.style.borderColor = 'rgba(255, 100, 100, 0.5)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = 'transparent';
+                e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.3)';
+              }}
+            >
+              <FiTrash2 size={14} />
+              Clear All
+            </button>
           </div>
         </div>
-      )}
-      
-      {/* Resume Upload Section */}
-      <div className={styles.uploadSection}>
-        <div className={styles.uploadHeader}>
-          <h3 className={styles.uploadTitle}>Quick Start: Upload Your Resume</h3>
-          <p className={styles.uploadDescription}>
-            Upload your existing resume (PDF) to automatically fill out the form fields below
-          </p>
-        </div>
-        
-        <input
-          type="file"
-          ref={resumeFileInputRef}
-          onChange={handleResumeUpload}
-          accept="application/pdf"
-          style={{ display: 'none' }}
-        />
-        
-        <button
-          onClick={triggerResumeUpload}
-          className={styles.uploadButton}
-          disabled={resumeUploading}
-        >
-          {resumeUploading ? (
-            <>
-              <div className={styles.spinner} />
-              <span>Parsing Resume...</span>
-            </>
-          ) : (
-            <>
-              <FiUpload className={styles.uploadIcon} />
-              <span>Upload Resume (PDF)</span>
-            </>
-          )}
-        </button>
-        
-        {/* Resume Parse Success Message */}
+
+        {/* Status Messages */}
         {resumeParseSuccess && (
-          <div className={styles.parseSuccessMessage}>
-            <FiCheck className={styles.successIcon} />
+          <div style={{
+            marginTop: '20px',
+            padding: '16px',
+            backgroundColor: 'rgba(255, 255, 255, 0.15)',
+            borderRadius: '10px',
+            border: '1px solid rgba(255, 255, 255, 0.2)',
+            backdropFilter: 'blur(10px)'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
+              <FiCheck size={20} style={{ flexShrink: 0, marginTop: '2px' }} />
+              <div>
+                <div style={{ fontWeight: '600', marginBottom: '4px' }}>Resume parsed successfully!</div>
+                <div style={{ fontSize: '13px', opacity: 0.9, lineHeight: '1.5' }}>
+                  Review and adjust the auto-filled information below. Don't forget to manually select your address from the dropdowns.
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {uploadedResumeFile && showUploadedToEmployers && (
+          <div style={{
+            marginTop: '20px',
+            padding: '16px',
+            backgroundColor: 'rgba(76, 175, 80, 0.2)',
+            borderRadius: '10px',
+            border: '1px solid rgba(76, 175, 80, 0.3)',
+            backdropFilter: 'blur(10px)'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
+              <span style={{ fontSize: '20px', flexShrink: 0 }}>✅</span>
+              <div>
+                <div style={{ fontWeight: '600', marginBottom: '4px' }}>Original Resume Uploaded</div>
+                <div style={{ fontSize: '13px', opacity: 0.95 }}>
+                  Your original resume ({uploadedResumeFile.name}) will be shown to employers alongside the generated one.
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Instructions & Disclaimer - Collapsible */}
+      <div style={{
+        backgroundColor: '#fff',
+        borderRadius: '12px',
+        padding: '20px 24px',
+        marginBottom: '24px',
+        border: '2px solid #3b82f6',
+        boxShadow: '0 4px 12px rgba(59, 130, 246, 0.15)'
+      }}>
+        {/* Header - Always Visible */}
+        <div 
+          onClick={() => setShowInstructions(!showInstructions)}
+          style={{ 
+            display: 'flex', 
+            alignItems: 'center', 
+            justifyContent: 'space-between',
+            cursor: 'pointer',
+            userSelect: 'none',
+            padding: '4px',
+            borderRadius: '8px',
+            transition: 'background-color 0.2s'
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.backgroundColor = '#e5e7eb';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.backgroundColor = 'transparent';
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <div style={{
+              backgroundColor: '#3b82f6',
+              borderRadius: '50%',
+              padding: '10px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center'
+            }}>
+              <FiAlertCircle size={20} color="white" />
+            </div>
             <div>
-              <div><strong>Resume parsed successfully!</strong></div>
-              <div style={{ fontSize: '0.8rem', marginTop: '0.25rem', opacity: 0.9 }}>
-                ✓ Check the browser console (F12) for detailed parsing information<br/>
-                ✓ For address: Please manually select Region, Province, City, Barangay from dropdowns<br/>
-                ✓ Review and adjust the auto-filled information as needed
+              <h3 style={{ fontSize: '17px', fontWeight: '700', color: '#1f2937', margin: 0, marginBottom: '2px' }}>
+                How to Create Your Resume
+              </h3>
+              <p style={{ fontSize: '13px', color: '#6b7280', margin: 0 }}>
+                Step-by-step guide and important notes
+              </p>
+            </div>
+          </div>
+          <div style={{ 
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            padding: '8px 12px',
+            backgroundColor: showInstructions ? '#dbeafe' : '#f3f4f6',
+            borderRadius: '6px',
+            border: `1px solid ${showInstructions ? '#3b82f6' : '#e5e7eb'}`
+          }}>
+            <span style={{ 
+              fontSize: '13px', 
+              fontWeight: '600',
+              color: showInstructions ? '#1e40af' : '#6b7280'
+            }}>
+              {showInstructions ? 'Hide' : 'Show'}
+            </span>
+            {showInstructions ? <FiChevronUp size={18} color="#1e40af" /> : <FiChevronDown size={18} color="#6b7280" />}
+          </div>
+        </div>
+
+        {/* Collapsible Content */}
+        {showInstructions && (
+          <div style={{ marginTop: '16px', paddingTop: '16px', borderTop: '1px solid #e5e7eb' }}>
+            <p style={{ fontSize: '14px', color: '#6b7280', lineHeight: '1.6', marginBottom: '16px' }}>
+              Follow these steps to create your professional resume:
+            </p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
+                <span style={{ 
+                  backgroundColor: '#667eea', 
+                  color: 'white', 
+                  borderRadius: '50%', 
+                  width: '24px', 
+                  height: '24px', 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  justifyContent: 'center', 
+                  fontSize: '12px', 
+                  fontWeight: '700',
+                  flexShrink: 0
+                }}>1</span>
+                <div>
+                  <strong style={{ color: '#374151', fontSize: '14px' }}>Fill out the form</strong>
+                  <p style={{ fontSize: '13px', color: '#6b7280', marginTop: '2px' }}>
+                    Enter your information manually or use "Quick Start: Upload Resume" to auto-fill fields.
+                  </p>
+                </div>
+              </div>
+              <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
+                <span style={{ 
+                  backgroundColor: '#667eea', 
+                  color: 'white', 
+                  borderRadius: '50%', 
+                  width: '24px', 
+                  height: '24px', 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  justifyContent: 'center', 
+                  fontSize: '12px', 
+                  fontWeight: '700',
+                  flexShrink: 0
+                }}>2</span>
+                <div>
+                  <strong style={{ color: '#374151', fontSize: '14px' }}>Review & verify</strong>
+                  <p style={{ fontSize: '13px', color: '#6b7280', marginTop: '2px' }}>
+                    Double-check all information for accuracy. The parser may not capture everything perfectly.
+                  </p>
+                </div>
+              </div>
+              <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
+                <span style={{ 
+                  backgroundColor: '#667eea', 
+                  color: 'white', 
+                  borderRadius: '50%', 
+                  width: '24px', 
+                  height: '24px', 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  justifyContent: 'center', 
+                  fontSize: '12px', 
+                  fontWeight: '700',
+                  flexShrink: 0
+                }}>3</span>
+                <div>
+                  <strong style={{ color: '#374151', fontSize: '14px' }}>Save & Generate</strong>
+                  <p style={{ fontSize: '13px', color: '#6b7280', marginTop: '2px' }}>
+                    Click "Save & Generate" to create your professional resume and save it to your profile.
+                  </p>
+                </div>
+              </div>
+              <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
+                <span style={{ 
+                  backgroundColor: '#667eea', 
+                  color: 'white', 
+                  borderRadius: '50%', 
+                  width: '24px', 
+                  height: '24px', 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  justifyContent: 'center', 
+                  fontSize: '12px', 
+                  fontWeight: '700',
+                  flexShrink: 0
+                }}>4</span>
+                <div>
+                  <strong style={{ color: '#374151', fontSize: '14px' }}>Apply to jobs</strong>
+                  <p style={{ fontSize: '13px', color: '#6b7280', marginTop: '2px' }}>
+                    Your resume will be automatically attached when you apply for jobs. Employers can view both your generated and original resume (if uploaded).
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Important Notes */}
+            <div style={{
+              backgroundColor: '#fff3cd',
+              borderLeft: '4px solid #ffc107',
+              borderRadius: '8px',
+              padding: '16px',
+              marginTop: '16px'
+            }}>
+              <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
+                <FiAlertCircle size={20} color="#f59e0b" style={{ flexShrink: 0, marginTop: '2px' }} />
+                <div>
+                  <strong style={{ color: '#92400e', fontSize: '14px', display: 'block', marginBottom: '8px' }}>
+                    Important Notes:
+                  </strong>
+                  <ul style={{ margin: 0, paddingLeft: '20px', fontSize: '13px', color: '#78350f', lineHeight: '1.6' }}>
+                    <li style={{ marginBottom: '6px' }}>
+                      <strong>Job Matching Requirement:</strong> A complete resume is essential for accurate job matching. Our system analyzes your skills, experience, and qualifications to match you with suitable opportunities. Without a resume, job matching will be limited.
+                    </li>
+                    <li style={{ marginBottom: '6px' }}>
+                      <strong>Resume Parser Accuracy:</strong> The auto-fill feature uses AI to extract information from your uploaded resume. While it's helpful, it may not be 100% accurate. Always review and correct any errors.
+                    </li>
+                    <li style={{ marginBottom: '6px' }}>
+                      <strong>If Parser Fails:</strong> If the upload doesn't work or information is missing, simply fill out the form manually. All fields are editable.
+                    </li>
+                    <li style={{ marginBottom: '6px' }}>
+                      <strong>Address Selection:</strong> For your address, you must manually select Region, Province, City, and Barangay from the dropdown menus for accurate location data.
+                    </li>
+                    <li>
+                      <strong>Resume Visibility:</strong> Your generated resume will be shown to employers when you apply for jobs. If you upload an original resume and consent, employers will see both versions.
+                    </li>
+                  </ul>
+                </div>
               </div>
             </div>
           </div>
@@ -2947,13 +3333,8 @@ const CreateResumeTab: React.FC<CreateResumeTabProps> = ({
       </div>
 
       {/* Dynamic Section Rendering */}
-      {(() => {
-        console.log('🔍 Debug sectionOrder:', resumeData.sectionOrder);
-        return null;
-      })()}
       {resumeData.sectionOrder && resumeData.sectionOrder.length > 1 ? resumeData.sectionOrder.slice(1).map((section, index) => {
         const sectionIndex = index + 1; // Adjust for skipping personal info
-        console.log('🔍 Debug rendering section:', section);
         
         if (section.type === 'summary') {
           return (
@@ -3965,36 +4346,212 @@ const CreateResumeTab: React.FC<CreateResumeTabProps> = ({
         </div>
       )}
 
-      {/* Action Buttons */}
-      <div className={styles.actionSection}>
-        <button 
-          onClick={handleSaveResume}
-          disabled={isSaving || !isFormValid()}
-          className={styles.saveButton}
-        >
-          <FiDownload className={styles.buttonIcon} />
-          {isSaving ? 'Generating...' : 'Save & Generate Resume'}
-        </button>
-        
-        <button 
-          onClick={handleDownloadPDF}
-          disabled={!isPDFReady || hasUnsavedChanges || !isFormValid()}
-          className={`${styles.downloadButton} ${(!isPDFReady || hasUnsavedChanges || !isFormValid()) ? styles.disabledButton : ''}`}
-        >
-          <FiDownload className={styles.buttonIcon} />
-          Download Resume PDF
-        </button>
-        
-        <button 
-          onClick={handleClearAllFields}
-          className={styles.clearButton}
-          title="Clear all form fields"
-        >
-          <FiTrash2 className={styles.buttonIcon} />
-          Clear All Fields
-        </button>
       </div>
-      </div>
+
+      {/* Upload Consent Modal */}
+      {showUploadConsentModal && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(0, 0, 0, 0.5)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 9999
+        }}>
+          <div style={{
+            backgroundColor: 'white',
+            borderRadius: '12px',
+            padding: '32px',
+            maxWidth: '500px',
+            width: '90%',
+            boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
+            animation: 'slideIn 0.3s ease-out'
+          }}>
+            <div style={{ textAlign: 'center', marginBottom: '24px' }}>
+              <div style={{ 
+                fontSize: '48px', 
+                marginBottom: '16px',
+                animation: 'bounce 1s ease-in-out'
+              }}>
+                📄
+              </div>
+              <h2 style={{ 
+                fontSize: '24px', 
+                fontWeight: '600', 
+                color: '#1f2937',
+                marginBottom: '8px'
+              }}>
+                Show Your Resume to Employers?
+              </h2>
+              <p style={{ 
+                fontSize: '15px', 
+                color: '#6b7280',
+                lineHeight: '1.6'
+              }}>
+                Would you like to save your original uploaded resume and show it to employers alongside the generated resume?
+              </p>
+            </div>
+
+            <div style={{
+              backgroundColor: '#f3f4f6',
+              borderRadius: '8px',
+              padding: '16px',
+              marginBottom: '24px'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px', marginBottom: '12px' }}>
+                <span style={{ fontSize: '20px' }}>✅</span>
+                <div>
+                  <strong style={{ display: 'block', color: '#374151', marginBottom: '4px' }}>
+                    If you choose "Yes":
+                  </strong>
+                  <span style={{ fontSize: '14px', color: '#6b7280' }}>
+                    Your original resume will be uploaded to secure cloud storage and employers will see both your original and generated resumes.
+                  </span>
+                </div>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
+                <span style={{ fontSize: '20px' }}>❌</span>
+                <div>
+                  <strong style={{ display: 'block', color: '#374151', marginBottom: '4px' }}>
+                    If you choose "No":
+                  </strong>
+                  <span style={{ fontSize: '14px', color: '#6b7280' }}>
+                    Only the generated resume will be shown to employers. Your original file won't be saved.
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', gap: '12px' }}>
+              <button
+                onClick={handleUploadConsentNo}
+                style={{
+                  flex: 1,
+                  padding: '12px 24px',
+                  border: '2px solid #e5e7eb',
+                  borderRadius: '8px',
+                  backgroundColor: 'white',
+                  color: '#374151',
+                  fontSize: '15px',
+                  fontWeight: '600',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s',
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = '#f9fafb';
+                  e.currentTarget.style.borderColor = '#d1d5db';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = 'white';
+                  e.currentTarget.style.borderColor = '#e5e7eb';
+                }}
+              >
+                No, Thanks
+              </button>
+              <button
+                onClick={handleUploadConsentYes}
+                style={{
+                  flex: 1,
+                  padding: '12px 24px',
+                  border: 'none',
+                  borderRadius: '8px',
+                  backgroundColor: '#3b82f6',
+                  color: 'white',
+                  fontSize: '15px',
+                  fontWeight: '600',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s',
+                  boxShadow: '0 4px 6px -1px rgba(59, 130, 246, 0.3)'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = '#2563eb';
+                  e.currentTarget.style.transform = 'translateY(-1px)';
+                  e.currentTarget.style.boxShadow = '0 6px 8px -1px rgba(59, 130, 246, 0.4)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = '#3b82f6';
+                  e.currentTarget.style.transform = 'translateY(0)';
+                  e.currentTarget.style.boxShadow = '0 4px 6px -1px rgba(59, 130, 246, 0.3)';
+                }}
+              >
+                Yes, Show It!
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Sticky Save Button - Shows when scrolling */}
+      {showStickyButton && (
+        <div style={{
+          position: 'fixed',
+          bottom: '30px',
+          right: '30px',
+          zIndex: 1000,
+          animation: 'slideUp 0.3s ease-out'
+        }}>
+          <button
+            onClick={handleSaveResume}
+            disabled={isSaving || !isFormValid()}
+            style={{
+              padding: '16px 32px',
+              backgroundColor: isSaving || !isFormValid() ? '#9ca3af' : '#667eea',
+              border: 'none',
+              borderRadius: '50px',
+              color: 'white',
+              fontSize: '16px',
+              fontWeight: '700',
+              cursor: isSaving || !isFormValid() ? 'not-allowed' : 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '12px',
+              boxShadow: '0 8px 24px rgba(102, 126, 234, 0.4)',
+              transition: 'all 0.3s',
+              minWidth: '200px',
+              justifyContent: 'center'
+            }}
+            onMouseEnter={(e) => {
+              if (!isSaving && isFormValid()) {
+                e.currentTarget.style.transform = 'translateY(-4px)';
+                e.currentTarget.style.boxShadow = '0 12px 32px rgba(102, 126, 234, 0.5)';
+              }
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.transform = 'translateY(0)';
+              e.currentTarget.style.boxShadow = '0 8px 24px rgba(102, 126, 234, 0.4)';
+            }}
+          >
+            {isSaving ? (
+              <>
+                <div className={styles.spinner} style={{ borderColor: 'white', borderTopColor: 'transparent' }} />
+                <span>Saving...</span>
+              </>
+            ) : (
+              <>
+                <FiDownload size={20} />
+                <span>Save & Generate</span>
+              </>
+            )}
+          </button>
+        </div>
+      )}
+
+      <style>{`
+        @keyframes slideUp {
+          from {
+            opacity: 0;
+            transform: translateY(20px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+      `}</style>
     </div>
   );
 };

@@ -224,7 +224,7 @@ router.post('/upload-documents-cloud', verifyToken, requireRole('employer'), clo
           const cloudResult = await cloudStorageService.uploadBuffer(
             file.buffer, 
             file.originalname, 
-            `${req.user.uid}/${docType}`,
+            `users/${req.user.uid}/documents/${docType}`,
             file.mimetype
           );
           
@@ -385,7 +385,7 @@ router.post('/upload-single-document', verifyToken, requireRole('employer'), clo
           const cloudResult = await cloudStorageService.uploadBuffer(
             file.buffer, 
             file.originalname, 
-            `${req.user.uid}/${docType}`,
+            `users/${req.user.uid}/documents/${docType}`,
             file.mimetype
           );
           

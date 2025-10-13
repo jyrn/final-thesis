@@ -50,7 +50,6 @@ class SkillsParser extends BaseParser {
   }
 
   parse(text, context = {}) {
-    console.log('💡 SkillsParser: Starting extraction...');
     
     const skills = [];
     const seenSkills = new Set();

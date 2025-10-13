@@ -12,12 +12,34 @@ const applicationRoutes = require('./routes/applicationRoutes');
 const resumeRoutes = require('./routes/resumeRoutes');
 const adminRoutes = require('./routes/adminRoutes');
 const fixAdminIndexes = require('./routes/fixAdminIndexes');
+const { getInstance: getMLServiceManager } = require('./services/ml/MLServiceManager');
 
 // Initialize Express app
 const app = express();
 
 // Connect to MongoDB
 connectDB();
+
+// Initialize ML Service Manager (auto-starts Python services)
+const mlServiceManager = getMLServiceManager();
+let mlServicesEnabled = false;
+
+// Start ML services if enabled
+if (process.env.ENABLE_ML_SERVICES !== 'false') {
+  mlServiceManager.startAll()
+    .then((success) => {
+      mlServicesEnabled = success;
+      if (success) {
+        console.log('✓ Advanced ML features enabled');
+      } else {
+        console.log('Running in basic mode (ML services disabled)');
+      }
+    })
+    .catch((error) => {
+      console.error('Failed to start ML services:', error.message);
+      console.log('Running in basic mode (ML services disabled)');
+    });
+}
 
 // Middleware
 app.use(cors({
@@ -59,6 +81,29 @@ app.get('/', (req, res) => {
 app.use((err, req, res, next) => {
   console.error(err.stack);
   res.status(500).send('Server Error');
+});
+
+// ML Service status endpoint
+app.get('/api/ml-services/status', (req, res) => {
+  const status = mlServiceManager.getStatus();
+  res.json({
+    enabled: mlServicesEnabled,
+    services: status,
+    ready: mlServiceManager.isReady()
+  });
+});
+
+// Graceful shutdown
+process.on('SIGTERM', async () => {
+  console.log('Shutting down...');
+  await mlServiceManager.stopAll();
+  process.exit(0);
+});
+
+process.on('SIGINT', async () => {
+  console.log('Shutting down...');
+  await mlServiceManager.stopAll();
+  process.exit(0);
 });
 
 // Start server

@@ -9,12 +9,9 @@ class CertificationsParser extends BaseParser {
   constructor() {
     super();
     this.version = '2.0.1';
-    console.log('🎓 CertificationsParser v2.0.1 loaded');
   }
 
   parse(text, context = {}) {
-    console.log('🎓 CertificationsParser v2.0.1: Starting extraction...');
-    
     const certifications = [];
     
     // Extract certifications section (including combined sections)

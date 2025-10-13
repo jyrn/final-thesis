@@ -7,8 +7,6 @@ const BaseParser = require('./BaseParser');
 
 class EducationParser extends BaseParser {
   parse(text, context = {}) {
-    console.log('🎓 EducationParser: Starting extraction...');
-    
     const education = [];
     
     // Extract education section (enhanced for cleaned text)
@@ -28,12 +26,8 @@ class EducationParser extends BaseParser {
     );
     
     if (!educationText) {
-      console.log('🎓 ⚠️ No education section found');
       return { data: education, confidence: 0 };
     }
-    
-    console.log('🎓 Found education section, length:', educationText.length);
-    console.log('🎓 First 300 chars of education section:', educationText.substring(0, 300));
     
     // Try multiple education patterns for different resume formats
     
@@ -121,7 +115,7 @@ class EducationParser extends BaseParser {
     
     // Pattern 5: Multi-line education formats - Parse ALL entries, not just first
     const lines = educationText.split('\n').filter(line => line.trim().length > 0);
-    console.log('🎓 Pattern 5: Analyzing education lines:', lines.slice(0, 10));
+
     
     for (let i = 0; i < lines.length - 1; i++) {
       const currentLine = lines[i].trim();
@@ -533,7 +527,7 @@ class EducationParser extends BaseParser {
           description
         });
         
-        console.log('🎓 ✅ Found education (Pattern 2):', school, '-', degree);
+
       }
     }
     
@@ -562,13 +556,13 @@ class EducationParser extends BaseParser {
           description
         });
         
-        console.log('🎓 ✅ Found education (Pattern 3):', school, '-', degree);
+
       }
     }
     
     // Try Pattern 4: More flexible pattern for any school format
     if (education.length === 0) {
-      console.log('🎓 Trying flexible pattern for any school format...');
+
       const lines = educationText.split('\n').filter(l => l.trim().length > 10);
       
       for (const line of lines) {
@@ -602,7 +596,7 @@ class EducationParser extends BaseParser {
               description: ''
             });
             
-            console.log('🎓 ✅ Found education (Flexible):', school, '-', degree);
+
           }
         }
       }
@@ -618,7 +612,7 @@ class EducationParser extends BaseParser {
       
       // Skip if we've already seen this school
       if (seenSchools.has(schoolKey)) {
-        console.log('🎓 ⚠️ Skipping duplicate:', edu.school);
+
         continue;
       }
       
@@ -626,7 +620,7 @@ class EducationParser extends BaseParser {
       if (edu.school === 'Present Senior High School' || 
           edu.school === 'Senior High School' ||
           edu.school.startsWith('Present ')) {
-        console.log('🎓 ⚠️ Skipping invalid school name:', edu.school);
+
         continue;
       }
       
@@ -636,8 +630,8 @@ class EducationParser extends BaseParser {
     
     this.confidence = uniqueEducation.length > 0 ? 0.85 : 0;
     
-    console.log('🎓 EducationParser: Extraction complete (confidence:', this.confidence.toFixed(2), ')');
-    console.log('🎓 Total entries found:', education.length, '| Unique entries:', uniqueEducation.length);
+
+
     
     return { data: uniqueEducation, confidence: this.confidence };
   }

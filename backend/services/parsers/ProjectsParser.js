@@ -9,12 +9,9 @@ class ProjectsParser extends BaseParser {
   constructor() {
     super();
     this.version = '2.0.1';
-    console.log('🚀 ProjectsParser v2.0.1 loaded');
   }
 
   parse(text, context = {}) {
-    console.log('🚀 ProjectsParser v2.0.1: Starting extraction...');
-    
     const projects = [];
     
     // Extract projects section

@@ -8,23 +8,16 @@ class OptionalSectionsParser extends BaseParser {
   constructor() {
     super();
     this.version = '1.0.0';
-    console.log('💫 OptionalSectionsParser v1.0.0 loaded');
   }
 
   /**
    * Parse all optional sections from resume text
    */
   parse(text, context = {}) {
-    console.log('💫 OptionalSectionsParser: Starting extraction...');
-    
     const sections = {
       organizations: this.parseOrganizations(text),
       awards: this.parseAwards(text) // This includes both awards and achievements
     };
-    
-    console.log('💫 OptionalSectionsParser: Extraction complete');
-    console.log(`💫   Organizations: ${sections.organizations.length}`);
-    console.log(`💫   Awards & Achievements: ${sections.awards.length}`);
     
     return sections;
   }
@@ -35,8 +28,8 @@ class OptionalSectionsParser extends BaseParser {
   parseOrganizations(text) {
     const organizations = [];
     
-    // Extract organizations section
-    const orgText = this.extractSection(
+    // Extract organizations section - also check EXPERIENCE section for organizations
+    let orgText = this.extractSection(
       text,
       [
         'ORGANIZATIONS', 'Organizations', 'VOLUNTEER EXPERIENCE', 'Volunteer Experience',
@@ -44,10 +37,24 @@ class OptionalSectionsParser extends BaseParser {
         'EXTRACURRICULAR', 'Extracurricular Activities', 'LEADERSHIP', 'Leadership Experience'
       ],
       [
-        'EDUCATION', 'Education', 'EXPERIENCE', 'WORK EXPERIENCE', 'SKILLS', 'Skills',
+        'EDUCATION', 'Education', 'SKILLS', 'Skills',
         'PROJECTS', 'Projects', 'CERTIFICATIONS', 'Certifications', 'AWARDS', 'Awards'
       ]
     );
+    
+    // If no dedicated section, check EXPERIENCE section for organizations
+    if (!orgText || orgText.trim().length < 10) {
+      const expText = this.extractSection(
+        text,
+        ['EXPERIENCE', 'Experience', 'WORK EXPERIENCE', 'Work Experience'],
+        ['EDUCATION', 'Education', 'SKILLS', 'Skills', 'PROJECTS', 'Projects']
+      );
+      
+      if (expText) {
+        // Look for organization patterns in experience section
+        orgText = expText;
+      }
+    }
     
     if (!orgText || orgText.trim().length < 10) {
       return organizations;
@@ -55,80 +62,133 @@ class OptionalSectionsParser extends BaseParser {
     
     console.log('💫 Found organizations section, length:', orgText.length);
     
-    // Pattern 1: "Organization Name - Role\nDate Range\nDescription"
-    const pattern1 = /([A-Z][A-Za-z\s&,]+(?:Club|Society|Organization|Association|Committee|Team|Council|Group))\s*[-–]\s*([A-Z][A-Za-z\s]+)\s+(January|February|March|April|May|June|July|August|September|October|November|December)?\s*(\d{4})\s*[-–]\s*(January|February|March|April|May|June|July|August|September|October|November|December)?\s*(\d{4}|Present|Current)/gi;
+    // Pattern 1: "Organization Name | Location\nDate Range\nRole"
+    const pattern1 = /([A-Z][A-Za-z\s&,.'()]+(?:Rondalla|Society|Organization|Association|Committee|Team|Council|Group|Club|JPCS|Lumieres|Lasallian))\s*[|]\s*([A-Z][A-Za-z\s]+)\s*\n?\s*(\d{4})\s*[-–]\s*(\d{4}|Present|Current)\s*\n?\s*([A-Z][A-Za-z\s]+)/gi;
     
     let match;
     while ((match = pattern1.exec(orgText)) !== null) {
       const organization = match[1].trim();
-      const role = match[2].trim();
-      const startYear = match[4];
-      const endYear = match[6];
+      const location = match[2].trim();
+      const startYear = match[3];
+      const endYear = match[4];
+      const role = match[5].trim();
       
-      // Extract description (next 200 characters after match)
-      const afterMatch = orgText.substring(match.index + match[0].length, match.index + match[0].length + 200);
-      const description = afterMatch.split('\n')[0].trim();
+      // Extract description (next 300 characters after match)
+      const afterMatch = orgText.substring(match.index + match[0].length, match.index + match[0].length + 300);
+      const descLines = afterMatch.split('\n').filter(l => l.trim().length > 10);
+      const description = descLines.slice(0, 3).join(' ').trim();
       
       organizations.push({
         organization,
         role,
         startDate: startYear,
         endDate: endYear,
+        location,
         description
       });
       
       console.log(`💫 ✅ Found organization: ${organization} - ${role}`);
     }
     
-    // Pattern 2: Bullet point format
+    // Pattern 2: Line-by-line format with pipe separator
     if (organizations.length === 0) {
       const lines = orgText.split('\n').filter(line => line.trim().length > 0);
       
       for (let i = 0; i < lines.length; i++) {
         const line = lines[i].trim();
         
-        // Look for organization names with roles
-        const orgMatch = line.match(/^([A-Z][A-Za-z\s&,]+(?:Club|Society|Organization|Association|Committee|Team|Council|Group))/);
-        if (orgMatch) {
-          const organization = orgMatch[1].trim();
+        // Pattern: "Organization Name | Location"
+        const pipeMatch = line.match(/^([A-Z][A-Za-z\s&,.'()]+)\s*[|]\s*([A-Z][A-Za-z\s]+)/);
+        if (pipeMatch) {
+          const organization = pipeMatch[1].trim();
+          const location = pipeMatch[2].trim();
           
-          // Look for role and date in next lines
+          // Look for date and role in next lines
           let role = '';
           let startDate = '';
           let endDate = '';
           let description = '';
           
-          for (let j = i + 1; j < Math.min(i + 4, lines.length); j++) {
+          for (let j = i + 1; j < Math.min(i + 5, lines.length); j++) {
             const nextLine = lines[j].trim();
             
-            // Check for role
-            if (nextLine.match(/^(President|Vice President|Member|Secretary|Treasurer|Coordinator|Leader|Chair|Director)/i)) {
-              role = nextLine;
-            }
-            
             // Check for dates
-            const dateMatch = nextLine.match(/(\d{4})\s*[-–]\s*(\d{4}|Present|Current)/i);
+            const dateMatch = nextLine.match(/^(\d{4})\s*[-–]\s*(\d{4}|Present|Current)/i);
             if (dateMatch) {
               startDate = dateMatch[1];
               endDate = dateMatch[2];
+              continue;
             }
             
-            // Collect description
-            if (!dateMatch && !nextLine.match(/^(President|Vice President|Member)/i)) {
+            // Check for role (single word or short phrase, usually first line after date)
+            if (!role && nextLine.length < 50 && nextLine.match(/^[A-Z]/)) {
+              role = nextLine;
+              continue;
+            }
+            
+            // Collect description (longer lines)
+            if (role && nextLine.length > 20 && !nextLine.match(/^\d{4}/)) {
               description += nextLine + ' ';
             }
           }
           
-          if (role || startDate) {
+          if (startDate) {
             organizations.push({
               organization,
               role: role || 'Member',
               startDate,
               endDate,
+              location,
               description: description.trim()
             });
             
-            console.log(`💫 ✅ Found organization: ${organization}`);
+            console.log(`💫 ✅ Found organization: ${organization} - ${role}`);
+          }
+        }
+        
+        // Fallback: Look for organization keywords without pipe
+        else {
+          const orgMatch = line.match(/^([A-Z][A-Za-z\s&,.'()]+(?:Rondalla|Society|Organization|Association|Committee|Team|Council|Group|Club|JPCS|Lumieres|Lasallian))/);
+          if (orgMatch) {
+            const organization = orgMatch[1].trim();
+            
+            let role = '';
+            let startDate = '';
+            let endDate = '';
+            let description = '';
+            
+            for (let j = i + 1; j < Math.min(i + 5, lines.length); j++) {
+              const nextLine = lines[j].trim();
+              
+              const dateMatch = nextLine.match(/(\d{4})\s*[-–]\s*(\d{4}|Present|Current)/i);
+              if (dateMatch) {
+                startDate = dateMatch[1];
+                endDate = dateMatch[2];
+                continue;
+              }
+              
+              if (!role && nextLine.match(/^(President|Vice President|Member|Secretary|Treasurer|Coordinator|Leader|Chair|Director|Representative)/i)) {
+                role = nextLine;
+                continue;
+              }
+              
+              if (role && nextLine.length > 20) {
+                description += nextLine + ' ';
+              }
+            }
+            
+            if (role || startDate) {
+              organizations.push({
+                organization,
+                role: role || 'Member',
+                startDate,
+                endDate,
+                location: '',
+                description: description.trim()
+              });
+              
+              console.log(`💫 ✅ Found organization: ${organization}`);
+            }
           }
         }
       }

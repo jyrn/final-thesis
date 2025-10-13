@@ -34,6 +34,30 @@ const ResumeSchema = new mongoose.Schema({
     required: true
   },
   
+  // Cloud Storage Information
+  pdfCloudUrl: {
+    type: String, // Cloudinary URL for the generated PDF
+    default: null
+  },
+  pdfPublicId: {
+    type: String, // Cloudinary public ID for management
+    default: null
+  },
+  
+  // Original Uploaded Resume
+  uploadedResumeUrl: {
+    type: String, // Cloudinary URL for original uploaded PDF
+    default: null
+  },
+  uploadedResumePublicId: {
+    type: String, // Cloudinary public ID for uploaded resume
+    default: null
+  },
+  showUploadedToEmployers: {
+    type: Boolean, // User consent to show original uploaded resume to employers
+    default: false
+  },
+  
   // Processing Status
   processingStatus: {
     type: String,
