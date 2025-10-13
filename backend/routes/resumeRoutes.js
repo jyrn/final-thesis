@@ -1002,6 +1002,11 @@ router.post('/parse', verifyToken, async (req, res) => {
             personalInfo: parseResult.data.personalInfo,
             educationCount: parseResult.data.education?.length || 0,
             educationSample: parseResult.data.education?.[0] || null,
+            educationAll: parseResult.data.education || [],
+            experienceCount: parseResult.data.experience?.length || 0,
+            experienceSample: parseResult.data.experience?.[0] || null,
+            projectsCount: parseResult.data.projects?.length || 0,
+            skillsCount: parseResult.data.skills?.length || 0,
             optionalSectionsCount: parseResult.data.optionalSections?.length || 0,
             optionalSectionTypes: parseResult.data.optionalSections?.map(s => s.type) || []
           });

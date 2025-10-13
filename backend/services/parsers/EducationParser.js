@@ -128,9 +128,16 @@ class EducationParser extends BaseParser {
       const nextLine = lines[i + 1] ? lines[i + 1].trim() : '';
       
       // Pattern A: School name first, then degree
-      const schoolMatch = currentLine.match(/^([A-Z][A-Za-z\s,]+(?:University|College|Institute|School|Academy|Lipa|Polytechnic|Colleges))/);
+      // Capture school name including location (everything up to newline or next section)
+      const schoolMatch = currentLine.match(/^([A-Z][A-Za-z\s,]+(?:University|College|Institute|School|Academy|Lipa|Polytechnic|Colleges)[A-Za-z\s,]*)/);
       if (schoolMatch) {
-        const school = schoolMatch[1].replace(/,$/, '').trim(); // Remove trailing comma
+        // Extract school name and location
+        const fullSchoolText = schoolMatch[1].trim();
+        const parts = fullSchoolText.split(',').map(p => p.trim());
+        const school = parts[0]; // First part is school name
+        const location = parts.slice(1).join(', '); // Rest is location
+        
+        console.log(`🎓 DEBUG Pattern 5A: fullSchoolText="${fullSchoolText}", school="${school}", location="${location}"`);
         
         // Check if this school is already in our education list
         const alreadyExists = education.some(edu => edu.school.toLowerCase().includes(school.toLowerCase().split(' ')[0]));
@@ -169,17 +176,6 @@ class EducationParser extends BaseParser {
           }
         }
         
-        // Special handling for De La Salle Lipa description (reconstruct from known pattern)
-        if (school.includes('De La Salle Lipa')) {
-          // We know the exact format from the lines:
-          // Line 3: "2022 - Present Second Honor Awardee ("
-          // Line 4: "GPA: 3.53), 3rd Year - First Semester, AY"
-          // Line 5: "2024 - 2025 San Pablo Colleges, Senior High School"
-          
-          // Reconstruct the complete description
-          description = `Second Honor Awardee (GPA: ${gpa}), 3rd Year - First Semester, AY 2024-2025`;
-        }
-        
         if (degreeMatch || school.includes('Colleges') || school.includes('High School')) {
           const degree = degreeMatch ? this.normalizeDegree(degreeMatch[0]) : 'High School';
           
@@ -189,11 +185,42 @@ class EducationParser extends BaseParser {
           // Search for date in the lines around the school/degree
           for (let k = i; k < Math.min(i + 6, lines.length); k++) {
             const dateLine = lines[k].trim();
-            const dateMatch = dateLine.match(/(\d{4})\s*-\s*(\d{4}|Present|Current)/i);
+            
+            // Try multiple date patterns (with en-dash – or hyphen -)
+            // Pattern 1: Month YYYY - Month YYYY (e.g., "August 2018 - May 2020")
+            let dateMatch = dateLine.match(/(January|February|March|April|May|June|July|August|September|October|November|December)\s+(\d{4})\s*[–\-]\s*(January|February|March|April|May|June|July|August|September|October|November|December)\s+(\d{4})/i);
+            if (dateMatch) {
+              startDate = dateMatch[2];
+              endDate = dateMatch[4];
+              break;
+            }
+            
+            // Pattern 2: Month YYYY - YYYY/Present (e.g., "September 2022 - Present")
+            dateMatch = dateLine.match(/(January|February|March|April|May|June|July|August|September|October|November|December)\s+(\d{4})\s*[–\-]\s*(Present|Current|\d{4})/i);
+            if (dateMatch) {
+              startDate = dateMatch[2];
+              endDate = dateMatch[3];
+              break;
+            }
+            
+            // Pattern 3: YYYY - YYYY or YYYY - Present
+            dateMatch = dateLine.match(/(\d{4})\s*[–\-]\s*(\d{4}|Present|Current)/i);
             if (dateMatch) {
               startDate = dateMatch[1];
               endDate = dateMatch[2];
               break;
+            }
+            
+            // Pattern 4: Check if previous line has month and current has year-range
+            if (k > 0) {
+              const prevLine = lines[k - 1].trim();
+              const monthMatch = prevLine.match(/^(January|February|March|April|May|June|July|August|September|October|November|December)$/i);
+              const yearMatch = dateLine.match(/^(\d{4})\s*[–\-]\s*(Present|Current|\d{4})/i);
+              if (monthMatch && yearMatch) {
+                startDate = yearMatch[1];
+                endDate = yearMatch[2];
+                break;
+              }
             }
           }
           
@@ -203,34 +230,141 @@ class EducationParser extends BaseParser {
             startDate,
             endDate,
             gpa: gpa,
-            location: '',
+            location: location,
             description: description.trim()
           });
           
-          console.log(`🎓 ✅ Found education (Pattern 5A): ${school} - ${degree} (${startDate} - ${endDate}) GPA: ${gpa}`);
+          console.log(`🎓 ✅ Found education (Pattern 5A): ${school} - ${degree} (${startDate} - ${endDate}) Location: ${location} GPA: ${gpa}`);
           i = Math.max(degreeLineIndex, i + 2); // Continue from after the degree line or skip at least 2 lines
           continue;
         }
       }
       
       // Pattern B: Degree first, then school (Adrian's format)
-      const degreeMatch = currentLine.match(/^(Bachelor|Master|Ph\.?D|B\.?S|M\.?S|M\.?A|B\.?A|Associate|Senior High School)[A-Za-z\s,\.]*/i);
+      // Also handle case where degree line contains a date: "2022 - Present Senior High School Certificate, STEM"
+      let degreeMatch = currentLine.match(/^(Bachelor|Master|Ph\.?D|B\.?S|M\.?S|M\.?A|B\.?A|Associate|Senior High School)[A-Za-z\s,\.]*/i);
+      
+      // If no match, try to extract degree after a date pattern
+      if (!degreeMatch && currentLine.match(/\d{4}\s*[–\-]\s*(Present|Current|\d{4})/)) {
+        // Remove the date part and try again
+        const withoutDate = currentLine.replace(/^\d{4}\s*[–\-]\s*(Present|Current|\d{4})\s*/, '').trim();
+        degreeMatch = withoutDate.match(/^(Senior High School|Bachelor|Master|Associate)[A-Za-z\s,\.]*/i);
+        if (degreeMatch && nextLine) {
+          const degree = this.normalizeDegree(withoutDate);
+          const schoolMatch = nextLine.match(/^([A-Z][A-Za-z\s,]+(?:University|College|Institute|School|Academy|Lipa|Polytechnic|Colleges)[A-Za-z\s,]*)/);
+          
+          if (schoolMatch) {
+            // Extract school name and location
+            const fullSchoolText = schoolMatch[1].trim();
+            const parts = fullSchoolText.split(',').map(p => p.trim());
+            const school = parts[0]; // First part is school name
+            const location = parts.slice(1).join(', '); // Rest is location
+            
+            console.log(`🎓 DEBUG Pattern 5B-alt: fullSchoolText="${fullSchoolText}", school="${school}", location="${location}"`);
+            
+            // Look for date in next lines (NOT from current line, as that date belongs to a different education)
+            let startDate = '', endDate = '';
+            
+            // Search in next lines for the date that belongs to THIS education entry
+            {
+              for (let j = i + 2; j < Math.min(i + 6, lines.length); j++) {
+                const dateLine = lines[j].trim();
+                
+                // Pattern 1: Month YYYY - Month YYYY (with en-dash or hyphen)
+                let dateMatch = dateLine.match(/(January|February|March|April|May|June|July|August|September|October|November|December)\s+(\d{4})\s*[–\-]\s*(January|February|March|April|May|June|July|August|September|October|November|December)\s+(\d{4})/i);
+                if (dateMatch) {
+                  startDate = dateMatch[2];
+                  endDate = dateMatch[4];
+                  break;
+                }
+                
+                // Pattern 2: Month YYYY - YYYY/Present on same line
+                dateMatch = dateLine.match(/(September|August|January|February|March|April|May|June|July|October|November|December)\s+(\d{4})\s*[–\-]\s*(\d{4}|Present|Current)/i);
+                if (dateMatch) {
+                  startDate = dateMatch[2];
+                  endDate = dateMatch[3];
+                  break;
+                }
+                
+                // Pattern 3: Just YYYY - YYYY/Present (with en-dash or hyphen)
+                dateMatch = dateLine.match(/^(\d{4})\s*[–\-]\s*(\d{4}|Present|Current)/i);
+                if (dateMatch) {
+                  startDate = dateMatch[1];
+                  endDate = dateMatch[2];
+                  break;
+                }
+              }
+            }
+            
+            education.push({
+              school,
+              degree,
+              startDate,
+              endDate,
+              gpa: '',
+              location: location,
+              description: ''
+            });
+            
+            console.log(`🎓 ✅ Found education (Pattern 5B-alt): ${school} - ${degree} (${startDate} - ${endDate}) Location: ${location}`);
+            i += 2; // Skip processed lines
+            continue;
+          }
+        }
+      }
+      
       if (degreeMatch && nextLine) {
         const degree = this.normalizeDegree(currentLine);
-        const schoolMatch = nextLine.match(/^([A-Z][A-Za-z\s,]+(?:University|College|Institute|School|Academy|Lipa|Polytechnic))/);
+        const schoolMatch = nextLine.match(/^([A-Z][A-Za-z\s,]+(?:University|College|Institute|School|Academy|Lipa|Polytechnic|Colleges)[A-Za-z\s,]*)/);
         
         if (schoolMatch) {
-          const school = schoolMatch[1].trim();
+          // Extract school name and location
+          const fullSchoolText = schoolMatch[1].trim();
+          const parts = fullSchoolText.split(',').map(p => p.trim());
+          const school = parts[0]; // First part is school name
+          const location = parts.slice(1).join(', '); // Rest is location
+          
+          console.log(`🎓 DEBUG Pattern 5B: fullSchoolText="${fullSchoolText}", school="${school}", location="${location}"`);
           
           // Look for date in next lines
           let startDate = '', endDate = '';
-          for (let j = i + 2; j < Math.min(i + 5, lines.length); j++) {
+          for (let j = i + 2; j < Math.min(i + 6, lines.length); j++) {
             const dateLine = lines[j].trim();
-            const dateMatch = dateLine.match(/(September|August|January|February|March|April|May|June|July|October|November|December)\s+(\d{4})\s*-\s*(\d{4}|Present|Current)/i);
+            
+            // Pattern 1: Month YYYY - Month YYYY (with en-dash or hyphen)
+            let dateMatch = dateLine.match(/(January|February|March|April|May|June|July|August|September|October|November|December)\s+(\d{4})\s*[–\-]\s*(January|February|March|April|May|June|July|August|September|October|November|December)\s+(\d{4})/i);
+            if (dateMatch) {
+              startDate = dateMatch[2];
+              endDate = dateMatch[4];
+              break;
+            }
+            
+            // Pattern 2: Month YYYY - YYYY/Present on same line
+            dateMatch = dateLine.match(/(September|August|January|February|March|April|May|June|July|October|November|December)\s+(\d{4})\s*[–\-]\s*(\d{4}|Present|Current)/i);
             if (dateMatch) {
               startDate = dateMatch[2];
               endDate = dateMatch[3];
               break;
+            }
+            
+            // Pattern 3: Just YYYY - YYYY/Present (with en-dash or hyphen)
+            dateMatch = dateLine.match(/^(\d{4})\s*[–\-]\s*(\d{4}|Present|Current)/i);
+            if (dateMatch) {
+              startDate = dateMatch[1];
+              endDate = dateMatch[2];
+              break;
+            }
+            
+            // Pattern 4: Month on previous line, year-range on current line
+            if (j > 0) {
+              const prevLine = lines[j - 1].trim();
+              const monthMatch = prevLine.match(/^(January|February|March|April|May|June|July|August|September|October|November|December)$/i);
+              const yearMatch = dateLine.match(/^(\d{4})\s*[–\-]\s*(Present|Current|\d{4})/i);
+              if (monthMatch && yearMatch) {
+                startDate = yearMatch[1];
+                endDate = yearMatch[2];
+                break;
+              }
             }
           }
           
@@ -240,11 +374,11 @@ class EducationParser extends BaseParser {
             startDate,
             endDate,
             gpa: '',
-            location: '',
+            location: location,
             description: ''
           });
           
-          console.log(`🎓 ✅ Found education (Pattern 5B): ${school} - ${degree} (${startDate} - ${endDate})`);
+          console.log(`🎓 ✅ Found education (Pattern 5B): ${school} - ${degree} (${startDate} - ${endDate}) Location: ${location}`);
           i += 2; // Skip processed lines
         }
       }
@@ -254,32 +388,61 @@ class EducationParser extends BaseParser {
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i].trim();
       
+      // Skip lines that start with "Present" - these are not school names
+      if (line.startsWith('Present ')) {
+        continue;
+      }
+      
       // Look for lines that contain school names and dates (more flexible pattern)
       const schoolMatch = line.match(/([A-Z][A-Za-z\s,]+(?:Colleges|University|College|Institute|School|Academy))/);
       if (schoolMatch) {
-        const school = schoolMatch[1].replace(/,$/, '').trim();
+        // Remove location (everything after first comma)
+        let school = schoolMatch[1].split(',')[0].trim();
+        
+        // Skip if school name is just "Senior High School" without a proper institution name
+        if (school === 'Senior High School') {
+          continue;
+        }
         
         // Look for dates in this line or nearby lines
         let startDate = '';
         let endDate = '';
         
-        // Check current line and next few lines for date patterns
-        // For San Pablo Colleges, look for the 2020-2022 date specifically
-        if (school.includes('San Pablo')) {
-          for (let j = i; j < Math.min(i + 3, lines.length); j++) {
+        // First, try to find date on the CURRENT line AFTER the school name
+        // Extract the part of the line after the school name
+        const schoolIndex = line.indexOf(school);
+        if (schoolIndex !== -1) {
+          const afterSchool = line.substring(schoolIndex + school.length);
+          const currentLineDateMatch = afterSchool.match(/(\d{4})\s*[–\-]\s*(\d{4}|Present|Current)/i);
+          if (currentLineDateMatch) {
+            startDate = currentLineDateMatch[1];
+            endDate = currentLineDateMatch[2];
+          }
+        }
+        
+        // If no date found on current line, check next few lines (with en-dash – or hyphen -)
+        if (!startDate) {
+          for (let j = i + 1; j < Math.min(i + 4, lines.length); j++) {
             const dateLine = lines[j].trim();
-            const dateMatch = dateLine.match(/(\d{4})\s*-\s*(\d{4})/);
-            if (dateMatch && dateMatch[1] === '2020') {
+            
+            // Pattern 1: Month YYYY - Month YYYY (e.g., "August 2018 - May 2020")
+            let dateMatch = dateLine.match(/(January|February|March|April|May|June|July|August|September|October|November|December)\s+(\d{4})\s*[–\-]\s*(January|February|March|April|May|June|July|August|September|October|November|December)\s+(\d{4})/i);
+            if (dateMatch) {
+              startDate = dateMatch[2];
+              endDate = dateMatch[4];
+              break;
+            }
+            
+            // Pattern 2: YYYY - YYYY (with en-dash or hyphen)
+            dateMatch = dateLine.match(/(\d{4})\s*[–\-]\s*(\d{4})/);
+            if (dateMatch) {
               startDate = dateMatch[1];
               endDate = dateMatch[2];
               break;
             }
-          }
-        } else {
-          // For other schools, use first date found
-          for (let j = i; j < Math.min(i + 3, lines.length); j++) {
-            const dateLine = lines[j].trim();
-            const dateMatch = dateLine.match(/(\d{4})\s*-\s*(\d{4})/);
+            
+            // Pattern 3: YYYY - Present (with en-dash or hyphen)
+            dateMatch = dateLine.match(/(\d{4})\s*[–\-]\s*(Present|Current)/i);
             if (dateMatch) {
               startDate = dateMatch[1];
               endDate = dateMatch[2];
@@ -293,6 +456,18 @@ class EducationParser extends BaseParser {
         // Check if this school is already in our education list
         const alreadyExists = education.some(edu => edu.school.toLowerCase().includes(school.toLowerCase().split(' ')[0]));
         if (!alreadyExists) {
+          
+          // Look for degree in previous line (might be "Senior High School Certificate, STEM")
+          if (i > 0) {
+            const prevLine = lines[i - 1].trim();
+            if (prevLine.includes('Senior High School') || prevLine.includes('Certificate') || prevLine.includes('STEM')) {
+              // Extract degree from previous line, removing date patterns
+              const degreeText = prevLine.replace(/\d{4}\s*-\s*(Present|Current|\d{4})/i, '').trim();
+              if (degreeText.length > 5 && degreeText.length < 100) {
+                degree = degreeText;
+              }
+            }
+          }
           
           // Look for more degree information in next lines
           let gpa = '';
@@ -433,11 +608,38 @@ class EducationParser extends BaseParser {
       }
     }
     
-    this.confidence = education.length > 0 ? 0.85 : 0;
+    // Remove duplicates - keep only unique schools
+    const uniqueEducation = [];
+    const seenSchools = new Set();
+    
+    for (const edu of education) {
+      // Create a normalized school key for comparison
+      const schoolKey = edu.school.toLowerCase().replace(/[,\s]+/g, '');
+      
+      // Skip if we've already seen this school
+      if (seenSchools.has(schoolKey)) {
+        console.log('🎓 ⚠️ Skipping duplicate:', edu.school);
+        continue;
+      }
+      
+      // Skip entries with invalid or placeholder school names
+      if (edu.school === 'Present Senior High School' || 
+          edu.school === 'Senior High School' ||
+          edu.school.startsWith('Present ')) {
+        console.log('🎓 ⚠️ Skipping invalid school name:', edu.school);
+        continue;
+      }
+      
+      seenSchools.add(schoolKey);
+      uniqueEducation.push(edu);
+    }
+    
+    this.confidence = uniqueEducation.length > 0 ? 0.85 : 0;
     
     console.log('🎓 EducationParser: Extraction complete (confidence:', this.confidence.toFixed(2), ')');
+    console.log('🎓 Total entries found:', education.length, '| Unique entries:', uniqueEducation.length);
     
-    return { data: education, confidence: this.confidence };
+    return { data: uniqueEducation, confidence: this.confidence };
   }
 
   normalizeDegree(degree) {

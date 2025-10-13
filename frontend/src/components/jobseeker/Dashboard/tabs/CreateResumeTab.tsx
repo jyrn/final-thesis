@@ -198,9 +198,17 @@ interface VolunteerExperience {
 
 interface OptionalSection {
   id: string;
-  type: 'certificates' | 'projects' | 'awards' | 'volunteer';
+  type: 'certificates' | 'projects' | 'awards' | 'organizations';
   title: string;
-  data: Certificate[] | Project[] | Award[] | VolunteerExperience[];
+  data: Certificate[] | Project[] | Award[] | Organization[];
+}
+
+interface Organization {
+  organization: string;
+  role: string;
+  startDate: string;
+  endDate: string;
+  description: string;
 }
 
 interface SectionOrder {
@@ -1030,19 +1038,19 @@ const CreateResumeTab: React.FC<CreateResumeTabProps> = ({
   };
 
   // Optional Section Management Functions
-  const addOptionalSection = (type: 'certificates' | 'projects' | 'awards' | 'volunteer') => {
+  const addOptionalSection = (type: 'certificates' | 'projects' | 'awards' | 'organizations') => {
     const sectionTitles = {
       certificates: 'Certificates & Seminars',
       projects: 'Projects',
       awards: 'Awards & Achievements',
-      volunteer: 'Volunteer Experience'
+      organizations: 'Organizations & Volunteer Experience'
     };
 
     const emptyData = {
       certificates: [{ name: '', issuer: '', date: '', description: '' }],
       projects: [{ name: '', description: '', technologies: '', startDate: '', endDate: '', url: '' }],
       awards: [{ title: '', issuer: '', date: '', description: '' }],
-      volunteer: [{ organization: '', role: '', startDate: '', endDate: '', description: '', location: '' }]
+      organizations: [{ organization: '', role: '', startDate: '', endDate: '', description: '' }]
     };
 
     const newSection: OptionalSection = {
@@ -1082,7 +1090,7 @@ const CreateResumeTab: React.FC<CreateResumeTabProps> = ({
   // Get available section types that haven't been added yet
   const getAvailableSectionTypes = () => {
     const existingTypes = resumeData.optionalSections.map(section => section.type);
-    const allTypes = ['certificates', 'projects', 'awards', 'volunteer'] as const;
+    const allTypes = ['certificates', 'projects', 'awards', 'organizations'] as const;
     return allTypes.filter(type => !existingTypes.includes(type));
   };
 
@@ -1167,32 +1175,34 @@ const CreateResumeTab: React.FC<CreateResumeTabProps> = ({
     }
   };
 
-  // Volunteer Functions
-  const addVolunteerExperience = (sectionId: string) => {
+
+  // Organization Functions
+  const addOrganization = (sectionId: string) => {
     const section = resumeData.optionalSections.find(s => s.id === sectionId);
-    if (section && section.type === 'volunteer') {
-      const newData = [...(section.data as VolunteerExperience[]), { organization: '', role: '', startDate: '', endDate: '', description: '', location: '' }];
+    if (section && section.type === 'organizations') {
+      const newData = [...(section.data as Organization[]), { organization: '', role: '', startDate: '', endDate: '', description: '' }];
       updateOptionalSection(sectionId, newData);
     }
   };
 
-  const updateVolunteerExperience = (sectionId: string, index: number, field: keyof VolunteerExperience, value: string) => {
+  const updateOrganization = (sectionId: string, index: number, field: keyof Organization, value: string) => {
     const section = resumeData.optionalSections.find(s => s.id === sectionId);
-    if (section && section.type === 'volunteer') {
-      const newData = (section.data as VolunteerExperience[]).map((vol, i) => 
-        i === index ? { ...vol, [field]: value } : vol
+    if (section && section.type === 'organizations') {
+      const newData = (section.data as Organization[]).map((org, i) => 
+        i === index ? { ...org, [field]: value } : org
       );
       updateOptionalSection(sectionId, newData);
     }
   };
 
-  const removeVolunteerExperience = (sectionId: string, index: number) => {
+  const removeOrganization = (sectionId: string, index: number) => {
     const section = resumeData.optionalSections.find(s => s.id === sectionId);
-    if (section && section.type === 'volunteer' && (section.data as VolunteerExperience[]).length > 1) {
-      const newData = (section.data as VolunteerExperience[]).filter((_, i) => i !== index);
+    if (section && section.type === 'organizations' && (section.data as Organization[]).length > 1) {
+      const newData = (section.data as Organization[]).filter((_, i) => i !== index);
       updateOptionalSection(sectionId, newData);
     }
   };
+
 
   // Section Reordering Functions
   const moveSectionUp = (index: number) => {
@@ -1746,30 +1756,30 @@ const CreateResumeTab: React.FC<CreateResumeTabProps> = ({
         }
       }
 
-      if (section.type === 'volunteer') {
-        const validVolunteer = (section.data as VolunteerExperience[]).filter(vol => vol.organization && vol.role);
-        if (validVolunteer.length > 0) {
-          addSectionHeader('Volunteer Experience');
+      if (section.type === 'organizations') {
+        const validOrganizations = (section.data as Organization[]).filter(org => org.organization && org.role);
+        if (validOrganizations.length > 0) {
+          addSectionHeader('Organizations & Volunteer Experience');
           
-          validVolunteer.forEach((vol, index) => {
+          validOrganizations.forEach((org, index) => {
             checkPageBreak(20);
             
             // Role - bold
             doc.setFontSize(9);
             doc.setFont('helvetica', 'bold');
             doc.setTextColor(blackColor[0], blackColor[1], blackColor[2]);
-            doc.text(vol.role, margin, yPosition);
+            doc.text(org.role, margin, yPosition);
             
             // Date range (right aligned)
             let dateText = '';
-            if (vol.startDate && vol.endDate && vol.endDate !== 'present') {
-              const startDate = new Date(vol.startDate + '-01');
-              const endDate = new Date(vol.endDate + '-01');
+            if (org.startDate && org.endDate && org.endDate !== 'present') {
+              const startDate = new Date(org.startDate + '-01');
+              const endDate = new Date(org.endDate + '-01');
               const startMonth = startDate.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
               const endMonth = endDate.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
               dateText = `${startMonth} - ${endMonth}`;
-            } else if (vol.startDate) {
-              const startDate = new Date(vol.startDate + '-01');
+            } else if (org.startDate) {
+              const startDate = new Date(org.startDate + '-01');
               const startMonth = startDate.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
               dateText = `${startMonth} - Present`;
             }
@@ -1785,24 +1795,21 @@ const CreateResumeTab: React.FC<CreateResumeTabProps> = ({
             // Organization - italic
             doc.setFontSize(9);
             doc.setFont('helvetica', 'italic');
-            let orgText = vol.organization;
-            if (vol.location) {
-              orgText += `, ${vol.location}`;
-            }
+            let orgText = org.organization;
             doc.text(orgText, margin, yPosition);
             yPosition += 4;
             
             // Description
-            if (vol.description) {
+            if (org.description) {
               doc.setFontSize(9);
               doc.setFont('helvetica', 'normal');
-              const descLines = doc.splitTextToSize(vol.description, contentWidth - 8);
+              const descLines = doc.splitTextToSize(org.description, contentWidth - 8);
               checkPageBreak(descLines.length * 4 + 2);
               doc.text(descLines, margin + 8, yPosition);
               yPosition += descLines.length * 4;
             }
             
-            if (index < validVolunteer.length - 1) {
+            if (index < validOrganizations.length - 1) {
               yPosition += 8;
             }
           });
@@ -2455,24 +2462,24 @@ const CreateResumeTab: React.FC<CreateResumeTabProps> = ({
             break;
             
           case 'volunteer':
-            // Handle volunteer experience
+          case 'organizations':
+            // Handle organizations/volunteer experience
             if (section.data && section.data.length > 0) {
-              const volunteer: VolunteerExperience[] = section.data.map((vol: any) => ({
-                organization: vol.organization || '',
-                role: vol.role || vol.position || '',
-                startDate: vol.startDate || '',
-                endDate: vol.endDate || '',
-                description: vol.description || '',
-                location: vol.location || ''
-              })).filter((vol: VolunteerExperience) => vol.organization.trim() && vol.role.trim());
+              const organizations: Organization[] = section.data.map((org: any) => ({
+                organization: org.organization || '',
+                role: org.role || org.position || '',
+                startDate: org.startDate || '',
+                endDate: org.endDate || '',
+                description: org.description || ''
+              })).filter((org: Organization) => org.organization.trim() && org.role.trim());
               
-              if (volunteer.length > 0) {
-                const sectionId = section.id || `volunteer-${Date.now()}`;
+              if (organizations.length > 0) {
+                const sectionId = section.id || `organizations-${Date.now()}`;
                 newOptionalSections.push({
                   id: sectionId,
-                  type: 'volunteer',
-                  title: section.title || 'Volunteer Experience',
-                  data: volunteer
+                  type: 'organizations',
+                  title: section.title || 'Organizations & Volunteer Experience',
+                  data: organizations
                 });
                 
                 // Add to section order if not already present
@@ -2480,8 +2487,8 @@ const CreateResumeTab: React.FC<CreateResumeTabProps> = ({
                   newSectionOrder.push({
                     id: sectionId,
                     type: 'optional',
-                    title: section.title || 'Volunteer Experience',
-                    optionalType: 'volunteer'
+                    title: section.title || 'Organizations & Volunteer Experience',
+                    optionalType: 'organizations'
                   });
                 }
               }
@@ -3278,7 +3285,7 @@ const CreateResumeTab: React.FC<CreateResumeTabProps> = ({
                   {optionalSection.type === 'certificates' && <FiStar className={styles.sectionIcon} />}
                   {optionalSection.type === 'projects' && <FiFileText className={styles.sectionIcon} />}
                   {optionalSection.type === 'awards' && <FiStar className={styles.sectionIcon} />}
-                  {optionalSection.type === 'volunteer' && <FiUser className={styles.sectionIcon} />}
+                  {optionalSection.type === 'organizations' && <FiUser className={styles.sectionIcon} />}
                   <h2 className={styles.sectionTitle}>{optionalSection.title}</h2>
                   <div className={styles.sectionControls}>
                     {renderSectionControls(sectionIndex)}
@@ -3515,16 +3522,16 @@ const CreateResumeTab: React.FC<CreateResumeTabProps> = ({
                 </>
               )}
 
-              {/* Volunteer Experience Section */}
-              {optionalSection.type === 'volunteer' && (
+              {/* Organizations Section */}
+              {optionalSection.type === 'organizations' && (
                 <>
-                  {(optionalSection.data as VolunteerExperience[]).map((vol, index) => (
+                  {(optionalSection.data as Organization[]).map((org, index) => (
                     <div key={index} className={styles.itemContainer}>
                       <div className={styles.itemHeader}>
-                        <h3 className={styles.itemTitle}>Volunteer Experience {index + 1}</h3>
-                        {(optionalSection.data as VolunteerExperience[]).length > 1 && (
+                        <h3 className={styles.itemTitle}>Organization {index + 1}</h3>
+                        {(optionalSection.data as Organization[]).length > 1 && (
                           <button 
-                            onClick={() => removeVolunteerExperience(optionalSection.id, index)}
+                            onClick={() => removeOrganization(optionalSection.id, index)}
                             className={styles.removeButton}
                           >
                             <FiTrash2 />
@@ -3536,8 +3543,8 @@ const CreateResumeTab: React.FC<CreateResumeTabProps> = ({
                           <label>Organization</label>
                           <input
                             type="text"
-                            value={vol.organization}
-                            onChange={(e) => updateVolunteerExperience(optionalSection.id, index, 'organization', e.target.value)}
+                            value={org.organization}
+                            onChange={(e) => updateOrganization(optionalSection.id, index, 'organization', e.target.value)}
                             placeholder="Red Cross"
                             className={styles.formInput}
                           />
@@ -3546,31 +3553,21 @@ const CreateResumeTab: React.FC<CreateResumeTabProps> = ({
                           <label>Role</label>
                           <input
                             type="text"
-                            value={vol.role}
-                            onChange={(e) => updateVolunteerExperience(optionalSection.id, index, 'role', e.target.value)}
+                            value={org.role}
+                            onChange={(e) => updateOrganization(optionalSection.id, index, 'role', e.target.value)}
                             placeholder="Volunteer Coordinator"
                             className={styles.formInput}
                           />
                         </div>
                       </div>
                       <div className={styles.formGrid}>
-                        <div className={styles.formGroup}>
-                          <label>Location</label>
-                          <input
-                            type="text"
-                            value={vol.location}
-                            onChange={(e) => updateVolunteerExperience(optionalSection.id, index, 'location', e.target.value)}
-                            placeholder="Manila, Philippines"
-                            className={styles.formInput}
-                          />
-                        </div>
                         <div style={{ display: 'flex', gap: '15px' }}>
                           <div className={styles.formGroup} style={{ flex: '1' }}>
                             <label>Start Date</label>
                             <input
                               type="month"
-                              value={vol.startDate}
-                              onChange={(e) => updateVolunteerExperience(optionalSection.id, index, 'startDate', e.target.value)}
+                              value={org.startDate}
+                              onChange={(e) => updateOrganization(optionalSection.id, index, 'startDate', e.target.value)}
                               className={styles.formInput}
                             />
                           </div>
@@ -3578,24 +3575,24 @@ const CreateResumeTab: React.FC<CreateResumeTabProps> = ({
                             <label>End Date</label>
                             <input
                               type="month"
-                              value={vol.endDate === 'present' ? '' : vol.endDate}
-                              onChange={(e) => updateVolunteerExperience(optionalSection.id, index, 'endDate', e.target.value)}
+                              value={org.endDate === 'present' ? '' : org.endDate}
+                              onChange={(e) => updateOrganization(optionalSection.id, index, 'endDate', e.target.value)}
                               className={styles.formInput}
-                              disabled={vol.endDate === 'present'}
+                              disabled={org.endDate === 'present'}
                             />
                             <label className={styles.presentCheckbox}>
                               <input
                                 type="checkbox"
-                                checked={vol.endDate === 'present'}
+                                checked={org.endDate === 'present'}
                                 onChange={(e) => {
                                   if (e.target.checked) {
-                                    updateVolunteerExperience(optionalSection.id, index, 'endDate', 'present');
+                                    updateOrganization(optionalSection.id, index, 'endDate', 'present');
                                   } else {
-                                    updateVolunteerExperience(optionalSection.id, index, 'endDate', '');
+                                    updateOrganization(optionalSection.id, index, 'endDate', '');
                                   }
                                 }}
                               />
-                              <span>Currently volunteering here</span>
+                              <span>Currently active</span>
                             </label>
                           </div>
                         </div>
@@ -3603,19 +3600,19 @@ const CreateResumeTab: React.FC<CreateResumeTabProps> = ({
                       <div className={styles.formGroup}>
                         <label>Description</label>
                         <textarea
-                          value={vol.description}
-                          onChange={(e) => updateVolunteerExperience(optionalSection.id, index, 'description', e.target.value)}
-                          placeholder="Describe your volunteer activities and impact..."
+                          value={org.description}
+                          onChange={(e) => updateOrganization(optionalSection.id, index, 'description', e.target.value)}
+                          placeholder="Describe your role and activities..."
                           className={styles.formTextarea}
                         />
                       </div>
                     </div>
                   ))}
                   <button 
-                    onClick={() => addVolunteerExperience(optionalSection.id)}
+                    onClick={() => addOrganization(optionalSection.id)}
                     className={styles.addButton}
                   >
-                    <FiPlus /> Add Volunteer Experience
+                    <FiPlus /> Add Organization
                   </button>
                 </>
               )}
@@ -3942,7 +3939,7 @@ const CreateResumeTab: React.FC<CreateResumeTabProps> = ({
             <select 
               onChange={(e) => {
                 if (e.target.value) {
-                  addOptionalSection(e.target.value as 'certificates' | 'projects' | 'awards' | 'volunteer');
+                  addOptionalSection(e.target.value as 'certificates' | 'projects' | 'awards' | 'organizations');
                   e.target.value = ''; // Reset dropdown
                 }
               }}
@@ -3955,7 +3952,7 @@ const CreateResumeTab: React.FC<CreateResumeTabProps> = ({
                   certificates: 'Certificates & Seminars',
                   projects: 'Projects',
                   awards: 'Awards & Achievements',
-                  volunteer: 'Volunteer Experience'
+                  organizations: 'Organizations & Volunteer Experience'
                 };
                 return (
                   <option key={type} value={type}>

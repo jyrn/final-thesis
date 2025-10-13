@@ -18,7 +18,7 @@ class ExperienceParser extends BaseParser {
     const experience = [];
     
     // Extract experience section
-    const experienceText = this.extractSection(
+    let experienceText = this.extractSection(
       text,
       [
         'WORK EXPERIENCE', 'Work Experience', 'EXPERIENCE', 'Experience',
@@ -31,7 +31,29 @@ class ExperienceParser extends BaseParser {
       ]
     );
     
-    if (!experienceText) {
+    // If the extracted section is too short (likely wrong match), try finding EXPERIENCE after PROJECTS
+    if (!experienceText || experienceText.trim().length < 20) {
+      console.log('💼 ⚠️ Experience section too short, trying alternate extraction...');
+      
+      // Look for EXPERIENCE that appears after PROJECTS section
+      const projectsIndex = text.search(/\b(PROJECTS|Projects)\b/i);
+      if (projectsIndex !== -1) {
+        const textAfterProjects = text.substring(projectsIndex);
+        const expMatch = textAfterProjects.match(/\b(EXPERIENCE|Experience)\b/);
+        if (expMatch) {
+          const expStartInFull = projectsIndex + expMatch.index + expMatch[0].length;
+          // Extract from there to end or next major section
+          const remainingText = text.substring(expStartInFull);
+          const nextSectionMatch = remainingText.match(/\n\s*(EDUCATION|SKILLS|CERTIFICATIONS|ACHIEVEMENTS)/i);
+          experienceText = nextSectionMatch ? 
+            remainingText.substring(0, nextSectionMatch.index) : 
+            remainingText;
+          console.log('💼 Found EXPERIENCE after PROJECTS, length:', experienceText.length);
+        }
+      }
+    }
+    
+    if (!experienceText || experienceText.trim().length < 10) {
       console.log('💼 ⚠️ No work experience section found');
       return { data: experience, confidence: 0 };
     }
@@ -125,16 +147,21 @@ class ExperienceParser extends BaseParser {
       }
     }
     
-    // Pattern 2.6: Freelance work without company suffix "Freelance Video Editor and Graphic Designer January 2018 - May 2024"
-    if (experience.length < 2) {
-      const freelancePattern = /(Freelance\s+[A-Z][A-Za-z\s]+(?:Editor|Designer|Developer|Analyst|Manager|Specialist|Coordinator))\s+(January|February|March|April|May|June|July|August|September|October|November|December)\s+(\d{4})\s*-\s*(January|February|March|April|May|June|July|August|September|October|November|December)\s+(\d{4}|Present|Current)/gi;
+    // Pattern 2.6: Freelance work - flexible pattern to match various formats
+    // Matches: "Freelance [Job Title] [Date] - [Date]"
+    {
+      // More flexible pattern that allows any words between Freelance and the date
+      const freelancePattern = /(Freelance\s+[A-Z][A-Za-z\s,&]+?)\s+(January|February|March|April|May|June|July|August|September|October|November|December)\s+(\d{4})\s*-\s*((?:January|February|March|April|May|June|July|August|September|October|November|December)\s+)?(\d{4}|Present|Current)/gi;
       
       while ((match = freelancePattern.exec(experienceText)) !== null) {
-        const title = match[1].trim();
+        let title = match[1].trim();
         const startMonth = match[2].trim();
         const startYear = match[3].trim();
-        const endMonth = match[4].trim();
+        const endMonth = match[4] ? match[4].trim() : startMonth;
         const endYear = match[5].trim();
+        
+        // Clean up title - remove trailing words that aren't part of job title
+        title = title.replace(/\s+(at|for|with|in)\s*$/i, '').trim();
         
         const startDate = `${startMonth} ${startYear}`;
         const endDate = endYear === 'Present' || endYear === 'Current' ? endYear : `${endMonth} ${endYear}`;

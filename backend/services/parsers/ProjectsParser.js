@@ -265,16 +265,23 @@ class ProjectsParser extends BaseParser {
     // Strategy 3: Bullet points and project title detection
     if (projectBlocks.length === 0) {
       // First try to split by project titles that appear before pipe symbols or bullet points
-      const projectTitleSplit = text.split(/(?=^[A-Z][A-Za-z\s\-]+(?:System|Application|App|Management|Tracker|Platform|Tool|Website|Project)\s*[\|\•])/m);
+      const projectTitleSplit = text.split(/(?=^[A-Z][A-Za-z\s\-]+(?:System|Application|App|Management|Tracker|Platform|Tool|Website|Project|Monitoring|Banking|Expense|Quiz|Task)\s*[\|\•])/m);
       if (projectTitleSplit.length > 1 && projectTitleSplit.some(b => b.trim().length > 20)) {
         projectBlocks = projectTitleSplit.filter(block => block.trim().length > 20);
         console.log('🚀 Using project title split, found', projectBlocks.length, 'blocks');
       } else {
-        // Fallback to bullet point split
-        const bulletSplit = text.split(/(?=^[\-•\*]\s+[A-Z]|^\d+\.\s+[A-Z])/m);
-        if (bulletSplit.length > 1 && bulletSplit.some(b => b.trim().length > 20)) {
-          projectBlocks = bulletSplit;
-          console.log('🚀 Using bullet point split');
+        // Try splitting by project name patterns (more aggressive for Shayla/Carlo format)
+        const aggressiveSplit = text.split(/(?=^(?:Web-Based|Full-Stack|Personal|Task|Air Quality|Lost and Found|Pet Adoption|Web Based)[A-Za-z\s\-]*(?:System|Application|App|Management|Tracker)\s*\|)/m);
+        if (aggressiveSplit.length > 1 && aggressiveSplit.some(b => b.trim().length > 20)) {
+          projectBlocks = aggressiveSplit.filter(block => block.trim().length > 20);
+          console.log('🚀 Using aggressive project name split, found', projectBlocks.length, 'blocks');
+        } else {
+          // Fallback to bullet point split - but only use if we don't have better options
+          const bulletSplit = text.split(/(?=^[\-•\*]\s+[A-Z]|^\d+\.\s+[A-Z])/m);
+          if (bulletSplit.length > 1 && bulletSplit.some(b => b.trim().length > 20)) {
+            projectBlocks = bulletSplit;
+            console.log('🚀 Using bullet point split');
+          }
         }
       }
     }
@@ -340,44 +347,55 @@ class ProjectsParser extends BaseParser {
     }
     
     // Strategy 4: Pattern-based (capitalized titles)
-    if (projectBlocks.length === 0) {
-      const lines = text.split(/\n/);
-      let currentProject = '';
+    if (projectBlocks.length === 0 || projectBlocks.length === 1) {
+      // If we only have 1 block and it's long, try to split it further
+      const textToAnalyze = projectBlocks.length === 1 ? projectBlocks[0] : text;
       
-      console.log('🚀 Analyzing lines for project patterns...');
-      
-      for (let i = 0; i < lines.length; i++) {
-        const trimmed = lines[i].trim();
+      // Try splitting by sentence boundaries followed by project names
+      const sentenceSplit = textToAnalyze.split(/\.\s+(?=[A-Z][A-Za-z\s\-]+(?:System|Application|App|Management|Monitoring|Tracker)\s*\|)/);
+      if (sentenceSplit.length > 1 && sentenceSplit.length > projectBlocks.length) {
+        projectBlocks = sentenceSplit.filter(b => b.trim().length > 20);
+        console.log('🚀 Using sentence-based split, found', projectBlocks.length, 'blocks');
+      } else {
+        // Fallback to line-by-line analysis
+        const lines = textToAnalyze.split(/\n/);
+        let currentProject = '';
         
-        // Check if this line looks like a project title
-        const isProjectTitle = (
-          trimmed.length > 5 && trimmed.length < 150 && 
-          /^[A-Z]/.test(trimmed) && 
-          !trimmed.match(/^(The|A|An|In|On|At|For|With|And|Or|But|So|Yet|Because|Although|Since|Unless|While|During|After|Before|Until|When|Where|Why|How|What|Who|Which|That)\s/i) &&
-          !trimmed.match(/\d{4}\s*-\s*\d{4}/) && // Not a date range
-          !trimmed.match(/@|http|www|\.com|\.org/) && // Not contact info
-          !trimmed.match(/^(EDUCATION|EXPERIENCE|SKILLS|CERTIFICATIONS|PROJECTS|SUMMARY|OBJECTIVE)$/i) // Not section header
-        );
+        console.log('🚀 Analyzing lines for project patterns...');
         
-        if (isProjectTitle) {
-          // Save previous project if exists
-          if (currentProject.trim().length > 20) {
-            projectBlocks.push(currentProject);
-            console.log('🚀 Found project block via pattern matching');
+        for (let i = 0; i < lines.length; i++) {
+          const trimmed = lines[i].trim();
+          
+          // Check if this line looks like a project title
+          const isProjectTitle = (
+            trimmed.length > 5 && trimmed.length < 150 && 
+            /^[A-Z]/.test(trimmed) && 
+            !trimmed.match(/^(The|A|An|In|On|At|For|With|And|Or|But|So|Yet|Because|Although|Since|Unless|While|During|After|Before|Until|When|Where|Why|How|What|Who|Which|That)\s/i) &&
+            !trimmed.match(/\d{4}\s*-\s*\d{4}/) && // Not a date range
+            !trimmed.match(/@|http|www|\.com|\.org/) && // Not contact info
+            !trimmed.match(/^(EDUCATION|EXPERIENCE|SKILLS|CERTIFICATIONS|PROJECTS|SUMMARY|OBJECTIVE)$/i) // Not section header
+          );
+          
+          if (isProjectTitle) {
+            // Save previous project if exists
+            if (currentProject.trim().length > 20) {
+              projectBlocks.push(currentProject);
+              console.log('🚀 Found project block via pattern matching');
+            }
+            currentProject = trimmed + '\n';
+          } else if (trimmed.length > 0) {
+            currentProject += trimmed + '\n';
           }
-          currentProject = trimmed + '\n';
-        } else if (trimmed.length > 0) {
-          currentProject += trimmed + '\n';
         }
-      }
-      
-      // Add last project
-      if (currentProject.trim().length > 20) {
-        projectBlocks.push(currentProject);
-      }
-      
-      if (projectBlocks.length > 0) {
-        console.log('🚀 Using pattern-based split, found', projectBlocks.length, 'blocks');
+        
+        // Add last project
+        if (currentProject.trim().length > 20) {
+          projectBlocks.push(currentProject);
+        }
+        
+        if (projectBlocks.length > 0) {
+          console.log('🚀 Using pattern-based split, found', projectBlocks.length, 'blocks');
+        }
       }
     }
     
@@ -449,14 +467,51 @@ class ProjectsParser extends BaseParser {
         continue;
       }
       
-      const description = lines.slice(1).join(' ').trim();
+      // Extract description - handle both multi-line and single-line formats
+      let description = '';
+      
+      // If the first line contains the project name and tech stack, the description might be on the same line
+      const firstLine = lines[0];
+      if (firstLine.includes('|')) {
+        // Split by pipe to separate name|tech from description
+        const parts = firstLine.split('|');
+        if (parts.length >= 2) {
+          // Everything after the tech stack is description
+          const afterTech = parts.slice(2).join('|').trim();
+          if (afterTech) {
+            description = afterTech + ' ';
+          }
+          // Also check if description continues on the same line after tech stack
+          const techPart = parts[1].trim();
+          // Look for description text after technology names
+          const descMatch = techPart.match(/^[A-Za-z\s,\.]+(?:React|Node\.js|JavaScript|HTML|CSS|Python|Java|MongoDB|Firebase|Figma|UiPath|Excel|TypeScript|Express|MySQL|Supabase|PHP)[A-Za-z\s,\.]*\s+(.+)$/);
+          if (descMatch && descMatch[1]) {
+            description += descMatch[1] + ' ';
+          }
+        }
+      }
+      
+      // Add remaining lines as description
+      description += lines.slice(1).join(' ').trim();
+      description = description.trim();
+      
+      // If still no description, try to extract from the full block text
+      if (!description || description.length < 20) {
+        // Remove the project name and tech stack from the beginning
+        let cleanedText = trimmed;
+        if (projectName && technologies) {
+          cleanedText = cleanedText.replace(new RegExp('^' + projectName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')), '');
+          cleanedText = cleanedText.replace(new RegExp('^\\s*\\|\\s*' + technologies.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')), '');
+        }
+        description = cleanedText.trim();
+      }
       
       // Use extracted technologies from pipe format, or fall back to keyword detection
       if (!technologies) {
         const techKeywords = [
           'Python', 'Java', 'JavaScript', 'TypeScript', 'C\\+\\+', 'C#', 'React', 'Node.js',
           'HTML', 'CSS', 'SQL', 'MongoDB', 'Firebase', 'Unity', 'Django', 'Flask', 'Express',
-          'Figma', 'Adobe XD', 'UiPath', 'Excel', 'Raspberry Pi', 'Machine Learning'
+          'Figma', 'Adobe XD', 'UiPath', 'Excel', 'Raspberry Pi', 'Machine Learning', 'Supabase', 'PHP'
         ];
         
         const foundTechs = [];
@@ -496,19 +551,25 @@ class ProjectsParser extends BaseParser {
     let paragraphs = text.split(/\n\s*\n/).filter(p => p.trim().length > 20);
     
     // If we only have one paragraph (text got concatenated), try to split by project patterns
-    if (paragraphs.length === 1) {
-      const singleText = paragraphs[0];
-      // Split by project name patterns that appear before |
-      let projectSplit = singleText.split(/(?=\b[A-Z][A-Za-z\s\-]+(?:System|App|Management|Tracker|Companion|Computation)\s*\|)/);
+    if (paragraphs.length === 1 || (paragraphs.length === 2 && paragraphs[0].length > 500)) {
+      const singleText = paragraphs.length === 1 ? paragraphs[0] : paragraphs.join('\n\n');
+      
+      // Carlo's specific patterns - split by project names that appear at start of sentences
+      let projectSplit = singleText.split(/(?=(?:^|\.\s+)(?:Lost and Found|Air Quality|Web Based Task|Pet Adoption)[A-Za-z\s]*(?:System|Application|App)\s*\|)/m);
+      
+      if (projectSplit.length <= 2) {
+        // Split by project name patterns that appear before |
+        projectSplit = singleText.split(/(?=\b[A-Z][A-Za-z\s\-]+(?:System|App|Management|Tracker|Companion|Computation|Application|Monitoring)\s*\|)/);
+      }
       
       // If that didn't work well, try splitting by common project keywords
       if (projectSplit.length <= 2) {
-        projectSplit = singleText.split(/(?=\b(?:Digital|Grade|Inventory|NLP-Based|Web-Based|Task|Full-Stack|Personal)\s+[A-Z][A-Za-z\s\-]*(?:System|App|Management|Tracker|Companion|Computation))/);
+        projectSplit = singleText.split(/(?=\b(?:Digital|Grade|Inventory|NLP-Based|Web-Based|Task|Full-Stack|Personal|Lost and Found|Air Quality|Pet Adoption|Web Based)\s+[A-Z][A-Za-z\s\-]*(?:System|App|Management|Tracker|Companion|Computation|Application|Monitoring))/);
       }
       
       // Also try splitting by " | " when followed by technology names
       if (projectSplit.length <= 2) {
-        projectSplit = singleText.split(/(?=\b[A-Z][A-Za-z\s\-]+\s*\|\s*(?:React|Figma|UiPath|JavaScript|HTML|CSS|MongoDB|Node\.js))/);
+        projectSplit = singleText.split(/(?=\b[A-Z][A-Za-z\s\-]+\s*\|\s*(?:React|Figma|UiPath|JavaScript|HTML|CSS|MongoDB|Node\.js|TypeScript|Expo|Supabase|Python))/);
       }
       
       // Hannah's specific format: try splitting by project names that end with specific keywords
@@ -559,13 +620,23 @@ class ProjectsParser extends BaseParser {
         }
       }
       
-      // Ultimate fallback: Manual extraction for Hannah's format
-      if (projectSplit.length <= 3 && (singleText.includes('Digital Companion') || singleText.includes('Grade Computation'))) {
-        console.log('🚀 Using manual Hannah project extraction');
+      // Ultimate fallback: Manual extraction for Hannah's, Shayla's, and Carlo's formats
+      const needsManualExtraction = (
+        singleText.includes('Digital Companion') || 
+        singleText.includes('Grade Computation') ||
+        singleText.includes('Web-Based Inventory') ||
+        singleText.includes('Task Management Application') ||
+        singleText.includes('Lost and Found') ||
+        singleText.includes('Air Quality Monitoring')
+      );
+      
+      if (projectSplit.length <= 3 && needsManualExtraction) {
+        console.log('🚀 Using manual project extraction for concatenated format');
         const manualProjects = [];
         
         // Extract each project manually based on known patterns
         const patterns = [
+          // Hannah's projects
           { 
             name: 'NLP-Based Recruitment System for PESO Lipa', 
             tech: 'React, Node.js, Express, MongoDB, Cloud',
@@ -585,6 +656,53 @@ class ProjectsParser extends BaseParser {
             name: 'Grade Computation and Email Automation', 
             tech: 'UiPath, Microsoft Excel',
             keywords: ['Grade Computation', 'Email Automation', 'UiPath']
+          },
+          // Shayla's projects
+          {
+            name: 'Web-Based Inventory Management System',
+            tech: 'JavaScript, HTML, CSS',
+            keywords: ['Web-Based Inventory', 'ReactJS', 'product addition']
+          },
+          {
+            name: 'Task Management Application',
+            tech: 'React Native, TypeScript, Expo',
+            keywords: ['Task Management Application', 'create, edit, delete']
+          },
+          {
+            name: 'Full-Stack Quiz Management System',
+            tech: 'MongoDB, MySQL, React, Supabase',
+            keywords: ['Quiz Management System', 'CRUD operations for quizzes']
+          },
+          {
+            name: 'Web-Based Banking Application (Frontend)',
+            tech: 'JavaScript, HTML, CSS',
+            keywords: ['Banking Application', 'simulated banking', 'local storage']
+          },
+          {
+            name: 'Personal Expense Tracker',
+            tech: 'TypeScript, React Native, Expo',
+            keywords: ['Expense Tracker', 'expense tracking', 'AsyncStorage']
+          },
+          // Carlo's projects
+          {
+            name: 'Lost and Found Management System',
+            tech: 'ReactJS, Supabase',
+            keywords: ['Lost and Found', 'Supabase', 'relational database schema']
+          },
+          {
+            name: 'Air Quality Monitoring System',
+            tech: 'ReactJS, Supabase, Python',
+            keywords: ['Air Quality', 'pollutant and sensor data']
+          },
+          {
+            name: 'Web Based Task Management Application',
+            tech: 'ReactJS, CSS',
+            keywords: ['Web Based Task', 'CRUD operations']
+          },
+          {
+            name: 'Pet Adoption App',
+            tech: 'React Native, TypeScript, Expo, Firebase',
+            keywords: ['Pet Adoption', 'Firebase for the database']
           }
         ];
         

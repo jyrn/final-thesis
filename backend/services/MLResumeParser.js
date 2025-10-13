@@ -10,6 +10,7 @@ const ExperienceParser = require('./parsers/ExperienceParser');
 const SkillsParser = require('./parsers/SkillsParser');
 const ProjectsParser = require('./parsers/ProjectsParser');
 const CertificationsParser = require('./parsers/CertificationsParser');
+const OptionalSectionsParser = require('./parsers/OptionalSectionsParser');
 const ResumeTextCleaner = require('./ResumeTextCleaner');
 const parserConfig = require('../config/parserConfig');
 
@@ -27,7 +28,8 @@ class MLResumeParser {
       experience: new ExperienceParser(),
       skills: new SkillsParser(),
       projects: new ProjectsParser(),
-      certifications: new CertificationsParser()
+      certifications: new CertificationsParser(),
+      optionalSections: new OptionalSectionsParser()
     };
 
     console.log('🤖 MLResumeParser v2.0.1 initialized with config:', {
@@ -174,6 +176,18 @@ class MLResumeParser {
       confidenceScores.certifications = 0;
     }
     
+    // Parse Optional Sections (organizations, awards & achievements combined)
+    console.log('\n💫 Parsing Optional Sections...');
+    try {
+      const optionalResult = this.parsers.optionalSections.parse(cleanedText, context);
+      results.organizations = optionalResult.organizations || [];
+      results.awards = optionalResult.awards || []; // Awards includes achievements
+    } catch (error) {
+      console.error('❌ Optional sections parsing error:', error.message);
+      results.organizations = [];
+      results.awards = [];
+    }
+    
     // Step 3: Calculate overall confidence
     const overallConfidence = this.calculateOverallConfidence(confidenceScores);
     
@@ -260,12 +274,147 @@ class MLResumeParser {
       });
     }
     
+    if (results.organizations && results.organizations.length > 0) {
+      optionalSections.push({
+        id: 'organizations-ml-' + Date.now(),
+        type: 'organizations',
+        title: 'Organizations & Volunteer Experience',
+        data: results.organizations
+      });
+    }
+    
+    if (results.awards && results.awards.length > 0) {
+      optionalSections.push({
+        id: 'awards-ml-' + Date.now(),
+        type: 'awards',
+        title: 'Awards & Achievements',
+        data: results.awards
+      });
+    }
+    
+    // Helper function to convert date to YYYY-MM format
+    const convertToYYYYMM = (dateStr) => {
+      if (!dateStr) return '';
+      
+      // Clean up the date string
+      const cleaned = dateStr.replace(/\n/g, ' ').replace(/\s+/g, ' ').trim();
+      
+      // If already in YYYY-MM format, return as-is
+      if (/^\d{4}-\d{2}$/.test(cleaned)) {
+        return cleaned;
+      }
+      
+      // Handle "Present" or "Current"
+      if (/^(present|current)$/i.test(cleaned)) {
+        return 'present';
+      }
+      
+      // Parse "Month YYYY" format (e.g., "June 2024", "January 2018")
+      const monthYearMatch = cleaned.match(/^(January|February|March|April|May|June|July|August|September|October|November|December)\s+(\d{4})$/i);
+      if (monthYearMatch) {
+        const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+        const monthIndex = monthNames.findIndex(m => m.toLowerCase() === monthYearMatch[1].toLowerCase());
+        if (monthIndex !== -1) {
+          const month = String(monthIndex + 1).padStart(2, '0');
+          return `${monthYearMatch[2]}-${month}`;
+        }
+      }
+      
+      // If we can't parse it, return the cleaned string
+      return cleaned;
+    };
+    
+    // Transform experience data to match frontend format
+    const transformedExperience = (results.experience || []).map(exp => {
+      const startDate = convertToYYYYMM(exp.startDate);
+      const endDate = convertToYYYYMM(exp.endDate);
+      
+      // Create human-readable duration for display
+      const formatDateForDisplay = (yyyymm) => {
+        if (!yyyymm) return '';
+        if (yyyymm === 'present') return 'Present';
+        
+        const match = yyyymm.match(/^(\d{4})-(\d{2})$/);
+        if (match) {
+          const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+          return `${monthNames[parseInt(match[2]) - 1]} ${match[1]}`;
+        }
+        return yyyymm;
+      };
+      
+      const displayStart = formatDateForDisplay(startDate);
+      const displayEnd = formatDateForDisplay(endDate);
+      
+      return {
+        company: exp.company || '',
+        position: exp.title || '', // Backend uses 'title', frontend expects 'position'
+        duration: displayStart && displayEnd ? `${displayStart} - ${displayEnd}` : '',
+        description: exp.description || '',
+        location: exp.location || '',
+        startDate: startDate, // YYYY-MM format for validation
+        endDate: endDate // YYYY-MM format or 'present'
+      };
+    });
+    
+    // Transform education data to match frontend format (YYYY-MM dates)
+    const transformedEducation = (results.education || []).map(edu => {
+      // Convert year-only dates to YYYY-MM format (assume September for start, June for end)
+      const convertYearToYYYYMM = (yearStr, isStart = true) => {
+        if (!yearStr) return '';
+        
+        const cleaned = yearStr.replace(/\n/g, ' ').replace(/\s+/g, ' ').trim();
+        
+        // Handle "Present" or "Current"
+        if (/^(present|current)$/i.test(cleaned)) {
+          return 'present';
+        }
+        
+        // If already in YYYY-MM format, return as-is
+        if (/^\d{4}-\d{2}$/.test(cleaned)) {
+          return cleaned;
+        }
+        
+        // If it's just a year (YYYY), add month
+        if (/^\d{4}$/.test(cleaned)) {
+          // Start dates default to September (09), end dates default to June (06)
+          const month = isStart ? '09' : '06';
+          return `${cleaned}-${month}`;
+        }
+        
+        // Parse "Month YYYY" format if present
+        const monthYearMatch = cleaned.match(/^(January|February|March|April|May|June|July|August|September|October|November|December)\s+(\d{4})$/i);
+        if (monthYearMatch) {
+          const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+          const monthIndex = monthNames.findIndex(m => m.toLowerCase() === monthYearMatch[1].toLowerCase());
+          if (monthIndex !== -1) {
+            const month = String(monthIndex + 1).padStart(2, '0');
+            return `${monthYearMatch[2]}-${month}`;
+          }
+        }
+        
+        return cleaned;
+      };
+      
+      const startDate = convertYearToYYYYMM(edu.startDate, true);
+      const endDate = convertYearToYYYYMM(edu.endDate, false);
+      
+      return {
+        school: edu.school || '',
+        degree: edu.degree || '',
+        location: edu.location || '',
+        startDate: startDate,
+        endDate: endDate,
+        description: edu.description || '',
+        gpa: edu.gpa || ''
+      };
+    });
+    
     return {
       method: 'ml',
       confidence: 0.9,
       personalInfo: results.personalInfo,
-      education: results.education,
-      experience: results.experience || [],
+      education: transformedEducation,
+      experience: transformedExperience,
       skills: results.skills,
       certifications: results.certifications || [],
       projects: results.projects || [],
