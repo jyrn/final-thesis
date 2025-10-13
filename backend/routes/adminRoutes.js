@@ -14,6 +14,7 @@ const { adminMiddleware, superAdminMiddleware } = require('../middleware/adminMi
 const admin = require('../config/firebase');
 const pdfReportService = require('../services/pdfReportService');
 const xlsxReportService = require('../services/xlsxReportService');
+const csvReportService = require('../services/csvReportService');
 
 // Admin login endpoint - Firebase Auth integration
 router.post('/login', verifyToken, async (req, res) => {
@@ -471,17 +472,26 @@ router.get('/applications', verifyToken, adminMiddleware, async (req, res) => {
 // Update job status (activate/deactivate/remove)
 router.put('/jobs/:jobId/status', verifyToken, adminMiddleware, async (req, res) => {
   try {
+    console.log(`🔧 Admin job status update request - JobID: ${req.params.jobId}, Status: ${req.body.status}`);
+    
     const { jobId } = req.params;
     const { status, reason } = req.body;
 
+    console.log(`🔍 Looking for job with ID: ${jobId}`);
     const job = await Job.findById(jobId);
     if (!job) {
+      console.log(`❌ Job not found: ${jobId}`);
       return res.status(404).json({ 
         success: false, 
         message: 'Job not found' 
       });
     }
+    
+    console.log(`✅ Job found: ${job.title} - Current status: ${job.status}`);
 
+    // Store original status to check if we need to send email
+    const originalStatus = job.status;
+    
     job.status = status;
     if (reason) {
       job.adminNotes = reason;
@@ -489,18 +499,99 @@ router.put('/jobs/:jobId/status', verifyToken, adminMiddleware, async (req, res)
     job.lastModifiedBy = req.user.uid;
     job.updatedAt = new Date();
 
+    console.log(`💾 Saving job with new status: ${status}`);
     await job.save();
+    console.log(`✅ Job saved successfully`);
 
+    // Send email notification based on status change
+    if (originalStatus !== status) {
+      console.log(`📧 Job status changed from ${originalStatus} to ${status}, preparing email notification...`);
+      try {
+        const emailService = require('../services/emailService');
+        
+        // Get employer information
+        let employerEmail = null;
+        let companyName = job.companyName || 'Unknown Company';
+        
+        console.log(`🔍 Looking for employer info - EmployerUID: ${job.employerUid}, EmployerID: ${job.employerId}`);
+        
+        if (job.employerUid) {
+          // Find employer by UID
+          const Employer = require('../models/Employer');
+          const employer = await Employer.findOne({ uid: job.employerUid });
+          if (employer) {
+            employerEmail = employer.email;
+            companyName = employer.companyName || job.companyName || 'Unknown Company';
+            console.log(`✅ Found employer by UID: ${employerEmail}`);
+          } else {
+            console.log(`❌ No employer found with UID: ${job.employerUid}`);
+          }
+        }
+        
+        // If still no email, try finding by employerId
+        if (!employerEmail && job.employerId) {
+          const Employer = require('../models/Employer');
+          const employer = await Employer.findById(job.employerId);
+          if (employer) {
+            employerEmail = employer.email;
+            companyName = employer.companyName || job.companyName || 'Unknown Company';
+            console.log(`✅ Found employer by ID: ${employerEmail}`);
+          } else {
+            console.log(`❌ No employer found with ID: ${job.employerId}`);
+          }
+        }
+        
+        if (employerEmail) {
+          console.log(`📤 Sending ${status} email to: ${employerEmail}`);
+          
+          // Send appropriate email based on status
+          if (status === 'removed') {
+            await emailService.sendJobRemovalEmail(
+              employerEmail,
+              companyName || 'Your Company',
+              job.title,
+              reason
+            );
+            console.log(`📧 Job removal notification sent to ${employerEmail} for job: ${job.title}`);
+          } else if (status === 'paused') {
+            await emailService.sendJobPauseEmail(
+              employerEmail,
+              companyName || 'Your Company',
+              job.title,
+              reason
+            );
+            console.log(`📧 Job pause notification sent to ${employerEmail} for job: ${job.title}`);
+          } else if (status === 'flagged') {
+            await emailService.sendJobFlagEmail(
+              employerEmail,
+              companyName || 'Your Company',
+              job.title,
+              reason
+            );
+            console.log(`📧 Job flag notification sent to ${employerEmail} for job: ${job.title}`);
+          }
+        } else {
+          console.log(`⚠️ Could not send job ${status} email - employer email not found for job: ${job.title}`);
+        }
+      } catch (emailError) {
+        console.error(`❌ Error sending job ${status} email:`, emailError);
+        // Don't fail the request if email fails
+      }
+    }
+
+    console.log(`🎉 Job status update completed successfully`);
     res.json({
       success: true,
-      message: `Job status updated to ${status}`
+      message: `Job status updated to ${status}${status === 'removed' ? '. Employer has been notified.' : ''}`
     });
 
   } catch (error) {
-    console.error('Job status update error:', error);
+    console.error('❌ Job status update error:', error);
+    console.error('Error stack:', error.stack);
     res.status(500).json({ 
       success: false, 
-      message: 'Error updating job status' 
+      message: 'Error updating job status',
+      error: error.message
     });
   }
 });
@@ -702,99 +793,6 @@ router.post('/admins', verifyToken, superAdminMiddleware, async (req, res) => {
   }
 });
 
-// Admin only: Update admin user
-router.put('/users/:userId', verifyToken, superAdminMiddleware, async (req, res) => {
-  try {
-    const { userId } = req.params;
-    const { email, adminName, department, role, adminLevel } = req.body;
-
-    // Find admin in Admin collection
-    const adminUser = await Admin.findOne({ uid: userId });
-    if (!adminUser) {
-      return res.status(404).json({ 
-        success: false, 
-        message: 'Admin user not found' 
-      });
-    }
-
-    // Check if email is being changed and if it already exists
-    if (email && email.toLowerCase() !== adminUser.email) {
-      const existingAdmin = await Admin.findOne({ email: email.toLowerCase() });
-      if (existingAdmin) {
-        return res.status(400).json({ 
-          success: false, 
-          message: 'Email already exists' 
-        });
-      }
-
-      // Update email in Firebase
-      try {
-        await admin.auth().updateUser(userId, {
-          email: email.toLowerCase()
-        });
-      } catch (firebaseError) {
-        console.error('❌ Firebase email update failed:', firebaseError);
-        return res.status(500).json({ 
-          success: false, 
-          message: 'Failed to update email in Firebase: ' + firebaseError.message 
-        });
-      }
-    }
-
-    // Update admin in MongoDB
-    if (email) adminUser.email = email.toLowerCase();
-    if (adminName) adminUser.adminName = adminName;
-    if (department !== undefined) adminUser.department = department;
-    if (role) {
-      adminUser.role = role;
-      adminUser.adminLevel = role;
-    }
-    if (adminLevel) {
-      adminUser.adminLevel = adminLevel;
-      adminUser.role = adminLevel;
-    }
-
-    adminUser.updatedAt = new Date();
-    await adminUser.save();
-
-    // Also update in User collection for backward compatibility
-    await User.updateOne(
-      { uid: userId },
-      {
-        $set: {
-          email: adminUser.email,
-          adminName: adminUser.adminName,
-          department: adminUser.department,
-          role: adminUser.role,
-          adminLevel: adminUser.adminLevel,
-          updatedAt: new Date()
-        }
-      }
-    );
-
-    res.json({
-      success: true,
-      message: 'Admin user updated successfully',
-      admin: {
-        uid: adminUser.uid,
-        email: adminUser.email,
-        role: adminUser.role,
-        adminName: adminUser.adminName,
-        adminLevel: adminUser.adminLevel,
-        department: adminUser.department,
-        isActive: adminUser.isActive,
-        updatedAt: adminUser.updatedAt
-      }
-    });
-
-  } catch (error) {
-    console.error('Admin update error:', error);
-    res.status(500).json({ 
-      success: false, 
-      message: 'Error updating admin user: ' + error.message 
-    });
-  }
-});
 
 // Get all pending documents for admin review
 router.get('/documents/pending', verifyToken, adminMiddleware, async (req, res) => {
@@ -1126,8 +1124,10 @@ router.get('/users', verifyToken, superAdminMiddleware, async (req, res) => {
 router.put('/users/:userId', verifyToken, superAdminMiddleware, async (req, res) => {
   try {
     const { userId } = req.params;
-    const { role, isActive, canLogin, registrationStatus, adminLevel, department, adminName } = req.body;
+    const { role, isActive, canLogin, registrationStatus, adminLevel, department, adminName, status } = req.body;
 
+    console.log(`🔧 Admin user status update request - UserID: ${userId}, Status: ${status || 'N/A'}`);
+    console.log('📦 Full request body:', req.body);
 
     const updateData = {};
     if (role !== undefined) updateData.role = role;
@@ -1137,21 +1137,68 @@ router.put('/users/:userId', verifyToken, superAdminMiddleware, async (req, res)
     if (adminLevel !== undefined) updateData.adminLevel = adminLevel;
     if (department !== undefined) updateData.department = department;
     if (adminName !== undefined) updateData.adminName = adminName;
+    if (status !== undefined) {
+      updateData.status = status;
+      // Set suspension timestamp when suspending
+      if (status === 'inactive') {
+        updateData.suspendedAt = new Date();
+      }
+      // Clear suspension timestamp when reactivating
+      if (status === 'active') {
+        updateData.suspendedAt = null;
+      }
+    }
+
+    console.log('🔄 Update data prepared:', updateData);
+
+    // Store original user data for email notification
+    let originalUser = null;
+
+    // Try to find user first to get original data
+    originalUser = await Admin.findOne({ uid: userId });
+    if (!originalUser) {
+      originalUser = await User.findOne({ uid: userId });
+    }
+
+    if (!originalUser) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found'
+      });
+    }
+
+    console.log(`✅ User found: ${originalUser.email} - Current status: ${originalUser.status || 'active'}`);
 
     // Try to update in Admin collection first
-    let user = await Admin.findByIdAndUpdate(
-      userId,
+    console.log(`🔍 Searching Admin collection for uid: ${userId}`);
+    let user = await Admin.findOneAndUpdate(
+      { uid: userId },
       updateData,
       { new: true, runValidators: true }
     );
+    
+    console.log(`🔍 Admin collection result:`, user ? 'Found and updated' : 'Not found');
 
     // If not found in Admin collection, try User collection
     if (!user) {
-      user = await User.findByIdAndUpdate(
-        userId,
+      console.log(`🔍 Searching User collection for uid: ${userId}`);
+      user = await User.findOneAndUpdate(
+        { uid: userId },
         updateData,
         { new: true, runValidators: true }
       );
+      console.log(`🔍 User collection result:`, user ? 'Found and updated' : 'Not found');
+      
+      if (user) {
+        console.log(`📋 Updated user data:`, {
+          uid: user.uid,
+          email: user.email,
+          role: user.role,
+          status: user.status,
+          firstName: user.firstName,
+          lastName: user.lastName
+        });
+      }
     }
 
     if (!user) {
@@ -1161,10 +1208,62 @@ router.put('/users/:userId', verifyToken, superAdminMiddleware, async (req, res)
       });
     }
 
+    console.log(`💾 User updated successfully with new status: ${user.status || 'active'}`);
+
+    // Send email notification for jobseeker status changes
+    const originalStatus = originalUser.status || 'active';
+    const newStatus = user.status || 'active';
+    
+    // For suspension, always send email if suspendedAt was updated (even if status didn't change)
+    const wasSuspended = updateData.suspendedAt !== undefined;
+    const shouldSendEmail = (originalStatus !== newStatus || wasSuspended) && user.role === 'jobseeker';
+    
+    console.log(`🔍 Email notification check:`, {
+      originalStatus,
+      newStatus,
+      userRole: user.role,
+      statusChanged: originalStatus !== newStatus,
+      wasSuspended,
+      isJobseeker: user.role === 'jobseeker',
+      shouldSendEmail
+    });
+    
+    if (shouldSendEmail) {
+      console.log(`📧 Jobseeker status changed from ${originalStatus} to ${newStatus}, preparing email notification...`);
+      
+      try {
+        const emailService = require('../services/emailService');
+        const userEmail = user.email;
+        const userName = `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.email;
+        
+        console.log(`📤 Sending ${newStatus} email to: ${userEmail}`);
+        
+        if (newStatus === 'removed') {
+          await emailService.sendJobseekerRemovalEmail(
+            userEmail,
+            userName,
+            'Your account has been removed by the administrator for policy compliance or security reasons.'
+          );
+          console.log(`📧 Jobseeker removal notification sent to ${userEmail}`);
+        } else if (newStatus === 'inactive') {
+          await emailService.sendJobseekerSuspensionEmail(
+            userEmail,
+            userName,
+            'Your account has been suspended due to inactivity (no login for over 1 year). Simply log in to reactivate.'
+          );
+          console.log(`📧 Jobseeker suspension notification sent to ${userEmail}`);
+        }
+      } catch (emailError) {
+        console.error(`❌ Error sending jobseeker ${newStatus} email:`, emailError);
+        // Don't fail the request if email fails
+      }
+    }
+
+    console.log(`🎉 User status update completed successfully`);
 
     res.json({
       success: true,
-      message: 'User updated successfully',
+      message: `User updated successfully${newStatus !== originalStatus && user.role === 'jobseeker' ? '. User has been notified via email.' : ''}`,
       user: {
         _id: user._id,
         uid: user.uid,
@@ -1175,15 +1274,18 @@ router.put('/users/:userId', verifyToken, superAdminMiddleware, async (req, res)
         department: user.department,
         isActive: user.isActive,
         canLogin: user.canLogin,
-        registrationStatus: user.registrationStatus
+        registrationStatus: user.registrationStatus,
+        status: user.status
       }
     });
 
   } catch (error) {
-    console.error('User update error:', error);
+    console.error('❌ User update error:', error);
+    console.error('Error stack:', error.stack);
     res.status(500).json({ 
       success: false, 
-      message: 'Error updating user' 
+      message: 'Error updating user',
+      error: error.message
     });
   }
 });
@@ -1319,140 +1421,195 @@ router.post('/reports/generate', verifyToken, superAdminMiddleware, async (req, 
     end.setHours(23, 59, 59, 999); // Include the entire end date
     
     switch (reportType) {
-      case 'dashboard-overview':
-        // Complete dashboard overview with all key metrics
-        const [overviewUsers, overviewEmployers, overviewJobseekers, overviewJobs, overviewApplications, overviewPendingEmployers, overviewActiveJobs] = await Promise.all([
-          User.countDocuments({ createdAt: { $gte: start, $lte: end } }),
-          User.countDocuments({ role: 'employer', createdAt: { $gte: start, $lte: end } }),
-          User.countDocuments({ role: 'jobseeker', createdAt: { $gte: start, $lte: end } }),
-          Job.countDocuments({ createdAt: { $gte: start, $lte: end } }),
-          Application.countDocuments({ createdAt: { $gte: start, $lte: end } }),
-          Employer.countDocuments({ accountStatus: 'pending', createdAt: { $gte: start, $lte: end } }),
-          Job.countDocuments({ status: 'active', createdAt: { $gte: start, $lte: end } })
-        ]);
-        
-        reportData = {
-          summary: { 
-            totalUsers: overviewUsers, 
-            totalEmployers: overviewEmployers, 
-            totalJobseekers: overviewJobseekers,
-            totalJobs: overviewJobs, 
-            totalApplications: overviewApplications,
-            pendingEmployers: overviewPendingEmployers,
-            activeJobs: overviewActiveJobs
-          },
-          details: includeDetails ? await User.find({ 
-            createdAt: { $gte: start, $lte: end } 
-          }).select('email role createdAt isActive lastLoginAt') : []
-        };
-        break;
-
-      case 'employer-verification':
-        const [pendingVerification, verifiedEmployersCount, rejectedEmployersCount, totalDocuments] = await Promise.all([
-          Employer.countDocuments({ 
-            accountStatus: 'pending',
-            createdAt: { $gte: start, $lte: end }
-          }),
-          Employer.countDocuments({ 
-            accountStatus: 'verified',
-            verifiedAt: { $gte: start, $lte: end }
-          }),
-          Employer.countDocuments({ 
-            accountStatus: 'rejected',
-            updatedAt: { $gte: start, $lte: end }
-          }),
-          EmployerDocument.countDocuments({ 
-            uploadedAt: { $gte: start, $lte: end }
-          })
-        ]);
-        
-        reportData = {
-          summary: { 
-            pendingVerification, 
-            verifiedEmployers: verifiedEmployersCount, 
-            rejectedEmployers: rejectedEmployersCount,
-            totalDocuments,
-            approvalRate: verifiedEmployersCount > 0 ? ((verifiedEmployersCount / (verifiedEmployersCount + rejectedEmployersCount)) * 100).toFixed(2) : 0
-          },
-          details: includeDetails ? await Employer.find({
-            $or: [
-              { accountStatus: 'pending', createdAt: { $gte: start, $lte: end } },
-              { accountStatus: 'verified', verifiedAt: { $gte: start, $lte: end } },
-              { accountStatus: 'rejected', updatedAt: { $gte: start, $lte: end } }
-            ]
-          }).populate('userId', 'email companyName') : []
-        };
-        break;
-
-      case 'employer-documents':
-        const documentStats = await EmployerDocument.aggregate([
-          { $match: { uploadedAt: { $gte: start, $lte: end } } },
-          {
-            $group: {
-              _id: '$verificationStatus',
-              count: { $sum: 1 }
-            }
-          }
-        ]);
-        
-        const docSummary = {
-          totalDocuments: documentStats.reduce((sum, stat) => sum + stat.count, 0),
-          pendingDocs: documentStats.find(s => s._id === 'pending')?.count || 0,
-          approvedDocs: documentStats.find(s => s._id === 'approved')?.count || 0,
-          rejectedDocs: documentStats.find(s => s._id === 'rejected')?.count || 0
-        };
-        
-        reportData = {
-          summary: docSummary,
-          details: includeDetails ? await EmployerDocument.find({ 
-            uploadedAt: { $gte: start, $lte: end } 
-          }).populate('employerUid', 'companyName email') : []
-        };
-        break;
-
-      case 'jobseekers-summary':
-        const [totalJobseekers, activeJobseekers, jobseekersWithResumes] = await Promise.all([
-          User.countDocuments({ role: 'jobseeker', createdAt: { $gte: start, $lte: end } }),
-          User.countDocuments({ 
-            role: 'jobseeker', 
+      case 'registered-jobseekers':
+        // Registered Jobseekers Report - Total registered jobseekers, demographics, profile completeness, and activity status
+        const [totalJobseekers, activeJobseekers, profileCompleteJobseekers, jobseekersWithResumes, jobseekersByGender, jobseekersByAge] = await Promise.all([
+          JobSeeker.countDocuments({ createdAt: { $gte: start, $lte: end } }),
+          JobSeeker.countDocuments({ 
             isActive: true, 
-            lastLoginAt: { $gte: start, $lte: end } 
+            createdAt: { $gte: start, $lte: end } 
           }),
-          Resume.countDocuments({ createdAt: { $gte: start, $lte: end } })
+          JobSeeker.countDocuments({ 
+            profileComplete: true,
+            createdAt: { $gte: start, $lte: end } 
+          }),
+          JobSeeker.countDocuments({ 
+            currentResumeId: { $exists: true, $ne: null },
+            createdAt: { $gte: start, $lte: end } 
+          }),
+          JobSeeker.aggregate([
+            { $match: { createdAt: { $gte: start, $lte: end } } },
+            { $group: { _id: '$gender', count: { $sum: 1 } } }
+          ]),
+          JobSeeker.aggregate([
+            { $match: { 
+              createdAt: { $gte: start, $lte: end },
+              dateOfBirth: { $exists: true, $ne: null }
+            }},
+            { 
+              $addFields: {
+                age: {
+                  $floor: {
+                    $divide: [
+                      { $subtract: [new Date(), '$dateOfBirth'] },
+                      365.25 * 24 * 60 * 60 * 1000
+                    ]
+                  }
+                }
+              }
+            },
+            {
+              $group: {
+                _id: {
+                  $switch: {
+                    branches: [
+                      { case: { $lt: ['$age', 25] }, then: '18-24' },
+                      { case: { $lt: ['$age', 35] }, then: '25-34' },
+                      { case: { $lt: ['$age', 45] }, then: '35-44' },
+                      { case: { $lt: ['$age', 55] }, then: '45-54' }
+                    ],
+                    default: '55+'
+                  }
+                },
+                count: { $sum: 1 }
+              }
+            }
+          ])
         ]);
         
         reportData = {
           summary: { 
             totalJobseekers, 
             activeJobseekers, 
+            profileCompleteJobseekers,
             jobseekersWithResumes,
-            resumeCompletionRate: totalJobseekers > 0 ? ((jobseekersWithResumes / totalJobseekers) * 100).toFixed(2) : 0
+            profileCompletionRate: totalJobseekers > 0 ? ((profileCompleteJobseekers / totalJobseekers) * 100).toFixed(2) : 0,
+            activityRate: totalJobseekers > 0 ? ((activeJobseekers / totalJobseekers) * 100).toFixed(2) : 0,
+            resumeUploadRate: totalJobseekers > 0 ? ((jobseekersWithResumes / totalJobseekers) * 100).toFixed(2) : 0
           },
-          details: includeDetails ? await User.find({ 
-            role: 'jobseeker',
-            createdAt: { $gte: start, $lte: end } 
-          }).select('email createdAt isActive lastLoginAt') : []
+          demographics: {
+            byGender: jobseekersByGender,
+            byAge: jobseekersByAge
+          },
+          registrationTrends: await JobSeeker.aggregate([
+            { $match: { createdAt: { $gte: start, $lte: end } } },
+            {
+              $group: {
+                _id: {
+                  year: { $year: '$createdAt' },
+                  month: { $month: '$createdAt' },
+                  day: { $dayOfMonth: '$createdAt' }
+                },
+                count: { $sum: 1 }
+              }
+            },
+            { $sort: { '_id.year': 1, '_id.month': 1, '_id.day': 1 } }
+          ]),
+          details: includeDetails ? await JobSeeker.aggregate([
+            { $match: { createdAt: { $gte: start, $lte: end } } },
+            {
+              $lookup: {
+                from: 'applications',
+                localField: '_id',
+                foreignField: 'jobSeekerId',
+                as: 'applications'
+              }
+            },
+            {
+              $lookup: {
+                from: 'resumes',
+                localField: '_id',
+                foreignField: 'jobSeekerId',
+                as: 'resume'
+              }
+            },
+            {
+              $lookup: {
+                from: 'users',
+                localField: 'userId',
+                foreignField: '_id',
+                as: 'userId'
+              }
+            },
+            { $unwind: { path: '$userId', preserveNullAndEmptyArrays: true } },
+            { $unwind: { path: '$resume', preserveNullAndEmptyArrays: true } },
+            {
+              $project: {
+                email: 1,
+                firstName: 1,
+                lastName: 1,
+                phoneNumber: { 
+                  $ifNull: ['$phoneNumber', '$resume.personalInfo.phone'] 
+                },
+                dateOfBirth: { 
+                  $ifNull: ['$dateOfBirth', '$resume.personalInfo.birthday'] 
+                },
+                createdAt: 1,
+                isActive: 1,
+                applications: { $size: '$applications' },
+                'userId.lastLoginAt': 1
+              }
+            }
+          ]) : []
         };
         break;
 
-      case 'jobseeker-resumes':
-        const resumeStats = await Resume.aggregate([
-          { $match: { createdAt: { $gte: start, $lte: end } } },
-          {
-            $group: {
-              _id: null,
-              totalResumes: { $sum: 1 },
-              avgSkillsCount: { $avg: { $size: { $ifNull: ['$skills', []] } } },
-              avgExperienceCount: { $avg: { $size: { $ifNull: ['$workExperience', []] } } }
-            }
-          }
+      case 'employers-companies':
+        // Employers/Companies Report - Registered employers, company profiles, verification status, and activity metrics
+        const [totalEmployers, verifiedEmployers, pendingEmployers, rejectedEmployers, activeEmployers, employersByIndustry] = await Promise.all([
+          User.countDocuments({ role: 'employer', createdAt: { $gte: start, $lte: end } }),
+          Employer.countDocuments({ 
+            accountStatus: 'verified',
+            verifiedAt: { $gte: start, $lte: end }
+          }),
+          Employer.countDocuments({ 
+            accountStatus: 'pending',
+            createdAt: { $gte: start, $lte: end }
+          }),
+          Employer.countDocuments({ 
+            accountStatus: 'rejected',
+            updatedAt: { $gte: start, $lte: end }
+          }),
+          User.countDocuments({ 
+            role: 'employer', 
+            isActive: true, 
+            lastLoginAt: { $gte: start, $lte: end } 
+          }),
+          Employer.aggregate([
+            { $match: { createdAt: { $gte: start, $lte: end } } },
+            { $group: { _id: '$industry', count: { $sum: 1 } } },
+            { $sort: { count: -1 } }
+          ])
         ]);
         
         reportData = {
-          summary: resumeStats[0] || { totalResumes: 0, avgSkillsCount: 0, avgExperienceCount: 0 },
-          details: includeDetails ? await Resume.find({ 
-            createdAt: { $gte: start, $lte: end } 
-          }).select('jobSeekerUid personalInfo skills workExperience education createdAt') : []
+          summary: { 
+            totalEmployers,
+            verifiedEmployers, 
+            pendingEmployers,
+            rejectedEmployers,
+            activeEmployers,
+            verificationRate: totalEmployers > 0 ? ((verifiedEmployers / totalEmployers) * 100).toFixed(2) : 0,
+            activityRate: totalEmployers > 0 ? ((activeEmployers / totalEmployers) * 100).toFixed(2) : 0
+          },
+          industryDistribution: employersByIndustry,
+          registrationTrends: await User.aggregate([
+            { $match: { role: 'employer', createdAt: { $gte: start, $lte: end } } },
+            {
+              $group: {
+                _id: {
+                  year: { $year: '$createdAt' },
+                  month: { $month: '$createdAt' },
+                  day: { $dayOfMonth: '$createdAt' }
+                },
+                count: { $sum: 1 }
+              }
+            },
+            { $sort: { '_id.year': 1, '_id.month': 1, '_id.day': 1 } }
+          ]),
+          details: includeDetails ? await Employer.find({
+            createdAt: { $gte: start, $lte: end }
+          }).populate('userId', 'email isActive lastLoginAt').select('companyName industry accountStatus verifiedAt createdAt') : []
         };
         break;
 
@@ -1482,228 +1639,68 @@ router.post('/reports/generate', verifyToken, superAdminMiddleware, async (req, 
           { $limit: 20 }
         ]);
         
+        const jobPostingsCount = await Job.countDocuments({ createdAt: { $gte: start, $lte: end } });
+
         reportData = {
           summary: { 
             totalJobCategories: jobDemandData.length,
             mostDemandedJob: jobDemandData[0]?._id?.title || 'N/A',
-            totalJobPostings: jobDemandData.reduce((sum, job) => sum + job.totalPostings, 0)
+            totalJobPostings: jobPostingsCount,
+            totalApplications: jobDemandData.reduce((sum, job) => sum + job.totalApplications, 0),
+            avgApplicationsPerJob: jobDemandData.length > 0 ? (jobDemandData.reduce((sum, job) => sum + job.avgApplicationsPerJob, 0) / jobDemandData.length).toFixed(2) : 0
           },
-          trends: jobDemandData,
-          details: includeDetails ? jobDemandData : []
+          jobDemandTrends: jobDemandData,
+          industryTrends: await Job.aggregate([
+            { $match: { createdAt: { $gte: start, $lte: end } } },
+            { $group: { _id: '$department', count: { $sum: 1 } } },
+            { $sort: { count: -1 } }
+          ]),
+          details: includeDetails ? await Job.aggregate([
+            { $match: { createdAt: { $gte: start, $lte: end } } },
+            {
+              $lookup: {
+                from: 'applications',
+                localField: '_id',
+                foreignField: 'jobId',
+                as: 'applications'
+              }
+            },
+            {
+              $project: {
+                title: 1,
+                companyName: 1,
+                totalApplications: { $size: '$applications' },
+                createdAt: 1
+              }
+            },
+            { $sort: { totalApplications: -1, createdAt: -1 } }
+          ]) : []
         };
         break;
 
-      case 'compliance-overview':
-        const complianceStats = await Promise.all([
-          Employer.countDocuments({ accountStatus: 'verified' }),
-          EmployerDocument.countDocuments({ verificationStatus: 'approved' }),
-          Job.countDocuments({ status: 'active' }),
-          User.countDocuments({ isActive: true })
-        ]);
-        
-        reportData = {
-          summary: {
-            verifiedEmployers: complianceStats[0],
-            approvedDocuments: complianceStats[1],
-            activeJobs: complianceStats[2],
-            activeUsers: complianceStats[3],
-            complianceScore: ((complianceStats[0] + complianceStats[1]) / (complianceStats[0] + complianceStats[1] + complianceStats[2]) * 100).toFixed(2)
-          }
-        };
-        break;
-
-      case 'admin-activity':
-        const adminStats = await Admin.aggregate([
-          { $match: { lastLogin: { $gte: start, $lte: end } } },
-          {
-            $group: {
-              _id: '$role',
-              count: { $sum: 1 },
-              lastActive: { $max: '$lastLogin' }
-            }
-          }
-        ]);
-        
-        reportData = {
-          summary: {
-            totalAdmins: adminStats.reduce((sum, stat) => sum + stat.count, 0),
-            admins: adminStats.find(s => s._id === 'admin')?.count || 0,
-            pesoStaff: adminStats.find(s => s._id === 'pesostaff')?.count || 0
-          },
-          details: includeDetails ? await Admin.find({ 
-            lastLogin: { $gte: start, $lte: end } 
-          }).select('email role lastLogin department isActive') : []
-        };
-        break;
-
-      case 'admin-permissions':
-        const permissionStats = await Admin.aggregate([
-          {
-            $group: {
-              _id: '$role',
-              count: { $sum: 1 },
-              permissions: { $push: '$permissions' }
-            }
-          }
-        ]);
-        
-        reportData = {
-          summary: {
-            totalAdminRoles: permissionStats.length,
-            adminsByRole: permissionStats
-          },
-          details: includeDetails ? await Admin.find({}).select('email role permissions department isActive createdAt') : []
-        };
-        break;
-
-      case 'system-settings':
-        const systemConfig = {
-          databaseStatus: 'Connected',
-          serverUptime: process.uptime(),
-          memoryUsage: process.memoryUsage(),
-          nodeVersion: process.version,
-          environment: process.env.NODE_ENV || 'development'
-        };
-        
-        reportData = {
-          summary: systemConfig
-        };
-        break;
-
-      case 'user-summary':
-        const [totalUsers, jobseekers, employers, activeUsers] = await Promise.all([
-          User.countDocuments({ createdAt: { $gte: start, $lte: end } }),
-          User.countDocuments({ role: 'jobseeker', createdAt: { $gte: start, $lte: end } }),
-          User.countDocuments({ role: 'employer', createdAt: { $gte: start, $lte: end } }),
-          User.countDocuments({ 
-            isActive: true, 
-            lastLoginAt: { $gte: start, $lte: end } 
-          })
-        ]);
-        
-        reportData = {
-          summary: { totalUsers, jobseekers, employers, activeUsers },
-          details: includeDetails ? await User.find({ 
-            createdAt: { $gte: start, $lte: end } 
-          }).select('email role createdAt isActive lastLoginAt') : []
-        };
-        break;
-        
-      case 'user-registration':
-        const registrationsByDay = await User.aggregate([
-          { $match: { createdAt: { $gte: start, $lte: end } } },
-          {
-            $group: {
-              _id: {
-                year: { $year: '$createdAt' },
-                month: { $month: '$createdAt' },
-                day: { $dayOfMonth: '$createdAt' },
-                role: '$role'
-              },
-              count: { $sum: 1 }
-            }
-          },
-          { $sort: { '_id.year': 1, '_id.month': 1, '_id.day': 1 } }
-        ]);
-        
-        reportData = {
-          summary: { totalRegistrations: registrationsByDay.length },
-          registrationTrends: registrationsByDay
-        };
-        break;
-        
       case 'job-postings':
-        const [totalJobs, activeJobs, expiredJobs] = await Promise.all([
+        // Job Postings Report - All job postings with status, categories, salary ranges, and success rates
+        const [totalJobPostings, activeJobPostings, expiredJobPostings, jobsByStatus, jobsByDepartment, avgSalaryByDept] = await Promise.all([
           Job.countDocuments({ createdAt: { $gte: start, $lte: end } }),
-          Job.countDocuments({ 
-            status: 'active', 
-            createdAt: { $gte: start, $lte: end } 
-          }),
-          Job.countDocuments({ 
-            status: 'expired', 
-            createdAt: { $gte: start, $lte: end } 
-          })
+          Job.countDocuments({ status: 'active', createdAt: { $gte: start, $lte: end } }),
+          Job.countDocuments({ status: 'expired', createdAt: { $gte: start, $lte: end } }),
+          Job.aggregate([
+            { $match: { createdAt: { $gte: start, $lte: end } } },
+            { $group: { _id: '$status', count: { $sum: 1 } } }
+          ]),
+          Job.aggregate([
+            { $match: { createdAt: { $gte: start, $lte: end } } },
+            { $group: { _id: '$department', count: { $sum: 1 } } },
+            { $sort: { count: -1 } }
+          ]),
+          Job.aggregate([
+            { $match: { createdAt: { $gte: start, $lte: end }, salary: { $exists: true, $ne: null } } },
+            { $group: { _id: '$department', avgSalary: { $avg: '$salary' }, jobCount: { $sum: 1 } } },
+            { $sort: { avgSalary: -1 } }
+          ])
         ]);
-        
-        reportData = {
-          summary: { totalJobs, activeJobs, expiredJobs },
-          details: includeDetails ? await Job.find({ 
-            createdAt: { $gte: start, $lte: end } 
-          }).populate('employerUid', 'email companyName') : []
-        };
-        break;
-        
-      case 'application-summary':
-        const [totalApplications, pendingApps, acceptedApps, rejectedApps] = await Promise.all([
-          Application.countDocuments({ createdAt: { $gte: start, $lte: end } }),
-          Application.countDocuments({ 
-            status: 'pending', 
-            createdAt: { $gte: start, $lte: end } 
-          }),
-          Application.countDocuments({ 
-            status: 'accepted', 
-            createdAt: { $gte: start, $lte: end } 
-          }),
-          Application.countDocuments({ 
-            status: 'rejected', 
-            createdAt: { $gte: start, $lte: end } 
-          })
-        ]);
-        
-        reportData = {
-          summary: { totalApplications, pendingApps, acceptedApps, rejectedApps },
-          details: includeDetails ? await Application.find({ 
-            createdAt: { $gte: start, $lte: end } 
-          }).populate('jobId', 'title').populate('jobseekerId', 'email') : []
-        };
-        break;
-        
-      case 'system-health':
-        const systemStats = await Promise.all([
-          User.countDocuments(),
-          Job.countDocuments(),
-          Application.countDocuments(),
-          Employer.countDocuments({ accountStatus: 'pending' })
-        ]);
-        
-        reportData = {
-          summary: {
-            totalUsers: systemStats[0],
-            totalJobs: systemStats[1],
-            totalApplications: systemStats[2],
-            pendingVerifications: systemStats[3],
-            systemUptime: process.uptime(),
-            memoryUsage: process.memoryUsage(),
-            generatedAt: new Date()
-          }
-        };
-        break;
-        
-      case 'user-activity':
-        const activityStats = await User.aggregate([
-          { $match: { lastLoginAt: { $gte: start, $lte: end } } },
-          {
-            $group: {
-              _id: '$role',
-              activeUsers: { $sum: 1 },
-              avgSessionTime: { $avg: { $subtract: ['$lastLoginAt', '$createdAt'] } }
-            }
-          }
-        ]);
-        
-        reportData = {
-          summary: { 
-            totalActiveUsers: activityStats.reduce((sum, stat) => sum + stat.activeUsers, 0),
-            activityByRole: activityStats
-          },
-          details: includeDetails ? await User.find({ 
-            lastLoginAt: { $gte: start, $lte: end } 
-          }).select('email role lastLoginAt createdAt isActive') : []
-        };
-        break;
-        
-      case 'job-performance':
-        const jobPerformance = await Job.aggregate([
+
+        const jobSuccessRates = await Job.aggregate([
           { $match: { createdAt: { $gte: start, $lte: end } } },
           {
             $lookup: {
@@ -1716,60 +1713,11 @@ router.post('/reports/generate', verifyToken, superAdminMiddleware, async (req, 
           {
             $addFields: {
               applicationCount: { $size: '$applications' },
-              viewToApplicationRatio: {
-                $cond: [
-                  { $gt: ['$viewCount', 0] },
-                  { $divide: [{ $size: '$applications' }, '$viewCount'] },
-                  0
-                ]
-              }
-            }
-          },
-          {
-            $group: {
-              _id: null,
-              totalJobs: { $sum: 1 },
-              totalViews: { $sum: '$viewCount' },
-              totalApplications: { $sum: '$applicationCount' },
-              avgApplicationsPerJob: { $avg: '$applicationCount' },
-              avgViewsPerJob: { $avg: '$viewCount' },
-              avgConversionRate: { $avg: '$viewToApplicationRatio' }
-            }
-          }
-        ]);
-        
-        reportData = {
-          summary: jobPerformance[0] || {},
-          details: includeDetails ? await Job.find({ 
-            createdAt: { $gte: start, $lte: end } 
-          }).populate('employerUid', 'email companyName') : []
-        };
-        break;
-        
-      case 'employer-activity':
-        const employerStats = await User.aggregate([
-          { 
-            $match: { 
-              role: 'employer',
-              createdAt: { $gte: start, $lte: end }
-            }
-          },
-          {
-            $lookup: {
-              from: 'jobs',
-              localField: 'uid',
-              foreignField: 'employerUid',
-              as: 'jobs'
-            }
-          },
-          {
-            $addFields: {
-              jobCount: { $size: '$jobs' },
-              activeJobs: {
+              hiredCount: {
                 $size: {
                   $filter: {
-                    input: '$jobs',
-                    cond: { $eq: ['$$this.status', 'active'] }
+                    input: '$applications',
+                    cond: { $eq: ['$$this.status', 'hired'] }
                   }
                 }
               }
@@ -1777,128 +1725,57 @@ router.post('/reports/generate', verifyToken, superAdminMiddleware, async (req, 
           },
           {
             $group: {
-              _id: null,
-              totalEmployers: { $sum: 1 },
-              avgJobsPerEmployer: { $avg: '$jobCount' },
-              totalJobsPosted: { $sum: '$jobCount' },
-              totalActiveJobs: { $sum: '$activeJobs' }
+              _id: '$department',
+              totalJobs: { $sum: 1 },
+              totalApplications: { $sum: '$applicationCount' },
+              totalHired: { $sum: '$hiredCount' },
+              avgApplicationsPerJob: { $avg: '$applicationCount' },
+              successRate: { 
+                $avg: { 
+                  $cond: [
+                    { $gt: ['$applicationCount', 0] },
+                    { $multiply: [{ $divide: ['$hiredCount', '$applicationCount'] }, 100] },
+                    0
+                  ]
+                }
+              }
             }
           }
         ]);
-        
-        reportData = {
-          summary: employerStats[0] || {},
-          details: includeDetails ? await User.find({ 
-            role: 'employer',
-            createdAt: { $gte: start, $lte: end } 
-          }).select('email companyName createdAt isActive') : []
-        };
-        break;
-        
-      case 'application-trends':
-        const applicationTrends = await Application.aggregate([
-          { $match: { createdAt: { $gte: start, $lte: end } } },
-          {
-            $group: {
-              _id: {
-                year: { $year: '$createdAt' },
-                month: { $month: '$createdAt' },
-                status: '$status'
-              },
-              count: { $sum: 1 }
-            }
-          },
-          { $sort: { '_id.year': 1, '_id.month': 1 } }
-        ]);
-        
-        const successRate = await Application.aggregate([
-          { $match: { createdAt: { $gte: start, $lte: end } } },
-          {
-            $group: {
-              _id: '$status',
-              count: { $sum: 1 }
-            }
-          }
-        ]);
-        
-        reportData = {
-          summary: { 
-            applicationTrends: applicationTrends.length,
-            successRateData: successRate
-          },
-          trends: applicationTrends,
-          details: includeDetails ? await Application.find({ 
-            createdAt: { $gte: start, $lte: end } 
-          }).populate('jobId', 'title').populate('jobseekerId', 'email') : []
-        };
-        break;
-        
-      case 'platform-analytics':
-        const platformStats = await Promise.all([
-          User.countDocuments({ createdAt: { $gte: start, $lte: end } }),
-          Job.countDocuments({ createdAt: { $gte: start, $lte: end } }),
-          Application.countDocuments({ createdAt: { $gte: start, $lte: end } }),
-          User.countDocuments({ role: 'jobseeker', createdAt: { $gte: start, $lte: end } }),
-          User.countDocuments({ role: 'employer', createdAt: { $gte: start, $lte: end } })
-        ]);
-        
+
         reportData = {
           summary: {
-            totalUsers: platformStats[0],
-            totalJobs: platformStats[1],
-            totalApplications: platformStats[2],
-            newJobseekers: platformStats[3],
-            newEmployers: platformStats[4],
-            userGrowthRate: platformStats[0] > 0 ? ((platformStats[3] + platformStats[4]) / platformStats[0] * 100).toFixed(2) : 0
-          }
-        };
-        break;
-        
-      case 'revenue-analytics':
-        // For now, basic metrics - can be expanded with actual revenue data
-        const revenueMetrics = await Promise.all([
-          Job.countDocuments({ status: 'active', createdAt: { $gte: start, $lte: end } }),
-          User.countDocuments({ role: 'employer', isActive: true, createdAt: { $gte: start, $lte: end } }),
-          Application.countDocuments({ status: 'accepted', createdAt: { $gte: start, $lte: end } })
-        ]);
-        
-        reportData = {
-          summary: {
-            activeJobPostings: revenueMetrics[0],
-            activeEmployers: revenueMetrics[1],
-            successfulPlacements: revenueMetrics[2],
-            estimatedRevenue: revenueMetrics[0] * 100 // Placeholder calculation
-          }
-        };
-        break;
-        
-      case 'verification-report':
-        const [pendingEmployers, verifiedEmployersLegacy, rejectedEmployersLegacy] = await Promise.all([
-          Employer.countDocuments({ 
-            accountStatus: 'pending',
+            totalJobs: totalJobPostings,
+            activeJobs: activeJobPostings,
+            expiredJobs: expiredJobPostings,
+            jobFillRate: totalJobPostings > 0 ? ((activeJobPostings / totalJobPostings) * 100).toFixed(2) : 0,
+            mostPopularDepartment: jobsByDepartment[0]?._id || 'N/A',
+            highestPayingDepartment: avgSalaryByDept[0]?._id || 'N/A'
+          },
+          statusDistribution: jobsByStatus,
+          departmentDistribution: jobsByDepartment,
+          salaryAnalytics: avgSalaryByDept,
+          successRates: jobSuccessRates,
+          postingTrends: await Job.aggregate([
+            { $match: { createdAt: { $gte: start, $lte: end } } },
+            {
+              $group: {
+                _id: {
+                  year: { $year: '$createdAt' },
+                  month: { $month: '$createdAt' },
+                  day: { $dayOfMonth: '$createdAt' }
+                },
+                count: { $sum: 1 }
+              }
+            },
+            { $sort: { '_id.year': 1, '_id.month': 1, '_id.day': 1 } }
+          ]),
+          details: includeDetails ? await Job.find({
             createdAt: { $gte: start, $lte: end }
-          }),
-          Employer.countDocuments({ 
-            accountStatus: 'verified',
-            verifiedAt: { $gte: start, $lte: end }
-          }),
-          Employer.countDocuments({ 
-            accountStatus: 'rejected',
-            updatedAt: { $gte: start, $lte: end }
-          })
-        ]);
-        
-        reportData = {
-          summary: { pendingEmployers, verifiedEmployers: verifiedEmployersLegacy, rejectedEmployers: rejectedEmployersLegacy },
-          details: includeDetails ? await Employer.find({
-            $or: [
-              { accountStatus: 'pending', createdAt: { $gte: start, $lte: end } },
-              { accountStatus: 'verified', verifiedAt: { $gte: start, $lte: end } },
-              { accountStatus: 'rejected', updatedAt: { $gte: start, $lte: end } }
-            ]
-          }).populate('userId', 'email companyName') : []
+          }).select('title companyName department status salary createdAt expiryDate') : []
         };
         break;
+
         
       default:
         return res.status(400).json({
@@ -1974,6 +1851,29 @@ router.post('/reports/generate', verifyToken, superAdminMiddleware, async (req, 
       }
     }
     
+    // Handle CSV generation
+    if (format === 'csv') {
+      try {
+        const reportName = getReportDisplayName(reportType);
+        const csvBuffer = csvReportService.generateReportCSV(finalReportData, reportName);
+        
+        res.setHeader('Content-Type', 'text/csv');
+        res.setHeader('Content-Disposition', `attachment; filename="${reportName}_${startDate}_to_${endDate}.csv"`);
+        res.setHeader('Content-Length', csvBuffer.length);
+        
+        return res.send(csvBuffer);
+      } catch (csvError) {
+        console.error('CSV generation error:', csvError);
+        // Fallback to JSON response if CSV generation fails
+        return res.json({
+          success: true,
+          report: finalReportData,
+          message: 'Report generated successfully (CSV generation failed, returning JSON)',
+          csvError: csvError.message
+        });
+      }
+    }
+    
     res.json({
       success: true,
       report: finalReportData,
@@ -1988,6 +1888,18 @@ router.post('/reports/generate', verifyToken, superAdminMiddleware, async (req, 
     });
   }
 });
+
+// Helper function to get report display names
+function getReportDisplayName(reportType) {
+  const displayNames = {
+    'registered-jobseekers': 'Registered Jobseekers Report',
+    'employers-companies': 'Employers Companies Report',
+    'job-postings': 'Job Postings Report',
+    'job-demand-analytics': 'Job Demand Analytics Report'
+  };
+  
+  return displayNames[reportType] || reportType.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+}
 
 // Get report history (for future implementation)
 router.get('/reports/history', verifyToken, superAdminMiddleware, async (req, res) => {

@@ -117,7 +117,7 @@ const JobSchema = new mongoose.Schema({
   // Job Status & Management
   status: {
     type: String,
-    enum: ['active', 'paused', 'closed', 'draft'],
+    enum: ['active', 'paused', 'closed', 'draft', 'removed', 'flagged'],
     default: 'active'
   },
   

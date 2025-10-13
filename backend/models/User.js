@@ -60,6 +60,15 @@ const UserSchema = new mongoose.Schema({
     type: Boolean,
     default: true
   },
+  status: {
+    type: String,
+    enum: ['active', 'inactive', 'removed'],
+    default: 'active'
+  },
+  suspendedAt: {
+    type: Date,
+    default: null
+  },
   lastLoginAt: {
     type: Date
   },

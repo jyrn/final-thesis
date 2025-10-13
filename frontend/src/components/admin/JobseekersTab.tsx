@@ -12,7 +12,7 @@ interface Jobseeker {
   phone?: string;
   skills: string[];
   applications: number;
-  status: 'active' | 'inactive';
+  status: 'active' | 'inactive' | 'removed';
   createdAt: string;
   lastActive?: string;
   resume?: {
@@ -34,7 +34,7 @@ const JobseekersTab: React.FC = () => {
   const [totalJobs, setTotalJobs] = useState(0);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const [filterStatus, setFilterStatus] = useState<'all' | 'active' | 'inactive'>('all');
+  const [filterStatus, setFilterStatus] = useState<'all' | 'active' | 'inactive' | 'removed'>('all');
   
   // Pagination and sorting states
   const [currentPage, setCurrentPage] = useState(1);
@@ -95,7 +95,7 @@ const JobseekersTab: React.FC = () => {
   };
 
   const handleStatusFilter = (status: string) => {
-    setFilterStatus(status as 'all' | 'active' | 'inactive');
+    setFilterStatus(status as 'all' | 'active' | 'inactive' | 'removed');
     setCurrentPage(1);
   };
 
@@ -103,7 +103,7 @@ const JobseekersTab: React.FC = () => {
   const handleRemoveJobseeker = (jobseekerId: string) => {
     setConfirmModal({
       show: true,
-      title: 'Remove Jobseeker',
+      title: 'Remove Jobseeker Account',
       message: `This action will permanently remove the jobseeker from the system. This is typically done when:
 
 • The account has been inactive for an extended period and has not responded to reactivation requests.
@@ -111,10 +111,13 @@ const JobseekersTab: React.FC = () => {
 • The account repeatedly violates platform policies despite prior warnings.
 • The account was identified as a duplicate and merged or removed for consistency.
 
-Once removed, the jobseeker account cannot be recovered and all associated data will be lost. The user will be notified of this action.`,
+Once removed, the jobseeker account cannot be recovered and all associated data will be lost. The user will be automatically notified via email about this action.`,
       action: async () => {
         try {
-          await adminService.updateUser(jobseekerId, { status: 'removed' });
+          console.log(`🔧 Removing jobseeker: ${jobseekerId}`);
+          const response = await adminService.updateUser(jobseekerId, { status: 'removed' });
+          console.log('✅ Jobseeker removal response:', response);
+          
           await fetchAllData();
           setConfirmModal(prev => ({ ...prev, show: false }));
           
@@ -122,11 +125,12 @@ Once removed, the jobseeker account cannot be recovered and all associated data 
           setSuccessModal({
             show: true,
             title: 'Jobseeker Removed Successfully',
-            message: 'The jobseeker has been permanently removed from the system. The user has been notified of this action.',
+            message: 'The jobseeker has been permanently removed from the system. An email notification has been sent to the user.',
             icon: '✅'
           });
         } catch (error) {
-          console.error('Error removing jobseeker:', error);
+          console.error('❌ Error removing jobseeker:', error);
+          setConfirmModal(prev => ({ ...prev, show: false }));
           alert('❌ Failed to remove jobseeker. Please try again.');
         }
       },
@@ -138,18 +142,22 @@ Once removed, the jobseeker account cannot be recovered and all associated data 
   const handleSuspendJobseeker = (jobseekerId: string) => {
     setConfirmModal({
       show: true,
-      title: 'Suspend Jobseeker Account',
-      message: `This action will temporarily suspend the jobseeker's account and notify them to reactivate. This is typically done when:
+      title: 'Suspend Inactive Account',
+      message: `This action will suspend the jobseeker's account due to inactivity (no login for over 1 year). 
 
-• The account has been inactive for an extended period and requires reactivation
-• The account shows suspicious or fraudulent activity and needs review
-• The account needs to be reviewed for policy compliance
-• The profile requires verification of information or credentials
+The system will:
+• Mark the account as suspended
+• Send an email notification to the user
+• Allow the user to reactivate by simply logging in again
+• Automatically remove the account if no login occurs within 30 days
 
-The jobseeker will receive an email notification with instructions to reactivate their account. They will have 30 days to reactivate before the account is permanently removed.`,
+This helps maintain database hygiene by managing inactive accounts while giving users a chance to reactivate if needed.`,
       action: async () => {
         try {
-          await adminService.updateUser(jobseekerId, { status: 'inactive' });
+          console.log(`🔧 Suspending jobseeker: ${jobseekerId}`);
+          const response = await adminService.updateUser(jobseekerId, { status: 'inactive' });
+          console.log('✅ Jobseeker suspension response:', response);
+          
           await fetchAllData();
           setConfirmModal(prev => ({ ...prev, show: false }));
           
@@ -157,15 +165,16 @@ The jobseeker will receive an email notification with instructions to reactivate
           setSuccessModal({
             show: true,
             title: 'Account Suspended Successfully',
-            message: 'The jobseeker account has been suspended. The user will receive notification with reactivation instructions.',
+            message: 'The inactive account has been suspended. An email notification has been sent to the user with instructions to reactivate by logging in within 30 days.',
             icon: '⏸️'
           });
         } catch (error) {
-          console.error('Error suspending jobseeker:', error);
+          console.error('❌ Error suspending jobseeker:', error);
+          setConfirmModal(prev => ({ ...prev, show: false }));
           alert('❌ Failed to suspend jobseeker account. Please try again.');
         }
       },
-      actionText: 'Suspend Account',
+      actionText: 'Suspend Inactive Account',
       icon: '⏸️'
     });
   };
@@ -361,7 +370,7 @@ The jobseeker will receive an email notification with instructions to reactivate
           phone: finalResume?.personalInfo?.phone || jobSeekerProfile?.phoneNumber || userProfile?.phone,
           skills: finalResume?.skills || jobSeekerProfile?.skills?.map((s: any) => s.name || s) || [],
           applications: applicationCount,
-          status: (jobSeekerProfile?.isActive === false || userProfile?.disabled || userProfile?.isActive === false) ? 'inactive' : 'active',
+          status: userProfile?.status || jobSeekerProfile?.status || ((jobSeekerProfile?.isActive === false || userProfile?.disabled || userProfile?.isActive === false) ? 'inactive' : 'active'),
           createdAt: jobSeekerProfile?.createdAt || userProfile?.createdAt || finalResume?.createdAt || new Date().toISOString(),
           lastActive: finalResume?.updatedAt || 
                      jobSeekerProfile?.updatedAt || 
@@ -542,6 +551,7 @@ The jobseeker will receive an email notification with instructions to reactivate
               <option value="all">All Status</option>
               <option value="active">Active</option>
               <option value="inactive">Inactive</option>
+              <option value="removed">Removed</option>
             </select>
           </div>
           </div>
@@ -650,7 +660,9 @@ The jobseeker will receive an email notification with instructions to reactivate
                       
                       <td className="status-cell">
                         <div className="jobseeker-status-badge" data-status={jobseeker.status}>
-                          {jobseeker.status?.toUpperCase() || 'UNKNOWN'}
+                          {jobseeker.status === 'active' ? 'ACTIVE' : 
+                           jobseeker.status === 'inactive' ? 'SUSPENDED' : 
+                           jobseeker.status === 'removed' ? 'REMOVED' : 'UNKNOWN'}
                         </div>
                       </td>
                       
@@ -678,17 +690,18 @@ The jobseeker will receive an email notification with instructions to reactivate
                         <div className="action-buttons">
                           <button 
                             onClick={() => handleRemoveJobseeker(jobseeker._id)}
-                            className="action-btn remove-btn"
-                            title="Remove Jobseeker"
+                            className={`action-btn remove-btn ${jobseeker.status === 'removed' ? 'disabled' : ''}`}
+                            title={jobseeker.status === 'removed' ? 'Account already removed' : 'Remove Jobseeker'}
+                            disabled={jobseeker.status === 'removed'}
                           >
-                            Remove
+                            {jobseeker.status === 'removed' ? 'Removed' : 'Remove'}
                           </button>
                           
                           <button 
                             onClick={() => handleSuspendJobseeker(jobseeker._id)}
-                            className="action-btn pause-btn"
-                            title="Suspend Jobseeker"
-                            disabled={jobseeker.status === 'inactive'}
+                            className={`action-btn pause-btn ${jobseeker.status === 'removed' ? 'disabled' : ''}`}
+                            title={jobseeker.status === 'removed' ? 'Account already removed' : 'Suspend inactive account (user can reactivate by logging in)'}
+                            disabled={jobseeker.status === 'removed'}
                           >
                             Suspend
                           </button>
@@ -862,7 +875,9 @@ The jobseeker will receive an email notification with instructions to reactivate
                         <div className="compact-item">
                           <strong>Status:</strong> 
                           <span className={`status-badge ${viewModal.jobseeker.status}`} style={{marginLeft: '0.5rem'}}>
-                            {viewModal.jobseeker.status === 'active' ? 'Active' : 'Inactive'}
+                            {viewModal.jobseeker.status === 'active' ? 'Active' : 
+                             viewModal.jobseeker.status === 'inactive' ? 'Suspended' : 
+                             viewModal.jobseeker.status === 'removed' ? 'Removed' : 'Unknown'}
                           </span>
                         </div>
                         <div className="compact-item">
@@ -925,8 +940,8 @@ The jobseeker will receive an email notification with instructions to reactivate
             {/* Fixed Action Buttons Footer */}
             <div className="view-modal-footer">
               <p className="action-note">
-                <strong>Note:</strong> Suspended accounts will receive notification to reactivate. 
-                Users have 30 days to reactivate before permanent removal.
+                <strong>Note:</strong> All actions will automatically send email notifications to the user. 
+                Suspended accounts have 30 days to reactivate before permanent removal.
               </p>
               <div className="modal-action-buttons">
                 <button 
@@ -935,7 +950,8 @@ The jobseeker will receive an email notification with instructions to reactivate
                     handleRemoveJobseeker(viewModal.jobseeker._id);
                   }}
                   className="modal-action-btn remove-btn"
-                  title="Permanently Remove Account"
+                  title="Permanently Remove Account - User will be notified via email"
+                  disabled={viewModal.jobseeker.status === 'removed'}
                 >
                   Remove Account
                 </button>
@@ -946,8 +962,8 @@ The jobseeker will receive an email notification with instructions to reactivate
                     handleSuspendJobseeker(viewModal.jobseeker._id);
                   }}
                   className="modal-action-btn suspend-btn"
-                  title="Suspend Account - User will be notified to reactivate"
-                  disabled={viewModal.jobseeker.status === 'inactive'}
+                  title="Suspend Account - User will receive reactivation instructions via email"
+                  disabled={viewModal.jobseeker.status === 'inactive' || viewModal.jobseeker.status === 'removed'}
                 >
                   Suspend Account
                 </button>

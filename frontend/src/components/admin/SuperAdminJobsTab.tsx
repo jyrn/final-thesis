@@ -5,7 +5,7 @@ import { HiCheckCircle } from 'react-icons/hi';
 import StatsCard from './StatsCard';
 import adminService from '../../services/adminService';
 import { Job } from '../../types/Job';
-import JobDetailModal from '../jobseeker/JobDetailModal/JobDetailModal';
+import AdminJobDetailModal from './AdminJobDetailModal';
 import './SuperAdminJobsTab.css';
 
 interface SuperAdminJobsTabProps {
@@ -340,7 +340,14 @@ Flagged jobs will be temporarily hidden from jobseekers while under review. The 
             requirements: job.requirements || [],
             benefits: job.benefits || [],
             salary: job.salary || job.salaryRange || 'Competitive',
-            department: job.department || 'Not specified'
+            department: job.department || 'Not specified',
+            companyDetails: job.companyDetails || {
+              name: job.companyName || job.company || 'Unknown Company',
+              description: job.companyDescription || null,
+              industry: job.industry || null,
+              website: job.website || null,
+              size: job.companySize || null
+            }
           };
         });
 
@@ -668,6 +675,7 @@ Flagged jobs will be temporarily hidden from jobseekers while under review. The 
                               onClick={() => handleRemoveJob(String(job.id))}
                               className="action-btn remove-btn"
                               title="Remove Job"
+                              disabled={job.status === 'removed'}
                             >
                               Remove
                             </button>
@@ -676,6 +684,7 @@ Flagged jobs will be temporarily hidden from jobseekers while under review. The 
                               onClick={() => handleFlagJob(String(job.id))}
                               className="action-btn flag-btn"
                               title="Flag Job"
+                              disabled={job.status === 'removed' || job.status === 'flagged'}
                             >
                               Flag
                             </button>
@@ -684,7 +693,7 @@ Flagged jobs will be temporarily hidden from jobseekers while under review. The 
                               onClick={() => handlePauseJob(String(job.id))}
                               className="action-btn pause-btn"
                               title="Pause Job"
-                              disabled={job.status === 'paused'}
+                              disabled={job.status === 'paused' || job.status === 'removed'}
                             >
                               Pause
                             </button>
@@ -749,15 +758,10 @@ Flagged jobs will be temporarily hidden from jobseekers while under review. The 
 
     {/* Job Details Modal - Rendered at document root using Portal */}
     {showJobModal && selectedJob && createPortal(
-      <JobDetailModal
+      <AdminJobDetailModal
         job={selectedJob}
         isOpen={showJobModal}
         onClose={closeJobModal}
-        onApply={(jobId) => {
-          // Admin view - no apply functionality needed
-          console.log('Admin viewing job:', jobId);
-          closeJobModal();
-        }}
       />,
       document.body
     )}
