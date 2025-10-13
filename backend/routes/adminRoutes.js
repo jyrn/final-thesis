@@ -472,17 +472,26 @@ router.get('/applications', verifyToken, adminMiddleware, async (req, res) => {
 // Update job status (activate/deactivate/remove)
 router.put('/jobs/:jobId/status', verifyToken, adminMiddleware, async (req, res) => {
   try {
+    console.log(`🔧 Admin job status update request - JobID: ${req.params.jobId}, Status: ${req.body.status}`);
+    
     const { jobId } = req.params;
     const { status, reason } = req.body;
 
+    console.log(`🔍 Looking for job with ID: ${jobId}`);
     const job = await Job.findById(jobId);
     if (!job) {
+      console.log(`❌ Job not found: ${jobId}`);
       return res.status(404).json({ 
         success: false, 
         message: 'Job not found' 
       });
     }
+    
+    console.log(`✅ Job found: ${job.title} - Current status: ${job.status}`);
 
+    // Store original status to check if we need to send email
+    const originalStatus = job.status;
+    
     job.status = status;
     if (reason) {
       job.adminNotes = reason;
@@ -490,18 +499,99 @@ router.put('/jobs/:jobId/status', verifyToken, adminMiddleware, async (req, res)
     job.lastModifiedBy = req.user.uid;
     job.updatedAt = new Date();
 
+    console.log(`💾 Saving job with new status: ${status}`);
     await job.save();
+    console.log(`✅ Job saved successfully`);
 
+    // Send email notification based on status change
+    if (originalStatus !== status) {
+      console.log(`📧 Job status changed from ${originalStatus} to ${status}, preparing email notification...`);
+      try {
+        const emailService = require('../services/emailService');
+        
+        // Get employer information
+        let employerEmail = null;
+        let companyName = job.companyName || 'Unknown Company';
+        
+        console.log(`🔍 Looking for employer info - EmployerUID: ${job.employerUid}, EmployerID: ${job.employerId}`);
+        
+        if (job.employerUid) {
+          // Find employer by UID
+          const Employer = require('../models/Employer');
+          const employer = await Employer.findOne({ uid: job.employerUid });
+          if (employer) {
+            employerEmail = employer.email;
+            companyName = employer.companyName || job.companyName || 'Unknown Company';
+            console.log(`✅ Found employer by UID: ${employerEmail}`);
+          } else {
+            console.log(`❌ No employer found with UID: ${job.employerUid}`);
+          }
+        }
+        
+        // If still no email, try finding by employerId
+        if (!employerEmail && job.employerId) {
+          const Employer = require('../models/Employer');
+          const employer = await Employer.findById(job.employerId);
+          if (employer) {
+            employerEmail = employer.email;
+            companyName = employer.companyName || job.companyName || 'Unknown Company';
+            console.log(`✅ Found employer by ID: ${employerEmail}`);
+          } else {
+            console.log(`❌ No employer found with ID: ${job.employerId}`);
+          }
+        }
+        
+        if (employerEmail) {
+          console.log(`📤 Sending ${status} email to: ${employerEmail}`);
+          
+          // Send appropriate email based on status
+          if (status === 'removed') {
+            await emailService.sendJobRemovalEmail(
+              employerEmail,
+              companyName || 'Your Company',
+              job.title,
+              reason
+            );
+            console.log(`📧 Job removal notification sent to ${employerEmail} for job: ${job.title}`);
+          } else if (status === 'paused') {
+            await emailService.sendJobPauseEmail(
+              employerEmail,
+              companyName || 'Your Company',
+              job.title,
+              reason
+            );
+            console.log(`📧 Job pause notification sent to ${employerEmail} for job: ${job.title}`);
+          } else if (status === 'flagged') {
+            await emailService.sendJobFlagEmail(
+              employerEmail,
+              companyName || 'Your Company',
+              job.title,
+              reason
+            );
+            console.log(`📧 Job flag notification sent to ${employerEmail} for job: ${job.title}`);
+          }
+        } else {
+          console.log(`⚠️ Could not send job ${status} email - employer email not found for job: ${job.title}`);
+        }
+      } catch (emailError) {
+        console.error(`❌ Error sending job ${status} email:`, emailError);
+        // Don't fail the request if email fails
+      }
+    }
+
+    console.log(`🎉 Job status update completed successfully`);
     res.json({
       success: true,
-      message: `Job status updated to ${status}`
+      message: `Job status updated to ${status}${status === 'removed' ? '. Employer has been notified.' : ''}`
     });
 
   } catch (error) {
-    console.error('Job status update error:', error);
+    console.error('❌ Job status update error:', error);
+    console.error('Error stack:', error.stack);
     res.status(500).json({ 
       success: false, 
-      message: 'Error updating job status' 
+      message: 'Error updating job status',
+      error: error.message
     });
   }
 });

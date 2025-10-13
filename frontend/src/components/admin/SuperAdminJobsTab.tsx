@@ -675,6 +675,7 @@ Flagged jobs will be temporarily hidden from jobseekers while under review. The 
                               onClick={() => handleRemoveJob(String(job.id))}
                               className="action-btn remove-btn"
                               title="Remove Job"
+                              disabled={job.status === 'removed'}
                             >
                               Remove
                             </button>
@@ -683,6 +684,7 @@ Flagged jobs will be temporarily hidden from jobseekers while under review. The 
                               onClick={() => handleFlagJob(String(job.id))}
                               className="action-btn flag-btn"
                               title="Flag Job"
+                              disabled={job.status === 'removed' || job.status === 'flagged'}
                             >
                               Flag
                             </button>
@@ -691,7 +693,7 @@ Flagged jobs will be temporarily hidden from jobseekers while under review. The 
                               onClick={() => handlePauseJob(String(job.id))}
                               className="action-btn pause-btn"
                               title="Pause Job"
-                              disabled={job.status === 'paused'}
+                              disabled={job.status === 'paused' || job.status === 'removed'}
                             >
                               Pause
                             </button>
