@@ -1049,7 +1049,7 @@ const SettingsTab: React.FC<SettingsTabProps> = ({ onNavigate }) => {
                   <iframe
                     src={resumePreviewUrl}
                     width="100%"
-                    height="600px"
+                    height="800px"
                     style={{ border: '1px solid #e5e7eb', borderRadius: '8px' }}
                     title="Resume Preview"
                   />

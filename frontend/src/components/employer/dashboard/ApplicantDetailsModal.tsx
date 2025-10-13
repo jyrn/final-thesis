@@ -526,7 +526,7 @@ export const ApplicantDetailsModal: React.FC<ApplicantDetailsModalProps> = ({
                 src={resumePreviewUrl}
                 width="100%"
                 height="100%"
-                style={{ border: 'none', minHeight: '600px' }}
+                style={{ border: 'none', minHeight: '800px' }}
                 title="Resume Preview"
                 onLoad={() => console.log('✅ Resume PDF loaded successfully')}
                 onError={(e) => console.error('❌ Resume PDF failed to load:', e)}
