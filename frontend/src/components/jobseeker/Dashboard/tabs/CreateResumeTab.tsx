@@ -234,9 +234,9 @@ interface CreateResumeTabProps {
   onResumeDataChange?: (data: ResumeData) => void;
 }
 
-// Helper function to capitalize first letter of each word
+// Helper function to capitalize first letter of each word (proper title case)
 const capitalizeWords = (str: string): string => {
-  return str.replace(/\b\w/g, (char) => char.toUpperCase());
+  return str.toLowerCase().replace(/\b\w/g, (char) => char.toUpperCase());
 };
 
 // Helper function to migrate old education format to new format
@@ -2238,21 +2238,21 @@ const CreateResumeTab: React.FC<CreateResumeTabProps> = ({
       
       // Handle name parsing - try multiple approaches
       if (personalInfo.firstName && personalInfo.lastName) {
-        updatePersonalInfo('firstName', personalInfo.firstName);
-        updatePersonalInfo('lastName', personalInfo.lastName);
+        updatePersonalInfo('firstName', capitalizeWords(personalInfo.firstName));
+        updatePersonalInfo('lastName', capitalizeWords(personalInfo.lastName));
       } else if (personalInfo.fullName) {
         console.log('🔄 Parsing fullName:', personalInfo.fullName);
         const nameParts = personalInfo.fullName.trim().split(/\s+/);
         if (nameParts.length >= 2) {
-          updatePersonalInfo('firstName', nameParts[0]);
-          updatePersonalInfo('lastName', nameParts.slice(1).join(' '));
+          updatePersonalInfo('firstName', capitalizeWords(nameParts[0]));
+          updatePersonalInfo('lastName', capitalizeWords(nameParts.slice(1).join(' ')));
         }
       } else if (personalInfo.name) {
         console.log('🔄 Parsing name field:', personalInfo.name);
         const nameParts = personalInfo.name.trim().split(/\s+/);
         if (nameParts.length >= 2) {
-          updatePersonalInfo('firstName', nameParts[0]);
-          updatePersonalInfo('lastName', nameParts.slice(1).join(' '));
+          updatePersonalInfo('firstName', capitalizeWords(nameParts[0]));
+          updatePersonalInfo('lastName', capitalizeWords(nameParts.slice(1).join(' ')));
         }
       } else {
         console.log('❌ No name information found in parsed data');
@@ -4485,15 +4485,56 @@ const CreateResumeTab: React.FC<CreateResumeTabProps> = ({
         </div>
       )}
 
-      {/* Sticky Save Button - Shows when scrolling */}
+      {/* Sticky Buttons - Shows when scrolling */}
       {showStickyButton && (
         <div style={{
           position: 'fixed',
           bottom: '30px',
           right: '30px',
           zIndex: 1000,
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '12px',
           animation: 'slideUp 0.3s ease-out'
         }}>
+          {/* Back to Top Button */}
+          <button
+            onClick={() => {
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+            }}
+            style={{
+              padding: '12px',
+              backgroundColor: '#3b82f6',
+              border: 'none',
+              borderRadius: '50%',
+              color: 'white',
+              fontSize: '20px',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              boxShadow: '0 8px 24px rgba(59, 130, 246, 0.4)',
+              transition: 'all 0.3s',
+              width: '48px',
+              height: '48px',
+              alignSelf: 'flex-end'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.transform = 'translateY(-4px)';
+              e.currentTarget.style.boxShadow = '0 12px 32px rgba(59, 130, 246, 0.5)';
+              e.currentTarget.style.backgroundColor = '#2563eb';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.transform = 'translateY(0)';
+              e.currentTarget.style.boxShadow = '0 8px 24px rgba(59, 130, 246, 0.4)';
+              e.currentTarget.style.backgroundColor = '#3b82f6';
+            }}
+            title="Back to top"
+          >
+            <FiChevronUp size={24} />
+          </button>
+
+          {/* Save Button */}
           <button
             onClick={handleSaveResume}
             disabled={isSaving || !isFormValid()}
