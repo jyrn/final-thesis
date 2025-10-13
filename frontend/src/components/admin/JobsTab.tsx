@@ -1,9 +1,10 @@
-import React from 'react';
-import { FiFileText, FiClock, FiTrendingUp, FiEye } from 'react-icons/fi';
+import React, { useState } from 'react';
+import { FiFileText, FiClock, FiEye } from 'react-icons/fi';
 import { HiCheckCircle } from 'react-icons/hi';
 import { Job } from '../../types/admin';
 import JobCard from './JobCard';
 import StatsCard from './StatsCard';
+import AdminJobDetailModal from './AdminJobDetailModal';
 
 interface JobsTabProps {
   jobs: Job[];
@@ -11,9 +12,17 @@ interface JobsTabProps {
 }
 
 const JobsTab: React.FC<JobsTabProps> = ({ jobs, onJobStatusChange }) => {
+  const [selectedJob, setSelectedJob] = useState<Job | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
   const handleViewJob = (job: Job) => {
-    console.log('View job details:', job);
-    // TODO: Implement job details modal or navigation
+    setSelectedJob(job);
+    setIsModalOpen(true);
+  };
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    setSelectedJob(null);
   };
 
   const handleEditJob = (job: Job) => {
@@ -94,6 +103,37 @@ const JobsTab: React.FC<JobsTabProps> = ({ jobs, onJobStatusChange }) => {
           </div>
         )}
       </div>
+
+      {/* Job Detail Modal */}
+      <AdminJobDetailModal
+        job={selectedJob ? {
+          id: selectedJob._id,
+          _id: selectedJob._id,
+          title: selectedJob.title,
+          company: selectedJob.company,
+          location: 'Not specified',
+          description: 'Job description not available',
+          type: 'full-time',
+          level: 'entry',
+          postedDate: selectedJob.createdAt,
+          status: selectedJob.status,
+          companyDetails: selectedJob.employerUid ? {
+            name: selectedJob.employerUid.companyName || selectedJob.company,
+            description: null,
+            industry: null,
+            website: null,
+            size: null
+          } : {
+            name: selectedJob.company,
+            description: null,
+            industry: null,
+            website: null,
+            size: null
+          }
+        } : null}
+        isOpen={isModalOpen}
+        onClose={handleCloseModal}
+      />
     </div>
   );
 };

@@ -5,7 +5,7 @@ import { HiCheckCircle } from 'react-icons/hi';
 import StatsCard from './StatsCard';
 import adminService from '../../services/adminService';
 import { Job } from '../../types/Job';
-import JobDetailModal from '../jobseeker/JobDetailModal/JobDetailModal';
+import AdminJobDetailModal from './AdminJobDetailModal';
 import './SuperAdminJobsTab.css';
 
 interface SuperAdminJobsTabProps {
@@ -340,7 +340,14 @@ Flagged jobs will be temporarily hidden from jobseekers while under review. The 
             requirements: job.requirements || [],
             benefits: job.benefits || [],
             salary: job.salary || job.salaryRange || 'Competitive',
-            department: job.department || 'Not specified'
+            department: job.department || 'Not specified',
+            companyDetails: job.companyDetails || {
+              name: job.companyName || job.company || 'Unknown Company',
+              description: job.companyDescription || null,
+              industry: job.industry || null,
+              website: job.website || null,
+              size: job.companySize || null
+            }
           };
         });
 
@@ -749,15 +756,10 @@ Flagged jobs will be temporarily hidden from jobseekers while under review. The 
 
     {/* Job Details Modal - Rendered at document root using Portal */}
     {showJobModal && selectedJob && createPortal(
-      <JobDetailModal
+      <AdminJobDetailModal
         job={selectedJob}
         isOpen={showJobModal}
         onClose={closeJobModal}
-        onApply={(jobId) => {
-          // Admin view - no apply functionality needed
-          console.log('Admin viewing job:', jobId);
-          closeJobModal();
-        }}
       />,
       document.body
     )}

@@ -1,15 +1,14 @@
 import React from 'react';
-import { FiX, FiMapPin, FiClock, FiUsers, FiCalendar, FiBriefcase, FiTrendingUp, FiStar, FiHome, FiGlobe } from 'react-icons/fi';
-import styles from './JobDetailModal.module.css';
-import { getImageSrc } from '../../../utils/imageUtils';
+import { FiX, FiMapPin, FiClock, FiUsers, FiBriefcase, FiTrendingUp, FiStar, FiGlobe } from 'react-icons/fi';
+import styles from '../jobseeker/JobDetailModal/JobDetailModal.module.css';
+import { getImageSrc } from '../../utils/imageUtils';
+import { Job as AdminJob } from '../../types/admin';
+import { Job as JobseekerJob } from '../../types/Job';
 
-import { Job } from '../../../types/Job';
-
-interface JobDetailModalProps {
-  job: Job | null
+interface AdminJobDetailModalProps {
+  job: JobseekerJob | null
   isOpen: boolean
   onClose: () => void
-  onApply: (jobId: string | number) => void
 }
 
 const getCompanyLogo = (company: string, companyLogo?: string) => {
@@ -43,35 +42,36 @@ const getCompanyLogo = (company: string, companyLogo?: string) => {
   );
 };
 
-const JobDetailModal: React.FC<JobDetailModalProps> = ({ job, isOpen, onClose, onApply }) => {
+const AdminJobDetailModal: React.FC<AdminJobDetailModalProps> = ({ job, isOpen, onClose }) => {
   if (!isOpen || !job) return null;
 
   const formatSalary = () => {
     // Handle individual salary values first
     if (job.salaryMin && job.salaryMax) {
-      return `${job.salaryMin.toLocaleString('en-PH')} - ${job.salaryMax.toLocaleString('en-PH')}`;
+      return `₱${job.salaryMin.toLocaleString('en-PH')} - ₱${job.salaryMax.toLocaleString('en-PH')}`;
     }
     if (job.salaryMin && !job.salaryMax) {
-      return `${job.salaryMin.toLocaleString('en-PH')}+`;
+      return `₱${job.salaryMin.toLocaleString('en-PH')}+`;
     }
     if (!job.salaryMin && job.salaryMax) {
       return `Up to ₱${job.salaryMax.toLocaleString('en-PH')}`;
     }
     if (job.salary) {
-      return `${job.salary.toLocaleString('en-PH')}`;
+      return `₱${job.salary.toLocaleString('en-PH')}`;
     }
     return 'Salary not specified';
   };
 
   const formatPostedDate = () => {
-    if (job.postedDate) {
+    const dateToFormat = job.postedDate || (job as any).createdAt;
+    if (dateToFormat) {
       // Handle different date formats from backend
       let date;
-      if (typeof job.postedDate === 'string') {
+      if (typeof dateToFormat === 'string') {
         // Try parsing ISO string or other common formats
-        date = new Date(job.postedDate);
-      } else if (job.postedDate && typeof job.postedDate === 'object') {
-        date = new Date(job.postedDate);
+        date = new Date(dateToFormat);
+      } else if (dateToFormat && typeof dateToFormat === 'object') {
+        date = new Date(dateToFormat);
       } else {
         return 'Recently posted';
       }
@@ -83,27 +83,20 @@ const JobDetailModal: React.FC<JobDetailModalProps> = ({ job, isOpen, onClose, o
       
       const now = new Date();
       const diffTime = Math.abs(now.getTime() - date.getTime());
-      const diffMinutes = Math.floor(diffTime / (1000 * 60));
-      const diffHours = Math.floor(diffTime / (1000 * 60 * 60));
       const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
       
-      // Format full date
-      const fullDate = date.toLocaleDateString('en-US', {
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric'
-      });
+      const options: Intl.DateTimeFormatOptions = { 
+        year: 'numeric', 
+        month: 'long', 
+        day: 'numeric' 
+      };
+      const fullDate = date.toLocaleDateString('en-US', options);
       
-      // Format relative time
       let timeAgo;
-      if (diffMinutes < 1) {
-        timeAgo = 'Just now';
-      } else if (diffMinutes < 60) {
-        timeAgo = diffMinutes === 1 ? '1 minute ago' : `${diffMinutes} minutes ago`;
-      } else if (diffHours < 24) {
-        timeAgo = diffHours === 1 ? '1 hour ago' : `${diffHours} hours ago`;
+      if (diffDays === 0) {
+        timeAgo = 'Today';
       } else if (diffDays === 1) {
-        timeAgo = '1 day ago';
+        timeAgo = 'Yesterday';
       } else if (diffDays < 7) {
         timeAgo = `${diffDays} days ago`;
       } else if (diffDays < 30) {
@@ -114,8 +107,12 @@ const JobDetailModal: React.FC<JobDetailModalProps> = ({ job, isOpen, onClose, o
       
       return `${fullDate} — ${timeAgo}`;
     }
+    
     return 'Recently posted';
   };
+
+  const companyName = job.company || 'Unknown Company';
+  const companyLogo = job.companyLogo; // Use company logo if available
 
   return (
     <div className={styles.overlay}>
@@ -125,7 +122,7 @@ const JobDetailModal: React.FC<JobDetailModalProps> = ({ job, isOpen, onClose, o
           <div className={styles.companyBanner}>
             <div className={styles.companyBannerContent}>
               <div className={styles.companyLogoContainer}>
-                {getCompanyLogo(job.company, job.companyLogo)}
+                {getCompanyLogo(companyName, companyLogo)}
               </div>
               <div className={styles.companyHeaderInfo}>
                 <div className={styles.jobTitleBanner}>
@@ -135,8 +132,17 @@ const JobDetailModal: React.FC<JobDetailModalProps> = ({ job, isOpen, onClose, o
                   </h1>
                 </div>
                 <div className={styles.companyNameRow}>
-                  <h2 className={styles.companyName}>{job.company}</h2>
-                  <button className={styles.viewAllJobs}>View all jobs</button>
+                  <h2 className={styles.companyName}>{companyName}</h2>
+                  <div className={styles.adminBadge} style={{
+                    background: '#dc3545',
+                    color: 'white',
+                    padding: '4px 12px',
+                    borderRadius: '12px',
+                    fontSize: '12px',
+                    fontWeight: '600'
+                  }}>
+                    ADMIN VIEW
+                  </div>
                 </div>
               </div>
             </div>
@@ -154,7 +160,7 @@ const JobDetailModal: React.FC<JobDetailModalProps> = ({ job, isOpen, onClose, o
               <div className={styles.jobMeta}>
                 <div className={styles.metaBadge}>
                   <FiMapPin className={styles.badgeIcon} />
-                  <span>{job.location}</span>
+                  <span>{job.location || 'Location not specified'}</span>
                 </div>
                 <div className={styles.metaBadge}>
                   <FiBriefcase className={styles.badgeIcon} />
@@ -162,7 +168,7 @@ const JobDetailModal: React.FC<JobDetailModalProps> = ({ job, isOpen, onClose, o
                 </div>
                 <div className={styles.metaBadge}>
                   <FiClock className={styles.badgeIcon} />
-                  <span>{job.type}</span>
+                  <span>{job.type || 'Full-time'}</span>
                 </div>
                 <div className={styles.metaBadge}>
                   <FiTrendingUp className={styles.badgeIcon} />
@@ -174,14 +180,18 @@ const JobDetailModal: React.FC<JobDetailModalProps> = ({ job, isOpen, onClose, o
                 </div>
               </div>
               <div className={styles.postingInfo}>
-                <span className={styles.applicationVolume}>Medium application volume</span>
+                <span className={styles.applicationVolume}>
+                  Status: <strong style={{ color: job.status === 'active' ? '#28a745' : '#dc3545' }}>
+                    {job.status?.toUpperCase() || 'ACTIVE'}
+                  </strong>
+                </span>
               </div>
             </div>
 
             <div className={styles.section}>
               <h3 className={styles.sectionTitle}>Job Description</h3>
               <div className={styles.sectionContent}>
-                <p>{job.description}</p>
+                <p>{job.description || 'No description provided'}</p>
               </div>
             </div>
 
@@ -211,9 +221,11 @@ const JobDetailModal: React.FC<JobDetailModalProps> = ({ job, isOpen, onClose, o
               <h3 className={styles.sectionTitle}>Required Skills and Experience</h3>
               <div className={styles.sectionContent}>
                 <ul className={styles.requirementsList}>
-                  {job.requirements?.map((req, index) => (
-                    <li key={index}>{req}</li>
-                  )) || (
+                  {job.requirements && job.requirements.length > 0 ? (
+                    job.requirements.map((req, index) => (
+                      <li key={index}>{req}</li>
+                    ))
+                  ) : (
                     <li>No specific requirements listed</li>
                   )}
                 </ul>
@@ -248,18 +260,32 @@ const JobDetailModal: React.FC<JobDetailModalProps> = ({ job, isOpen, onClose, o
                 </div>
               </div>
             )}
+
+            <div className={styles.section}>
+              <h3 className={styles.sectionTitle}>Administrative Information</h3>
+              <div className={styles.sectionContent}>
+                <ul className={styles.requirementsList}>
+                  <li><strong>Job ID:</strong> {job.id || job._id}</li>
+                  <li><strong>Status:</strong> <span style={{ color: job.status === 'active' ? '#28a745' : '#dc3545', fontWeight: '600' }}>{job.status?.toUpperCase() || 'ACTIVE'}</span></li>
+                  <li><strong>Posted Date:</strong> {formatPostedDate()}</li>
+                  <li><strong>Company:</strong> {companyName}</li>
+                </ul>
+              </div>
+            </div>
           </div>
 
           {/* Right Column - Company Information */}
           <div className={styles.rightColumn}>
             <div className={styles.section}>
-              <h3 className={styles.sectionTitle}>About {job.company}</h3>
+              <h3 className={styles.sectionTitle}>About {companyName}</h3>
               <div className={styles.sectionContent}>
                 <div className={styles.companyDescription}>
                   {job.companyDetails?.description ? (
                     <p>{job.companyDetails.description}</p>
                   ) : (
-                    <p>We are {job.company}, a leading company in our industry committed to excellence and innovation. Join our team and be part of our growth story.</p>
+                    <p style={{ color: '#666', fontStyle: 'italic' }}>
+                      Company description not available. Contact the employer for more information about {companyName}.
+                    </p>
                   )}
                 </div>
                 
@@ -268,21 +294,17 @@ const JobDetailModal: React.FC<JobDetailModalProps> = ({ job, isOpen, onClose, o
                     <FiBriefcase className={styles.statIcon} />
                     <div className={styles.statInfo}>
                       <span className={styles.statLabel}>Industry</span>
-                      <span className={styles.statValue}>{job.companyDetails?.industry || 'Technology & Services'}</span>
+                      <span className={styles.statValue}>{job.companyDetails?.industry || 'Not specified'}</span>
                     </div>
                   </div>
-                  
-                 
                   
                   <div className={styles.statItem}>
-                    <FiHome className={styles.statIcon} />
+                    <FiUsers className={styles.statIcon} />
                     <div className={styles.statInfo}>
-                      <span className={styles.statLabel}>Headquarters</span>
-                      <span className={styles.statValue}>{job.companyDetails?.headquarters || 'Metro Manila, Philippines'}</span>
+                      <span className={styles.statLabel}>Company Size</span>
+                      <span className={styles.statValue}>{job.companyDetails?.size ? `${job.companyDetails.size} employees` : 'Not specified'}</span>
                     </div>
                   </div>
-                  
-                
                   
                   {job.companyDetails?.website && (
                     <div className={styles.statItem}>
@@ -310,7 +332,7 @@ const JobDetailModal: React.FC<JobDetailModalProps> = ({ job, isOpen, onClose, o
                 <div className={styles.jobDetailsList}>
                   <div className={styles.detailItem}>
                     <span className={styles.detailLabel}>Employment Type</span>
-                    <span className={styles.detailValue}>{job.type}</span>
+                    <span className={styles.detailValue}>{job.type || 'Full-time'}</span>
                   </div>
                   <div className={styles.detailItem}>
                     <span className={styles.detailLabel}>Experience Level</span>
@@ -326,27 +348,38 @@ const JobDetailModal: React.FC<JobDetailModalProps> = ({ job, isOpen, onClose, o
                     <span className={styles.detailLabel}>Department</span>
                     <span className={styles.detailValue}>{job.department || 'Not specified'}</span>
                   </div>
+                  <div className={styles.detailItem}>
+                    <span className={styles.detailLabel}>Job Status</span>
+                    <span className={styles.detailValue} style={{ 
+                      color: job.status === 'active' ? '#28a745' : '#dc3545',
+                      fontWeight: '600'
+                    }}>
+                      {job.status?.toUpperCase() || 'ACTIVE'}
+                    </span>
+                  </div>
+                  <div className={styles.detailItem}>
+                    <span className={styles.detailLabel}>Job ID</span>
+                    <span className={styles.detailValue}>{job.id || job._id}</span>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Sticky Footer with action buttons */}
+        {/* Admin Footer - No Apply Button */}
         <div className={styles.footer}>
-          <div className={styles.footerContent}>
-            <button 
-              className={`${styles.applyButton} ${job.applied ? styles.applied : ''}`}
-              onClick={() => {
-                if (!job.applied) {
-                  onApply(job.id);
-                }
-              }}
-              disabled={job.applied}
-            >
-              {!job.applied && <FiTrendingUp className={styles.buttonIcon} />}
-              {job.applied ? 'Applied ✓' : 'Apply'}
-            </button>
+          <div className={styles.footerContent} style={{ justifyContent: 'center' }}>
+            <div style={{ 
+              padding: '12px 24px',
+              background: '#f8f9fa',
+              borderRadius: '8px',
+              color: '#6c757d',
+              fontSize: '14px',
+              fontStyle: 'italic'
+            }}>
+              Administrator View - Job posting details for review and management
+            </div>
           </div>
         </div>
       </div>
@@ -354,4 +387,4 @@ const JobDetailModal: React.FC<JobDetailModalProps> = ({ job, isOpen, onClose, o
   );
 }
 
-export default JobDetailModal
+export default AdminJobDetailModal;
