@@ -42,19 +42,30 @@ class XLSXReportService {
     }
     
     const workbook = XLSX.utils.book_new();
+    const reportType = reportData.reportMetadata.reportType;
     
     // Create summary sheet
     this.addSummarySheet(workbook, reportData, reportName);
     
+    // Add report-specific sheets based on report type
+    switch (reportType) {
+      case 'registered-jobseekers':
+        this.addJobseekerSpecificSheets(workbook, reportData);
+        break;
+      case 'employers-companies':
+        this.addEmployerSpecificSheets(workbook, reportData);
+        break;
+      case 'job-postings':
+        this.addJobPostingSpecificSheets(workbook, reportData);
+        break;
+      case 'job-demand-analytics':
+        this.addJobDemandSpecificSheets(workbook, reportData);
+        break;
+    }
+    
     // Create detailed data sheet if available
     if (reportData.data.details && reportData.data.details.length > 0) {
       this.addDetailsSheet(workbook, reportData.data.details, 'Detailed Data');
-    }
-    
-    // Create trends sheet if available
-    if (reportData.data.registrationTrends || reportData.data.trends) {
-      const trendsData = reportData.data.registrationTrends || reportData.data.trends;
-      this.addTrendsSheet(workbook, trendsData, 'Trends Analysis');
     }
     
     // Add metadata sheet
@@ -126,7 +137,8 @@ class XLSXReportService {
   addDetailsSheet(workbook, details, sheetName) {
     if (!details || details.length === 0) return;
     
-    const headers = Object.keys(details[0]);
+    // Get proper headers based on data type (matching PDF logic)
+    const properHeaders = this.getProperHeaders(details[0]);
     const detailsData = [];
     
     // Add title row with styling
@@ -134,14 +146,13 @@ class XLSXReportService {
     detailsData.push([]); // Empty row for spacing
     
     // Add headers with formatting
-    detailsData.push(headers.map(header => this.formatLabel(header)));
+    detailsData.push(properHeaders.map(header => header.label));
     
     // Add data rows with proper formatting
     details.forEach((row, index) => {
-      const dataRow = headers.map(header => {
-        const value = this.formatCellValue(row[header]);
-        // Add row number as first column for reference
-        return value;
+      const dataRow = properHeaders.map(header => {
+        const value = this.extractCellValue(row, header.key);
+        return this.formatCellValue(value);
       });
       detailsData.push(dataRow);
     });
@@ -153,11 +164,11 @@ class XLSXReportService {
     const worksheet = XLSX.utils.aoa_to_sheet(detailsData);
     
     // Smart column width calculation with better spacing
-    const colWidths = headers.map((header, index) => {
-      const headerLength = this.formatLabel(header).length;
+    const colWidths = properHeaders.map((header, index) => {
+      const headerLength = header.label.length;
       const maxContentLength = Math.max(
         ...details.slice(0, 100).map(row => 
-          String(this.formatCellValue(row[header])).length
+          String(this.formatCellValue(this.extractCellValue(row, header.key))).length
         )
       );
       // Add padding for better readability
@@ -330,18 +341,10 @@ class XLSXReportService {
 
   getReportCategory(reportType) {
     const categories = {
-      'dashboard-overview': 'Overview',
-      'employer-verification': 'Employers',
-      'employer-documents': 'Employers',
+      'registered-jobseekers': 'Jobseekers',
+      'employers-companies': 'Employers',
       'job-postings': 'Jobs',
-      'job-demand-analytics': 'Jobs',
-      'jobseekers-summary': 'Jobseekers',
-      'jobseeker-resumes': 'Jobseekers',
-      'compliance-overview': 'Compliance',
-      'admin-activity': 'Admin',
-      'admin-permissions': 'Admin',
-      'system-health': 'System',
-      'system-settings': 'System'
+      'job-demand-analytics': 'Jobs'
     };
     return categories[reportType] || 'General';
   }
@@ -496,20 +499,388 @@ class XLSXReportService {
     return str.length > 100 ? str.substring(0, 97) + '...' : str;
   }
 
+  getProperHeaders(sampleItem) {
+    // Define proper headers based on the data structure - matching PDF logic
+    if (sampleItem.title && sampleItem.totalApplications !== undefined) {
+      // Job demand analytics data - has title and totalApplications
+      return [
+        { key: 'companyName', label: 'Company Name' },
+        { key: 'title', label: 'Job Title' },
+        { key: 'totalApplications', label: 'Total Applications' }
+      ];
+    } else if (sampleItem.title && (sampleItem.department !== undefined || sampleItem.salary !== undefined || sampleItem.status !== undefined)) {
+      // Job data - has title and job-specific fields
+      return [
+        { key: 'title', label: 'Job Title' },
+        { key: 'companyName', label: 'Company' },
+        { key: 'department', label: 'Department' },
+        { key: 'status', label: 'Status' },
+        { key: 'salary', label: 'Salary' },
+        { key: 'createdAt', label: 'Posted Date' }
+      ];
+    } else if (sampleItem.firstName || sampleItem.lastName) {
+      // JobSeeker data
+      return [
+        { key: 'email', label: 'Email' },
+        { key: 'firstName', label: 'First Name' },
+        { key: 'lastName', label: 'Last Name' },
+        { key: 'phoneNumber', label: 'Phone Number' },
+        { key: 'dateOfBirth', label: 'Birthday' },
+        { key: 'age', label: 'Age' },
+        { key: 'isActive', label: 'Active' },
+        { key: 'createdAt', label: 'Registration Date' }
+      ];
+    } else if (sampleItem.companyName && (sampleItem.industry !== undefined || sampleItem.accountStatus !== undefined)) {
+      // Employer data - has companyName and employer-specific fields
+      return [
+        { key: 'email', label: 'Email' },
+        { key: 'companyName', label: 'Company Name' },
+        { key: 'industry', label: 'Industry' },
+        { key: 'accountStatus', label: 'Status' },
+        { key: 'createdAt', label: 'Registration Date' }
+      ];
+    } else {
+      // Generic fallback
+      const keys = Object.keys(sampleItem).filter(key => 
+        !key.startsWith('_') && 
+        key !== '__v' && 
+        typeof sampleItem[key] !== 'object'
+      ).slice(0, 6);
+      
+      return keys.map(key => ({
+        key: key,
+        label: this.formatLabel(key)
+      }));
+    }
+  }
+
+  extractCellValue(row, key) {
+    let value = undefined;
+    
+    // Handle userId population for employer data
+    if (key === 'email' && row.userId) {
+      value = row.userId.email;
+    } else if (key === 'lastLoginAt' && row.userId) {
+      value = row.userId.lastLoginAt;
+    } else if (key === 'isActive' && row.userId) {
+      value = row.userId.isActive;
+    }
+    
+    // Handle jobseeker-specific fields
+    if (key === 'phoneNumber' && row.phoneNumber) {
+      value = row.phoneNumber;
+    } else if (key === 'dateOfBirth' && row.dateOfBirth) {
+      value = row.dateOfBirth;
+    } else if (key === 'age' && row.dateOfBirth) {
+      // Calculate age from dateOfBirth
+      const today = new Date();
+      const birthDate = new Date(row.dateOfBirth);
+      let age = today.getFullYear() - birthDate.getFullYear();
+      const monthDiff = today.getMonth() - birthDate.getMonth();
+      if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+        age--;
+      }
+      value = age;
+    }
+    
+    // Handle direct fields for both employer and job data
+    if (key === 'companyName' && row.companyName) {
+      value = row.companyName;
+    } else if (key === 'industry' && row.industry) {
+      value = row.industry;
+    } else if (key === 'accountStatus' && row.accountStatus) {
+      value = row.accountStatus;
+    }
+    
+    // Handle job-specific fields
+    if (key === 'title' && row.title) {
+      value = row.title;
+    } else if (key === 'department' && row.department) {
+      value = row.department;
+    } else if (key === 'salary' && row.salary) {
+      value = row.salary;
+    } else if (key === 'totalApplications' && row.totalApplications !== undefined) {
+      value = row.totalApplications;
+    }
+    
+    // If value is still undefined, try to get it directly from row
+    if (value === undefined) {
+      value = row[key];
+    }
+    
+    return value;
+  }
+
+  addJobseekerSpecificSheets(workbook, reportData) {
+    const data = reportData.data;
+    
+    // Remove demographics and registration trends sheets
+    // Only keep the main detailed data sheet
+  }
+
+  addEmployerSpecificSheets(workbook, reportData) {
+    const data = reportData.data;
+    
+    // Industry distribution sheet
+    if (data.industryDistribution) {
+      this.addIndustryDistributionSheet(workbook, data.industryDistribution);
+    }
+    
+    // Remove employer registration trends sheet
+  }
+
+  addJobPostingSpecificSheets(workbook, reportData) {
+    const data = reportData.data;
+    
+    // Status distribution sheet
+    if (data.statusDistribution) {
+      this.addStatusDistributionSheet(workbook, data.statusDistribution);
+    }
+    
+    // Department distribution sheet
+    if (data.departmentDistribution) {
+      this.addDepartmentDistributionSheet(workbook, data.departmentDistribution);
+    }
+    
+    // Salary analytics sheet
+    if (data.salaryAnalytics) {
+      this.addSalaryAnalyticsSheet(workbook, data.salaryAnalytics);
+    }
+    
+    // Success rates sheet
+    if (data.successRates) {
+      this.addSuccessRatesSheet(workbook, data.successRates);
+    }
+    
+    // Posting trends sheet
+    if (data.postingTrends) {
+      this.addTrendsSheet(workbook, data.postingTrends, 'Job Posting Trends');
+    }
+  }
+
+  addJobDemandSpecificSheets(workbook, reportData) {
+    const data = reportData.data;
+    
+    // Job demand trends sheet
+    if (data.jobDemandTrends) {
+      this.addJobDemandTrendsSheet(workbook, data.jobDemandTrends);
+    }
+    
+    // Industry trends sheet
+    if (data.industryTrends) {
+      this.addIndustryTrendsSheet(workbook, data.industryTrends);
+    }
+  }
+
+  addDemographicsSheet(workbook, demographics) {
+    const demographicsData = [];
+    
+    demographicsData.push(['Jobseeker Demographics Analysis']);
+    demographicsData.push([]);
+    
+    // Gender distribution
+    if (demographics.byGender && demographics.byGender.length > 0) {
+      demographicsData.push(['Gender Distribution']);
+      demographicsData.push(['Gender', 'Count', 'Percentage']);
+      
+      const totalGender = demographics.byGender.reduce((sum, item) => sum + item.count, 0);
+      demographics.byGender.forEach(item => {
+        const percentage = totalGender > 0 ? ((item.count / totalGender) * 100).toFixed(1) : 0;
+        demographicsData.push([item._id || 'Not Specified', item.count, `${percentage}%`]);
+      });
+      demographicsData.push([]);
+    }
+    
+    // Age distribution
+    if (demographics.byAge && demographics.byAge.length > 0) {
+      demographicsData.push(['Age Distribution']);
+      demographicsData.push(['Age Group', 'Count', 'Percentage']);
+      
+      const totalAge = demographics.byAge.reduce((sum, item) => sum + item.count, 0);
+      demographics.byAge.forEach(item => {
+        const percentage = totalAge > 0 ? ((item.count / totalAge) * 100).toFixed(1) : 0;
+        demographicsData.push([item._id, item.count, `${percentage}%`]);
+      });
+    }
+    
+    const worksheet = XLSX.utils.aoa_to_sheet(demographicsData);
+    worksheet['!cols'] = [{ width: 25 }, { width: 15 }, { width: 15 }];
+    this.applyBasicStyling(worksheet, demographicsData.length);
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Demographics');
+  }
+
+  addIndustryDistributionSheet(workbook, industryData) {
+    const industrySheetData = [];
+    
+    industrySheetData.push(['Industry Distribution Analysis']);
+    industrySheetData.push([]);
+    industrySheetData.push(['Industry', 'Number of Employers', 'Percentage']);
+    
+    const total = industryData.reduce((sum, item) => sum + item.count, 0);
+    industryData.forEach(item => {
+      const percentage = total > 0 ? ((item.count / total) * 100).toFixed(1) : 0;
+      industrySheetData.push([item._id || 'Not Specified', item.count, `${percentage}%`]);
+    });
+    
+    industrySheetData.push([]);
+    industrySheetData.push(['Total Industries', industryData.length, '100%']);
+    
+    const worksheet = XLSX.utils.aoa_to_sheet(industrySheetData);
+    worksheet['!cols'] = [{ width: 30 }, { width: 20 }, { width: 15 }];
+    this.applyBasicStyling(worksheet, industrySheetData.length);
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Industry Distribution');
+  }
+
+  addStatusDistributionSheet(workbook, statusData) {
+    const statusSheetData = [];
+    
+    statusSheetData.push(['Job Status Distribution']);
+    statusSheetData.push([]);
+    statusSheetData.push(['Status', 'Count', 'Percentage']);
+    
+    const total = statusData.reduce((sum, item) => sum + item.count, 0);
+    statusData.forEach(item => {
+      const percentage = total > 0 ? ((item.count / total) * 100).toFixed(1) : 0;
+      statusSheetData.push([item._id, item.count, `${percentage}%`]);
+    });
+    
+    const worksheet = XLSX.utils.aoa_to_sheet(statusSheetData);
+    worksheet['!cols'] = [{ width: 20 }, { width: 15 }, { width: 15 }];
+    this.applyBasicStyling(worksheet, statusSheetData.length);
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Job Status');
+  }
+
+  addDepartmentDistributionSheet(workbook, departmentData) {
+    const deptSheetData = [];
+    
+    deptSheetData.push(['Department Distribution']);
+    deptSheetData.push([]);
+    deptSheetData.push(['Department', 'Job Count', 'Percentage']);
+    
+    const total = departmentData.reduce((sum, item) => sum + item.count, 0);
+    departmentData.forEach(item => {
+      const percentage = total > 0 ? ((item.count / total) * 100).toFixed(1) : 0;
+      deptSheetData.push([item._id || 'Not Specified', item.count, `${percentage}%`]);
+    });
+    
+    const worksheet = XLSX.utils.aoa_to_sheet(deptSheetData);
+    worksheet['!cols'] = [{ width: 25 }, { width: 15 }, { width: 15 }];
+    this.applyBasicStyling(worksheet, deptSheetData.length);
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Departments');
+  }
+
+  addSalaryAnalyticsSheet(workbook, salaryData) {
+    const salarySheetData = [];
+    
+    salarySheetData.push(['Salary Analytics by Department']);
+    salarySheetData.push([]);
+    salarySheetData.push(['Department', 'Average Salary', 'Job Count', 'Salary Range']);
+    
+    salaryData.forEach(item => {
+      const avgSalary = item.avgSalary ? `₱${item.avgSalary.toLocaleString()}` : 'N/A';
+      const salaryRange = item.minSalary && item.maxSalary ? 
+        `₱${item.minSalary.toLocaleString()} - ₱${item.maxSalary.toLocaleString()}` : 'N/A';
+      salarySheetData.push([item._id || 'Not Specified', avgSalary, item.jobCount || 0, salaryRange]);
+    });
+    
+    const worksheet = XLSX.utils.aoa_to_sheet(salarySheetData);
+    worksheet['!cols'] = [{ width: 25 }, { width: 18 }, { width: 15 }, { width: 25 }];
+    this.applyBasicStyling(worksheet, salarySheetData.length);
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Salary Analytics');
+  }
+
+  addSuccessRatesSheet(workbook, successData) {
+    const successSheetData = [];
+    
+    successSheetData.push(['Job Success Rates by Department']);
+    successSheetData.push([]);
+    successSheetData.push(['Department', 'Total Jobs', 'Total Applications', 'Total Hired', 'Success Rate', 'Avg Applications/Job']);
+    
+    successData.forEach(item => {
+      const successRate = item.successRate ? `${item.successRate.toFixed(1)}%` : '0%';
+      const avgApps = item.avgApplicationsPerJob ? item.avgApplicationsPerJob.toFixed(1) : '0';
+      successSheetData.push([
+        item._id || 'Not Specified',
+        item.totalJobs || 0,
+        item.totalApplications || 0,
+        item.totalHired || 0,
+        successRate,
+        avgApps
+      ]);
+    });
+    
+    const worksheet = XLSX.utils.aoa_to_sheet(successSheetData);
+    worksheet['!cols'] = [{ width: 25 }, { width: 12 }, { width: 18 }, { width: 12 }, { width: 15 }, { width: 20 }];
+    this.applyBasicStyling(worksheet, successSheetData.length);
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Success Rates');
+  }
+
+  addJobDemandTrendsSheet(workbook, demandData) {
+    const demandSheetData = [];
+    
+    demandSheetData.push(['Job Demand Trends']);
+    demandSheetData.push([]);
+    demandSheetData.push(['Job Title', 'Department', 'Total Postings', 'Total Applications', 'Avg Applications/Job']);
+    
+    demandData.forEach(item => {
+      const avgApps = item.avgApplicationsPerJob ? item.avgApplicationsPerJob.toFixed(1) : '0';
+      demandSheetData.push([
+        item._id?.title || 'Not Specified',
+        item._id?.department || 'Not Specified',
+        item.totalPostings || 0,
+        item.totalApplications || 0,
+        avgApps
+      ]);
+    });
+    
+    const worksheet = XLSX.utils.aoa_to_sheet(demandSheetData);
+    worksheet['!cols'] = [{ width: 30 }, { width: 20 }, { width: 15 }, { width: 18 }, { width: 20 }];
+    this.applyBasicStyling(worksheet, demandSheetData.length);
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Job Demand');
+  }
+
+  addSkillsTrendsSheet(workbook, skillsData) {
+    const skillsSheetData = [];
+    
+    skillsSheetData.push(['Top Skills in Demand']);
+    skillsSheetData.push([]);
+    skillsSheetData.push(['Skill', 'Demand Count', 'Rank']);
+    
+    skillsData.forEach((item, index) => {
+      skillsSheetData.push([item._id, item.count, index + 1]);
+    });
+    
+    const worksheet = XLSX.utils.aoa_to_sheet(skillsSheetData);
+    worksheet['!cols'] = [{ width: 25 }, { width: 15 }, { width: 10 }];
+    this.applyBasicStyling(worksheet, skillsSheetData.length);
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Skills Trends');
+  }
+
+  addIndustryTrendsSheet(workbook, industryData) {
+    const industrySheetData = [];
+    
+    industrySheetData.push(['Industry Job Trends']);
+    industrySheetData.push([]);
+    industrySheetData.push(['Industry/Department', 'Job Count', 'Market Share']);
+    
+    const total = industryData.reduce((sum, item) => sum + item.count, 0);
+    industryData.forEach(item => {
+      const percentage = total > 0 ? ((item.count / total) * 100).toFixed(1) : 0;
+      industrySheetData.push([item._id || 'Not Specified', item.count, `${percentage}%`]);
+    });
+    
+    const worksheet = XLSX.utils.aoa_to_sheet(industrySheetData);
+    worksheet['!cols'] = [{ width: 30 }, { width: 15 }, { width: 15 }];
+    this.applyBasicStyling(worksheet, industrySheetData.length);
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Industry Trends');
+  }
+
   getReportDisplayName(reportType) {
     const displayNames = {
-      'user-summary': 'User Summary Report',
-      'user-registration': 'User Registration Trends',
-      'user-activity': 'User Activity Analysis',
-      'job-postings': 'Job Postings Overview',
-      'job-performance': 'Job Performance Metrics',
-      'employer-activity': 'Employer Activity Report',
-      'application-summary': 'Application Summary',
-      'application-trends': 'Application Trends Analysis',
-      'system-health': 'System Health Report',
-      'verification-report': 'Verification Status Report',
-      'platform-analytics': 'Platform Analytics',
-      'revenue-analytics': 'Revenue Analytics'
+      'registered-jobseekers': 'Registered Jobseekers Report',
+      'employers-companies': 'Employers/Companies Report',
+      'job-postings': 'Job Postings Report',
+      'job-demand-analytics': 'Job Demand Analytics Report'
     };
     
     return displayNames[reportType] || reportType.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
