@@ -475,6 +475,170 @@ class EmailService {
     }
   }
 
+  async sendJobseekerSuspensionEmail(jobseekerEmail, jobseekerName, reason) {
+    // If email service is not configured, just log the action
+    if (!this.isConfigured) {
+      console.log(`📧 Email service not configured. Jobseeker suspension notification for ${jobseekerEmail}: Account has been suspended due to inactivity.`);
+      return { success: true, message: 'Email service not configured - notification logged to console' };
+    }
+
+    const mailOptions = {
+      from: process.env.EMAIL_USER || 'noreply@peso.gov.ph',
+      to: jobseekerEmail,
+      subject: 'Account Suspended Due to Inactivity - Reactivate by Logging In',
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+          <div style="text-align: center; margin-bottom: 30px;">
+            <h1 style="color: #2563eb;">PESO Job Portal</h1>
+          </div>
+          
+          <div style="background-color: #fff3cd; border: 1px solid #ffeaa7; border-radius: 8px; padding: 20px; margin-bottom: 20px;">
+            <h2 style="color: #856404; margin: 0 0 15px 0;">⏸️ Account Suspended Due to Inactivity</h2>
+            <p style="color: #856404; margin: 0;">Your PESO job portal account has been suspended due to extended inactivity.</p>
+          </div>
+          
+          <div style="background-color: #f8f9fa; border-radius: 8px; padding: 20px; margin-bottom: 20px;">
+            <h3 style="color: #333; margin-top: 0;">Hello ${jobseekerName},</h3>
+            
+            <p style="color: #666; line-height: 1.6;">
+              Your account has been automatically suspended because you haven't logged in for over a year. This is part of our routine maintenance to keep our database current and secure.
+            </p>
+            
+            <div style="background-color: #d1ecf1; border-left: 4px solid #17a2b8; padding: 15px; margin: 15px 0;">
+              <h4 style="margin: 0 0 10px 0; color: #0c5460;">✅ Easy Reactivation Process</h4>
+              <p style="margin: 0; color: #0c5460;">
+                <strong>Simply log in to your account to reactivate it immediately!</strong><br>
+                No additional steps or verification required.
+              </p>
+            </div>
+            
+            <div style="text-align: center; margin: 25px 0;">
+              <a href="${process.env.FRONTEND_URL || 'http://localhost:3000'}/auth/jobseeker" 
+                 style="background-color: #007bff; color: white; padding: 12px 30px; text-decoration: none; border-radius: 6px; display: inline-block; font-weight: bold;">
+                Log In to Reactivate Account
+              </a>
+            </div>
+            
+            <div style="background-color: #fff3cd; border-radius: 6px; padding: 15px; margin: 20px 0;">
+              <p style="margin: 0; color: #856404;">
+                <strong>⚠️ Important:</strong> If you don't log in within 30 days from today, 
+                your account will be permanently removed to maintain database hygiene.
+              </p>
+            </div>
+            
+            <p style="color: #666; line-height: 1.6;">
+              We understand that job searching can be seasonal, and we want to make sure your account 
+              is available when you need it. Simply logging in will restore full access to all your 
+              saved jobs, applications, and profile information.
+            </p>
+          </div>
+          
+          <div style="text-align: center; padding: 20px; border-top: 1px solid #eee;">
+            <p style="color: #999; font-size: 14px; margin: 0;">
+              This is an automated message from the PESO Job Portal System.<br>
+              If you have questions, contact us at support@peso.com
+            </p>
+          </div>
+        </div>
+      `
+    };
+
+    try {
+      const result = await this.transporter.sendMail(mailOptions);
+      console.log('✅ Jobseeker suspension email sent successfully:', result.messageId);
+      return { success: true, messageId: result.messageId };
+    } catch (error) {
+      console.error('❌ Error sending jobseeker suspension email:', error);
+      return { success: false, error: error.message };
+    }
+  }
+
+  async sendJobseekerRemovalEmail(jobseekerEmail, jobseekerName, reason) {
+    // If email service is not configured, just log the action
+    if (!this.isConfigured) {
+      console.log(`📧 Email service not configured. Jobseeker removal notification for ${jobseekerEmail}: Account has been removed.`);
+      return { success: true, message: 'Email service not configured - notification logged to console' };
+    }
+
+    const mailOptions = {
+      from: process.env.EMAIL_USER || 'noreply@peso.gov.ph',
+      to: jobseekerEmail,
+      subject: 'PESO - Account Removed',
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <div style="background-color: #ef4444; color: white; padding: 20px; text-align: center;">
+            <h1>Account Removed</h1>
+          </div>
+          
+          <div style="padding: 30px; background-color: #f9f9f9;">
+            <h2>Dear ${jobseekerName || 'User'},</h2>
+            
+            <p>We are writing to inform you that your PESO jobseeker account has been permanently removed from our system by our administrative team.</p>
+            
+            ${reason ? `
+              <div style="background-color: #fef2f2; border-left: 4px solid #ef4444; padding: 15px; margin: 20px 0;">
+                <h3 style="color: #dc2626; margin-top: 0;">Reason for Removal:</h3>
+                <p style="margin-bottom: 0;">${reason}</p>
+              </div>
+            ` : `
+              <div style="background-color: #fef2f2; border-left: 4px solid #ef4444; padding: 15px; margin: 20px 0;">
+                <h3 style="color: #dc2626; margin-top: 0;">Common Reasons for Account Removal:</h3>
+                <ul style="margin-bottom: 0;">
+                  <li>Account inactive for extended period without response to reactivation requests</li>
+                  <li>Fraudulent, misleading, or suspicious activity detected</li>
+                  <li>Repeated violations of platform policies despite warnings</li>
+                  <li>Duplicate account identified and merged/removed for consistency</li>
+                </ul>
+              </div>
+            `}
+            
+            <div style="background-color: white; padding: 20px; border-radius: 8px; margin: 20px 0;">
+              <h3>What This Means:</h3>
+              <ul>
+                <li>🚫 Your account and all associated data have been permanently deleted</li>
+                <li>📋 All job applications and saved jobs have been removed</li>
+                <li>🔒 You will no longer be able to access your previous account</li>
+                <li>📧 You will no longer receive notifications from our platform</li>
+              </ul>
+            </div>
+            
+            <div style="background-color: #f0f9ff; border-left: 4px solid #3b82f6; padding: 15px; margin: 20px 0;">
+              <h3 style="color: #1e40af; margin-top: 0;">Want to Continue Using PESO?</h3>
+              <p style="margin-bottom: 0;">
+                If you believe this removal was made in error or if you'd like to create a new account, please contact our support team. You may be eligible to register again with updated information.
+              </p>
+            </div>
+            
+            <div style="text-align: center; margin: 30px 0;">
+              <a href="${process.env.FRONTEND_URL || 'http://localhost:3000'}/auth/jobseeker" 
+                 style="background-color: #3b82f6; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; display: inline-block;">
+                Create New Account
+              </a>
+            </div>
+            
+            <p>We appreciate your understanding. If you have any questions about this decision or need assistance, please don't hesitate to contact our support team.</p>
+            
+            <hr style="margin: 30px 0; border: none; border-top: 1px solid #ddd;">
+            
+            <p style="color: #666; font-size: 14px;">
+              For questions or to appeal this decision, please contact our support team at support@peso.gov.ph<br>
+              This is an automated message, please do not reply to this email.
+            </p>
+          </div>
+        </div>
+      `
+    };
+
+    try {
+      const result = await this.transporter.sendMail(mailOptions);
+      console.log('✅ Jobseeker removal email sent successfully:', result.messageId);
+      return { success: true, messageId: result.messageId };
+    } catch (error) {
+      console.error('❌ Error sending jobseeker removal email:', error);
+      return { success: false, error: error.message };
+    }
+  }
+
   async testConnection() {
     try {
       await this.transporter.verify();

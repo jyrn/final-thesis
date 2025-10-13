@@ -29,6 +29,18 @@ class ApiService {
       const data = await response.json();
       
       if (!response.ok) {
+        // Handle removed account - redirect to login with error message
+        if (response.status === 403 && data.error === 'Account has been removed') {
+          // Clear auth state and redirect
+          await auth.signOut();
+          localStorage.setItem('accountRemovedMessage', data.message || 'Your account has been permanently removed from the system.');
+          window.location.href = '/auth/jobseeker';
+          return {
+            success: false,
+            error: data.error
+          };
+        }
+        
         return {
           success: false,
           error: data.error || `HTTP error! status: ${response.status}`

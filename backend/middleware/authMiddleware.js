@@ -28,6 +28,36 @@ const verifyToken = async (req, res, next) => {
     const User = require('../models/User');
     const user = await User.findOne({ uid: decodedToken.uid });
     
+    // Block removed users from logging in
+    if (user && user.status === 'removed') {
+      console.log(`🚫 Blocked login attempt from removed user: ${user.email}`);
+      return res.status(403).json({
+        success: false,
+        error: 'Account has been removed',
+        message: 'Your account has been permanently removed from the system.'
+      });
+    }
+    
+    // Auto-reactivate suspended users on login
+    if (user && user.status === 'inactive') {
+      console.log(`🔄 Auto-reactivating suspended user: ${user.email}`);
+      await User.updateOne(
+        { uid: decodedToken.uid },
+        { 
+          status: 'active',
+          suspendedAt: null,
+          lastLoginAt: new Date()
+        }
+      );
+      console.log(`✅ User ${user.email} reactivated successfully`);
+    } else if (user) {
+      // Update last login for active users
+      await User.updateOne(
+        { uid: decodedToken.uid },
+        { lastLoginAt: new Date() }
+      );
+    }
+    
     req.user = {
       ...decodedToken,
       role: user?.role || null

@@ -793,99 +793,6 @@ router.post('/admins', verifyToken, superAdminMiddleware, async (req, res) => {
   }
 });
 
-// Admin only: Update admin user
-router.put('/users/:userId', verifyToken, superAdminMiddleware, async (req, res) => {
-  try {
-    const { userId } = req.params;
-    const { email, adminName, department, role, adminLevel } = req.body;
-
-    // Find admin in Admin collection
-    const adminUser = await Admin.findOne({ uid: userId });
-    if (!adminUser) {
-      return res.status(404).json({ 
-        success: false, 
-        message: 'Admin user not found' 
-      });
-    }
-
-    // Check if email is being changed and if it already exists
-    if (email && email.toLowerCase() !== adminUser.email) {
-      const existingAdmin = await Admin.findOne({ email: email.toLowerCase() });
-      if (existingAdmin) {
-        return res.status(400).json({ 
-          success: false, 
-          message: 'Email already exists' 
-        });
-      }
-
-      // Update email in Firebase
-      try {
-        await admin.auth().updateUser(userId, {
-          email: email.toLowerCase()
-        });
-      } catch (firebaseError) {
-        console.error('❌ Firebase email update failed:', firebaseError);
-        return res.status(500).json({ 
-          success: false, 
-          message: 'Failed to update email in Firebase: ' + firebaseError.message 
-        });
-      }
-    }
-
-    // Update admin in MongoDB
-    if (email) adminUser.email = email.toLowerCase();
-    if (adminName) adminUser.adminName = adminName;
-    if (department !== undefined) adminUser.department = department;
-    if (role) {
-      adminUser.role = role;
-      adminUser.adminLevel = role;
-    }
-    if (adminLevel) {
-      adminUser.adminLevel = adminLevel;
-      adminUser.role = adminLevel;
-    }
-
-    adminUser.updatedAt = new Date();
-    await adminUser.save();
-
-    // Also update in User collection for backward compatibility
-    await User.updateOne(
-      { uid: userId },
-      {
-        $set: {
-          email: adminUser.email,
-          adminName: adminUser.adminName,
-          department: adminUser.department,
-          role: adminUser.role,
-          adminLevel: adminUser.adminLevel,
-          updatedAt: new Date()
-        }
-      }
-    );
-
-    res.json({
-      success: true,
-      message: 'Admin user updated successfully',
-      admin: {
-        uid: adminUser.uid,
-        email: adminUser.email,
-        role: adminUser.role,
-        adminName: adminUser.adminName,
-        adminLevel: adminUser.adminLevel,
-        department: adminUser.department,
-        isActive: adminUser.isActive,
-        updatedAt: adminUser.updatedAt
-      }
-    });
-
-  } catch (error) {
-    console.error('Admin update error:', error);
-    res.status(500).json({ 
-      success: false, 
-      message: 'Error updating admin user: ' + error.message 
-    });
-  }
-});
 
 // Get all pending documents for admin review
 router.get('/documents/pending', verifyToken, adminMiddleware, async (req, res) => {
@@ -1217,8 +1124,10 @@ router.get('/users', verifyToken, superAdminMiddleware, async (req, res) => {
 router.put('/users/:userId', verifyToken, superAdminMiddleware, async (req, res) => {
   try {
     const { userId } = req.params;
-    const { role, isActive, canLogin, registrationStatus, adminLevel, department, adminName } = req.body;
+    const { role, isActive, canLogin, registrationStatus, adminLevel, department, adminName, status } = req.body;
 
+    console.log(`🔧 Admin user status update request - UserID: ${userId}, Status: ${status || 'N/A'}`);
+    console.log('📦 Full request body:', req.body);
 
     const updateData = {};
     if (role !== undefined) updateData.role = role;
@@ -1228,21 +1137,68 @@ router.put('/users/:userId', verifyToken, superAdminMiddleware, async (req, res)
     if (adminLevel !== undefined) updateData.adminLevel = adminLevel;
     if (department !== undefined) updateData.department = department;
     if (adminName !== undefined) updateData.adminName = adminName;
+    if (status !== undefined) {
+      updateData.status = status;
+      // Set suspension timestamp when suspending
+      if (status === 'inactive') {
+        updateData.suspendedAt = new Date();
+      }
+      // Clear suspension timestamp when reactivating
+      if (status === 'active') {
+        updateData.suspendedAt = null;
+      }
+    }
+
+    console.log('🔄 Update data prepared:', updateData);
+
+    // Store original user data for email notification
+    let originalUser = null;
+
+    // Try to find user first to get original data
+    originalUser = await Admin.findOne({ uid: userId });
+    if (!originalUser) {
+      originalUser = await User.findOne({ uid: userId });
+    }
+
+    if (!originalUser) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found'
+      });
+    }
+
+    console.log(`✅ User found: ${originalUser.email} - Current status: ${originalUser.status || 'active'}`);
 
     // Try to update in Admin collection first
-    let user = await Admin.findByIdAndUpdate(
-      userId,
+    console.log(`🔍 Searching Admin collection for uid: ${userId}`);
+    let user = await Admin.findOneAndUpdate(
+      { uid: userId },
       updateData,
       { new: true, runValidators: true }
     );
+    
+    console.log(`🔍 Admin collection result:`, user ? 'Found and updated' : 'Not found');
 
     // If not found in Admin collection, try User collection
     if (!user) {
-      user = await User.findByIdAndUpdate(
-        userId,
+      console.log(`🔍 Searching User collection for uid: ${userId}`);
+      user = await User.findOneAndUpdate(
+        { uid: userId },
         updateData,
         { new: true, runValidators: true }
       );
+      console.log(`🔍 User collection result:`, user ? 'Found and updated' : 'Not found');
+      
+      if (user) {
+        console.log(`📋 Updated user data:`, {
+          uid: user.uid,
+          email: user.email,
+          role: user.role,
+          status: user.status,
+          firstName: user.firstName,
+          lastName: user.lastName
+        });
+      }
     }
 
     if (!user) {
@@ -1252,10 +1208,62 @@ router.put('/users/:userId', verifyToken, superAdminMiddleware, async (req, res)
       });
     }
 
+    console.log(`💾 User updated successfully with new status: ${user.status || 'active'}`);
+
+    // Send email notification for jobseeker status changes
+    const originalStatus = originalUser.status || 'active';
+    const newStatus = user.status || 'active';
+    
+    // For suspension, always send email if suspendedAt was updated (even if status didn't change)
+    const wasSuspended = updateData.suspendedAt !== undefined;
+    const shouldSendEmail = (originalStatus !== newStatus || wasSuspended) && user.role === 'jobseeker';
+    
+    console.log(`🔍 Email notification check:`, {
+      originalStatus,
+      newStatus,
+      userRole: user.role,
+      statusChanged: originalStatus !== newStatus,
+      wasSuspended,
+      isJobseeker: user.role === 'jobseeker',
+      shouldSendEmail
+    });
+    
+    if (shouldSendEmail) {
+      console.log(`📧 Jobseeker status changed from ${originalStatus} to ${newStatus}, preparing email notification...`);
+      
+      try {
+        const emailService = require('../services/emailService');
+        const userEmail = user.email;
+        const userName = `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.email;
+        
+        console.log(`📤 Sending ${newStatus} email to: ${userEmail}`);
+        
+        if (newStatus === 'removed') {
+          await emailService.sendJobseekerRemovalEmail(
+            userEmail,
+            userName,
+            'Your account has been removed by the administrator for policy compliance or security reasons.'
+          );
+          console.log(`📧 Jobseeker removal notification sent to ${userEmail}`);
+        } else if (newStatus === 'inactive') {
+          await emailService.sendJobseekerSuspensionEmail(
+            userEmail,
+            userName,
+            'Your account has been suspended due to inactivity (no login for over 1 year). Simply log in to reactivate.'
+          );
+          console.log(`📧 Jobseeker suspension notification sent to ${userEmail}`);
+        }
+      } catch (emailError) {
+        console.error(`❌ Error sending jobseeker ${newStatus} email:`, emailError);
+        // Don't fail the request if email fails
+      }
+    }
+
+    console.log(`🎉 User status update completed successfully`);
 
     res.json({
       success: true,
-      message: 'User updated successfully',
+      message: `User updated successfully${newStatus !== originalStatus && user.role === 'jobseeker' ? '. User has been notified via email.' : ''}`,
       user: {
         _id: user._id,
         uid: user.uid,
@@ -1266,15 +1274,18 @@ router.put('/users/:userId', verifyToken, superAdminMiddleware, async (req, res)
         department: user.department,
         isActive: user.isActive,
         canLogin: user.canLogin,
-        registrationStatus: user.registrationStatus
+        registrationStatus: user.registrationStatus,
+        status: user.status
       }
     });
 
   } catch (error) {
-    console.error('User update error:', error);
+    console.error('❌ User update error:', error);
+    console.error('Error stack:', error.stack);
     res.status(500).json({ 
       success: false, 
-      message: 'Error updating user' 
+      message: 'Error updating user',
+      error: error.message
     });
   }
 });
