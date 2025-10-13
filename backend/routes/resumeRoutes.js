@@ -433,7 +433,10 @@ router.get('/current', verifyToken, async (req, res) => {
           { id: 'experience', type: 'experience', title: 'Work Experience' },
           { id: 'education', type: 'education', title: 'Educational Background' },
           { id: 'skills', type: 'skills', title: 'Skills' }
-        ]
+        ],
+        // Original resume fields
+        uploadedResumeUrl: resume.uploadedResumeUrl,
+        showUploadedToEmployers: resume.showUploadedToEmployers
       }
     });
 
@@ -1146,6 +1149,55 @@ router.post('/parse', verifyToken, async (req, res) => {
     res.status(500).json({
       success: false,
       error: 'Internal server error'
+    });
+  }
+});
+
+// @route   PUT /api/resumes/original-visibility
+// @desc    Update original resume visibility to employers
+// @access  Private (Job Seeker)
+router.put('/original-visibility', verifyToken, async (req, res) => {
+  try {
+    const { uid } = req.user;
+    const { showUploadedToEmployers } = req.body;
+
+    if (typeof showUploadedToEmployers !== 'boolean') {
+      return res.status(400).json({
+        success: false,
+        error: 'showUploadedToEmployers must be a boolean value'
+      });
+    }
+
+    // Find the active resume for this job seeker
+    const resume = await Resume.findOne({ 
+      jobSeekerUid: uid, 
+      isActive: true 
+    });
+
+    if (!resume) {
+      return res.status(404).json({
+        success: false,
+        error: 'No active resume found'
+      });
+    }
+
+    // Update the visibility setting
+    resume.showUploadedToEmployers = showUploadedToEmployers;
+    await resume.save();
+
+    res.json({
+      success: true,
+      message: `Original resume visibility ${showUploadedToEmployers ? 'enabled' : 'disabled'}`,
+      data: {
+        showUploadedToEmployers: resume.showUploadedToEmployers
+      }
+    });
+
+  } catch (error) {
+    console.error('Error updating original resume visibility:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to update resume visibility'
     });
   }
 });

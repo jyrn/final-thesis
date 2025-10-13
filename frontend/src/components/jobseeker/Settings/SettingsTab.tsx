@@ -8,6 +8,7 @@ import { useNavigate } from 'react-router-dom';
 import PDFPreview from '../../shared/PDFPreview';
 import { getImageSrc } from '../../../utils/imageUtils';
 
+
 interface JobseekerProfile {
   _id?: string;
   firstName: string;
@@ -56,13 +57,11 @@ interface SettingsTabProps {
 const SettingsTab: React.FC<SettingsTabProps> = ({ onNavigate }) => {
   const navigate = useNavigate();
   const [profile, setProfile] = useState<JobseekerProfile | null>(null);
-  const [isEditing, setIsEditing] = useState(false);
-  const [editedProfile, setEditedProfile] = useState<JobseekerProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
-  const [activeSection, setActiveSection] = useState<'profile' | 'resume' | 'privacy' | 'account'>('profile');
+  const [activeSection, setActiveSection] = useState<'profile' | 'resume' | 'privacy'>('profile');
   const [resumeFile, setResumeFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
   const [profilePicture, setProfilePicture] = useState<File | null>(null);
@@ -95,18 +94,26 @@ const SettingsTab: React.FC<SettingsTabProps> = ({ onNavigate }) => {
     providers: []
   });
   const [checkingAuthMethods, setCheckingAuthMethods] = useState(false);
+  const [originalResumeUrl, setOriginalResumeUrl] = useState<string | null>(null);
+  const [showOriginalToEmployers, setShowOriginalToEmployers] = useState(false);
+  const [availableResumes, setAvailableResumes] = useState<{
+    generated?: { url: string; label: string };
+    uploaded?: { url: string; label: string };
+  }>({});
+  const [activeResumeType, setActiveResumeType] = useState<'generated' | 'uploaded'>('generated');
+  const [resumePreviewUrl, setResumePreviewUrl] = useState<string | null>(null);
 
   useEffect(() => {
     fetchProfile();
     checkUserAuthMethods();
   }, []);
 
-  // Add effect to re-fetch profile when activeSection changes to ensure fresh data
   useEffect(() => {
-    if (activeSection === 'profile' || activeSection === 'account') {
+    if (activeSection === 'profile' || activeSection === 'resume') {
       fetchProfile();
     }
   }, [activeSection]);
+
 
   const checkUserAuthMethods = async () => {
     try {
@@ -176,15 +183,44 @@ const SettingsTab: React.FC<SettingsTabProps> = ({ onNavigate }) => {
               ...profileData,
               resumeUrl: resumeResponse.data.fileUrl
             };
+            
+            // Set original resume data if available
+            
+            // Set up available resumes
+            const resumes: { generated?: { url: string; label: string }; uploaded?: { url: string; label: string } } = {};
+            
+            if (resumeResponse.data.fileUrl) {
+              resumes.generated = {
+                url: `http://localhost:3001${resumeResponse.data.fileUrl}`,
+                label: 'Generated Resume'
+              };
+            }
+            
+            if (resumeResponse.data.uploadedResumeUrl) {
+              setOriginalResumeUrl(resumeResponse.data.uploadedResumeUrl);
+              setShowOriginalToEmployers(resumeResponse.data.showUploadedToEmployers || false);
+              resumes.uploaded = {
+                url: resumeResponse.data.uploadedResumeUrl,
+                label: 'Original Resume'
+              };
+            }
+            
+            setAvailableResumes(resumes);
+            
+            // Set default active resume type and load preview
+            if (resumes.generated) {
+              setActiveResumeType('generated');
+              switchResume('generated');
+            } else if (resumes.uploaded) {
+              setActiveResumeType('uploaded');
+              switchResume('uploaded');
+            }
           }
         } catch (resumeErr) {
-          console.log('No resume found in Resume collection');
+          // No resume found in Resume collection
         }
         
-        console.log('Final profile data being set:', profileData);
-        console.log('Profile picture in final data:', profileData.profilePicture);
         setProfile(profileData);
-        setEditedProfile(profileData);
       } else {
         // If 401 error, redirect to auth
         if (jobseekerResponse.error?.includes('401') || jobseekerResponse.error?.includes('Unauthorized')) {
@@ -202,55 +238,6 @@ const SettingsTab: React.FC<SettingsTabProps> = ({ onNavigate }) => {
     }
   };
 
-  const handleSave = async () => {
-    if (!editedProfile) return;
-
-    try {
-      setSaving(true);
-      setError(null);
-      
-      const response = await apiService.put('/jobseekers/profile', editedProfile);
-      if (response.success && response.data) {
-        setProfile(response.data);
-        setEditedProfile(response.data);
-        setIsEditing(false);
-        setSuccess('Profile updated successfully!');
-        setTimeout(() => setSuccess(null), 3000);
-      } else {
-        setError(response.error || 'Failed to update profile');
-      }
-    } catch (err: any) {
-      setError(err.message || 'Failed to update profile');
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const handleCancel = () => {
-    setEditedProfile(profile);
-    setIsEditing(false);
-    setError(null);
-  };
-
-  const handleInputChange = (field: string, value: any) => {
-    if (!editedProfile) return;
-
-    if (field.includes('.')) {
-      const [parent, child] = field.split('.');
-      setEditedProfile({
-        ...editedProfile,
-        [parent]: {
-          ...(editedProfile[parent as keyof JobseekerProfile] as any),
-          [child]: value
-        }
-      });
-    } else {
-      setEditedProfile({
-        ...editedProfile,
-        [field]: value
-      });
-    }
-  };
 
   const handleProfilePictureChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -342,7 +329,6 @@ const SettingsTab: React.FC<SettingsTabProps> = ({ onNavigate }) => {
         // Update profile to reflect new resume
         const updatedProfile = { ...profile, resumeUrl: response.data.fileUrl };
         setProfile(updatedProfile);
-        setEditedProfile(updatedProfile);
         setTimeout(() => setSuccess(null), 3000);
       } else {
         setError(response.error || 'Failed to upload resume');
@@ -466,6 +452,64 @@ const SettingsTab: React.FC<SettingsTabProps> = ({ onNavigate }) => {
     // Keep the original parsed data if user cancels
   };
 
+  const switchResume = async (type: 'generated' | 'uploaded') => {
+    try {
+      if (type === 'generated' && availableResumes.generated) {
+        try {
+          const pdfResponse = await fetch(availableResumes.generated.url, { mode: 'cors' });
+          if (pdfResponse.ok) {
+            const arrayBuffer = await pdfResponse.arrayBuffer();
+            const pdfBlob = new Blob([arrayBuffer], { type: 'application/pdf' });
+            const blobUrl = URL.createObjectURL(pdfBlob);
+            setResumePreviewUrl(blobUrl);
+          } else {
+            setResumePreviewUrl(availableResumes.generated.url);
+          }
+        } catch (fetchError) {
+          setResumePreviewUrl(availableResumes.generated.url);
+        }
+        setActiveResumeType('generated');
+      } else if (type === 'uploaded' && availableResumes.uploaded) {
+        try {
+          const pdfResponse = await fetch(availableResumes.uploaded.url, { mode: 'cors' });
+          if (pdfResponse.ok) {
+            const arrayBuffer = await pdfResponse.arrayBuffer();
+            const pdfBlob = new Blob([arrayBuffer], { type: 'application/pdf' });
+            const blobUrl = URL.createObjectURL(pdfBlob);
+            setResumePreviewUrl(blobUrl);
+          } else {
+            setResumePreviewUrl(availableResumes.uploaded.url);
+          }
+        } catch (fetchError) {
+          setResumePreviewUrl(availableResumes.uploaded.url);
+        }
+        setActiveResumeType('uploaded');
+      }
+    } catch (error) {
+      console.error('Error switching resume:', error);
+    }
+  };
+
+  const handleOriginalResumeVisibilityToggle = async (showToEmployers: boolean) => {
+    try {
+      setError(null);
+      
+      const response = await apiService.put('/resumes/original-visibility', {
+        showUploadedToEmployers: showToEmployers
+      });
+      
+      if (response.success) {
+        setShowOriginalToEmployers(showToEmployers);
+        setSuccess(`Original resume ${showToEmployers ? 'will be shown' : 'will be hidden'} to employers`);
+        setTimeout(() => setSuccess(null), 3000);
+      } else {
+        setError(response.error || 'Failed to update resume visibility');
+      }
+    } catch (err: any) {
+      setError(err.message || 'Failed to update resume visibility');
+    }
+  };
+
   if (loading) {
     return (
       <div className={styles.settingsTab}>
@@ -531,7 +575,7 @@ const SettingsTab: React.FC<SettingsTabProps> = ({ onNavigate }) => {
             onClick={() => setActiveSection('profile')}
           >
             <FiUser />
-            Profile & Account
+            Profile & Account Management
           </button>
           <button
             className={`${styles.navButton} ${activeSection === 'resume' ? styles.active : ''}`}
@@ -545,14 +589,7 @@ const SettingsTab: React.FC<SettingsTabProps> = ({ onNavigate }) => {
             onClick={() => setActiveSection('privacy')}
           >
             <FiBell />
-            Privacy & Notifications
-          </button>
-          <button
-            className={`${styles.navButton} ${activeSection === 'account' ? styles.active : ''}`}
-            onClick={() => setActiveSection('account')}
-          >
-            <FiSettings />
-            Account Management
+            Notifications
           </button>
           
           <div className={styles.navDivider}></div>
@@ -580,33 +617,6 @@ const SettingsTab: React.FC<SettingsTabProps> = ({ onNavigate }) => {
                     ></div>
                   </div>
                 </div>
-                {!isEditing ? (
-                  <button 
-                    className={styles.editButton}
-                    onClick={() => setIsEditing(true)}
-                  >
-                    <FiEdit2 />
-                    Edit Profile
-                  </button>
-                ) : (
-                  <div className={styles.editActions}>
-                    <button 
-                      className={styles.saveButton}
-                      onClick={handleSave}
-                      disabled={saving}
-                    >
-                      <FiSave />
-                      {saving ? 'Saving...' : 'Save'}
-                    </button>
-                    <button 
-                      className={styles.cancelButton}
-                      onClick={handleCancel}
-                    >
-                      <FiX />
-                      Cancel
-                    </button>
-                  </div>
-                )}
               </div>
 
               <div className={styles.profileForm}>
@@ -657,112 +667,219 @@ const SettingsTab: React.FC<SettingsTabProps> = ({ onNavigate }) => {
                   )}
                 </div>
 
-                <div className={styles.formRow}>
-                  <div className={styles.formGroup}>
-                    <label>First Name</label>
-                    {isEditing ? (
-                      <input
-                        type="text"
-                        value={editedProfile?.firstName || ''}
-                        onChange={(e) => handleInputChange('firstName', e.target.value)}
-                        className={styles.input}
-                      />
-                    ) : (
+                {/* Basic Information - Only show essential fields */}
+                <div className={styles.basicInfoSection}>
+                  <h3>Basic Information</h3>
+                  <p className={styles.sectionNote}>This information is from your registration and cannot be changed here.</p>
+                  
+                  <div className={styles.formRow}>
+                    <div className={styles.formGroup}>
+                      <label>First Name</label>
                       <div className={styles.displayValue}>
                         <FiUser className={styles.fieldIcon} />
                         {profile.firstName || 'Not specified'}
                       </div>
-                    )}
-                  </div>
-                  <div className={styles.formGroup}>
-                    <label>Last Name</label>
-                    {isEditing ? (
-                      <input
-                        type="text"
-                        value={editedProfile?.lastName || ''}
-                        onChange={(e) => handleInputChange('lastName', e.target.value)}
-                        className={styles.input}
-                      />
-                    ) : (
+                    </div>
+                    <div className={styles.formGroup}>
+                      <label>Last Name</label>
                       <div className={styles.displayValue}>
                         <FiUser className={styles.fieldIcon} />
                         {profile.lastName || 'Not specified'}
                       </div>
-                    )}
+                    </div>
                   </div>
+
                 </div>
 
-                <div className={styles.formRow}>
-                  <div className={styles.formGroup}>
-                    <label>Middle Name</label>
-                    {isEditing ? (
-                      <input
-                        type="text"
-                        value={editedProfile?.middleName || ''}
-                        onChange={(e) => handleInputChange('middleName', e.target.value)}
-                        className={styles.input}
-                      />
-                    ) : (
-                      <div className={styles.displayValue}>
-                        <FiUser className={styles.fieldIcon} />
-                        {profile.middleName || 'Not specified'}
+                {/* Account Management Section */}
+                <div className={styles.accountInfo}>
+                  <h3>Account Information</h3>
+                  <div className={styles.accountGrid}>
+                    <div className={styles.accountCard}>
+                      <div className={styles.cardHeader}>
+                        <FiMail className={styles.cardIcon} />
+                        <h4>Email Address</h4>
                       </div>
-                    )}
-                  </div>
-                  <div className={styles.formGroup}>
-                    <label>Email</label>
-                    <div className={styles.displayValue}>
-                      <FiMail className={styles.fieldIcon} />
-                      {profile.email}
+                      <p className={styles.cardValue}>{profile?.email}</p>
+                    </div>
+                    
+                    <div className={styles.accountCard}>
+                      <div className={styles.cardHeader}>
+                        <FiUser className={styles.cardIcon} />
+                        <h4>Account Status</h4>
+                      </div>
+                      <div className={styles.statusBadge}>
+                        <FiCheck className={styles.statusIcon} />
+                        <span>Active</span>
+                      </div>
+                    </div>
+                    
+                    <div className={styles.accountCard}>
+                      <div className={styles.cardHeader}>
+                        <FiSettings className={styles.cardIcon} />
+                        <h4>Member Since</h4>
+                      </div>
+                      <p className={styles.cardValue}>
+                        {profile?.createdAt ? new Date(profile.createdAt).toLocaleDateString() : new Date().toLocaleDateString()}
+                      </p>
                     </div>
                   </div>
                 </div>
 
-                <div className={styles.formRow}>
-                  <div className={styles.formGroup}>
-                    <label>Phone Number</label>
-                    {isEditing ? (
-                      <input
-                        type="tel"
-                        value={editedProfile?.phone || ''}
-                        onChange={(e) => handleInputChange('phone', e.target.value)}
-                        className={styles.input}
-                        placeholder="+63 XXX XXX XXXX"
-                      />
-                    ) : (
-                      <div className={styles.displayValue}>
-                        <FiPhone className={styles.fieldIcon} />
-                        {profile.phone || 'Not specified'}
+                {/* Password & Security Section */}
+                <div className={styles.passwordSection}>
+                  <div className={styles.passwordHeader}>
+                    <h3>Password & Security</h3>
+                    {checkingAuthMethods ? (
+                      <div className={styles.loadingText}>Checking account type...</div>
+                    ) : !userAuthMethods.hasPassword ? (
+                      <div className={styles.googleAuthInfo}>
+                        <div className={styles.infoCard}>
+                          <FiSettings className={styles.infoIcon} />
+                          <div>
+                            <h4>Google Account</h4>
+                            <p>Your account uses Google sign-in. To change your password, please visit your Google Account settings.</p>
+                            <a 
+                              href="https://myaccount.google.com/security" 
+                              target="_blank" 
+                              rel="noopener noreferrer"
+                              className={styles.googleLink}
+                            >
+                              Manage Google Account →
+                            </a>
+                          </div>
+                        </div>
                       </div>
-                    )}
+                    ) : !showPasswordForm ? (
+                      <button 
+                        className={styles.changePasswordButton}
+                        onClick={() => setShowPasswordForm(true)}
+                      >
+                        <FiEdit2 />
+                        Change Password
+                      </button>
+                    ) : null}
                   </div>
                   
+                  {showPasswordForm && userAuthMethods.hasPassword && (
+                    <form onSubmit={handlePasswordUpdate} className={styles.passwordForm}>
+                      <div className={styles.formGroup}>
+                        <label>Current Password</label>
+                        <div className={styles.passwordInputWrapper}>
+                          <input
+                            type={showPasswords.current ? "text" : "password"}
+                            value={passwordData.currentPassword}
+                            onChange={(e) => setPasswordData({...passwordData, currentPassword: e.target.value})}
+                            className={styles.passwordInput}
+                            placeholder="Enter your current password"
+                            required
+                          />
+                          <button
+                            type="button"
+                            className={styles.passwordToggle}
+                            onClick={() => togglePasswordVisibility('current')}
+                          >
+                            {showPasswords.current ? <FiEye /> : <FiEye style={{opacity: 0.5}} />}
+                          </button>
+                        </div>
+                      </div>
+                      <div className={styles.formGroup}>
+                        <label>New Password</label>
+                        <div className={styles.passwordInputWrapper}>
+                          <input
+                            type={showPasswords.new ? "text" : "password"}
+                            value={passwordData.newPassword}
+                            onChange={(e) => setPasswordData({...passwordData, newPassword: e.target.value})}
+                            className={styles.passwordInput}
+                            placeholder="Enter your new password"
+                            required
+                          />
+                          <button
+                            type="button"
+                            className={styles.passwordToggle}
+                            onClick={() => togglePasswordVisibility('new')}
+                          >
+                            {showPasswords.new ? <FiEye /> : <FiEye style={{opacity: 0.5}} />}
+                          </button>
+                        </div>
+                      </div>
+                      <div className={styles.formGroup}>
+                        <label>Confirm New Password</label>
+                        <div className={styles.passwordInputWrapper}>
+                          <input
+                            type={showPasswords.confirm ? "text" : "password"}
+                            value={passwordData.confirmPassword}
+                            onChange={(e) => setPasswordData({...passwordData, confirmPassword: e.target.value})}
+                            className={styles.passwordInput}
+                            placeholder="Confirm your new password"
+                            required
+                          />
+                          <button
+                            type="button"
+                            className={styles.passwordToggle}
+                            onClick={() => togglePasswordVisibility('confirm')}
+                          >
+                            {showPasswords.confirm ? <FiEye /> : <FiEye style={{opacity: 0.5}} />}
+                          </button>
+                        </div>
+                      </div>
+                      <div className={styles.passwordFormActions}>
+                        <button 
+                          type="button"
+                          className={styles.cancelPasswordButton}
+                          onClick={() => {
+                            setShowPasswordForm(false);
+                            setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' });
+                            setShowPasswords({ current: false, new: false, confirm: false });
+                          }}
+                        >
+                          <FiX />
+                          Cancel
+                        </button>
+                        <button 
+                          type="submit"
+                          className={styles.updatePasswordButton}
+                          disabled={updatingPassword}
+                        >
+                          <FiSave />
+                          {updatingPassword ? 'Updating...' : 'Update Password'}
+                        </button>
+                      </div>
+                    </form>
+                  )}
                 </div>
 
-                <div className={styles.formRow}>
-                  <div className={styles.formGroup}>
-                    <label>Address</label>
-                    {isEditing ? (
-                      <input
-                        type="text"
-                        value={typeof editedProfile?.address === 'string' ? editedProfile.address : 
-                          editedProfile?.address ? 
-                            `${editedProfile.address.street || ''} ${editedProfile.address.city || ''} ${editedProfile.address.province || ''} ${editedProfile.address.zipCode || ''}`.trim() 
-                            : ''
-                        }
-                        onChange={(e) => handleInputChange('address', e.target.value)}
-                        className={styles.input}
-                      />
-                    ) : (
-                      <div className={styles.displayValue}>
-                        <FiMapPin className={styles.fieldIcon} />
-                        {profile.address ? 
-                          (typeof profile.address === 'string' ? profile.address :
-                            `${profile.address.street || ''} ${profile.address.city || ''} ${profile.address.province || ''} ${profile.address.zipCode || ''}`.trim() || 'Not specified')
-                          : 'Not specified'
-                        }
+                {/* Danger Zone */}
+                <div className={styles.dangerZone}>
+                  <h3>Danger Zone</h3>
+                  <div className={styles.dangerActions}>
+                    <div className={styles.dangerCard}>
+                      <div className={styles.dangerInfo}>
+                        <div className={styles.dangerHeader}>
+                          <FiEye className={styles.dangerIcon} />
+                          <h4>Deactivate Account</h4>
+                        </div>
+                        <p>Temporarily deactivate your account. You can reactivate it anytime by signing in.</p>
                       </div>
-                    )}
+                      <button className={styles.deactivateButton}>
+                        <FiEye />
+                        Deactivate
+                      </button>
+                    </div>
+                    
+                    <div className={styles.dangerCard}>
+                      <div className={styles.dangerInfo}>
+                        <div className={styles.dangerHeader}>
+                          <FiTrash2 className={styles.dangerIcon} />
+                          <h4>Delete Account</h4>
+                        </div>
+                        <p>Permanently delete your account and all associated data. This action cannot be undone.</p>
+                      </div>
+                      <button className={styles.deleteButton}>
+                        <FiTrash2 />
+                        Delete Account
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -771,131 +888,236 @@ const SettingsTab: React.FC<SettingsTabProps> = ({ onNavigate }) => {
 
           {activeSection === 'resume' && (
             <div className={styles.resumeSection}>
-              <div className={styles.sectionHeader}>
+              <div className={styles.sectionHeader} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 <h2>Resume & Documents</h2>
+                {profile.resumeUrl && (
+                  <button 
+                    onClick={() => onNavigate?.('create-resume')}
+                    className={styles.editButton}
+                  >
+                    <FiEdit2 />
+                    Edit Resume
+                  </button>
+                )}
               </div>
 
-              <div className={styles.resumeContent}>
-                <div className={styles.resumeCard}>
-                <div className={styles.resumeInfo}>
-                  <FiFileText className={styles.resumeIcon} />
-                  <div>
-                    <h3>Resume</h3>
-                    <p>{profile.resumeUrl ? 'Resume uploaded' : 'No resume uploaded'}</p>
-                  </div>
-                </div>
-                
-                <div className={styles.resumeActions}>
-                  {profile.resumeUrl && (
-                    <>
-                      <a 
-                        href={`http://localhost:3001${profile.resumeUrl}`} 
-                        target="_blank" 
-                        rel="noopener noreferrer"
-                        className={styles.viewButton}
-                      >
-                        <FiEye />
-                        View
-                      </a>
-                      <button 
-                        onClick={() => onNavigate?.('create-resume')}
-                        className={styles.editButton}
-                      >
-                        <FiEdit2 />
-                        Edit Resume
-                      </button>
-                      <button 
-                        onClick={() => window.open(`http://localhost:3001${profile.resumeUrl}`, '_blank')}
-                        className={styles.downloadButton}
-                      >
-                        <FiDownload />
-                        Download
-                      </button>
-                    </>
-                  )}
-                  
-                  {!profile.resumeUrl && (
-                    <button 
-                      onClick={() => onNavigate?.('create-resume')}
-                      className={styles.createResumeButton}
-                    >
-                      <FiEdit2 />
-                      Create Resume
-                    </button>
-                  )}
-                </div>
-              </div>
-
-              {/* PDF Preview */}
-              {profile.resumeUrl && (
-                <div className={styles.pdfPreviewSection}>
-                  <PDFPreview 
-                    resumeUrl={profile.resumeUrl} 
-                    className={styles.resumePreview}
-                  />
+              {/* Create Resume Button (only when no resume exists) */}
+              {!profile.resumeUrl && (
+                <div style={{ marginBottom: '20px', textAlign: 'center' }}>
+                  <button 
+                    onClick={() => onNavigate?.('create-resume')}
+                    className={styles.createResumeButton}
+                  >
+                    <FiEdit2 />
+                    Create Resume
+                  </button>
                 </div>
               )}
 
-                {uploading && (
-                  <div className={styles.uploadProgress}>
-                    <div className={styles.spinner}></div>
-                    <p>Uploading resume...</p>
+              {/* Resume Tabs */}
+              {(availableResumes.generated || availableResumes.uploaded) && (
+                <div style={{
+                  display: 'flex',
+                  gap: '12px',
+                  padding: '16px 0',
+                  borderBottom: '2px solid #e5e7eb',
+                  marginBottom: '24px',
+                  backgroundColor: '#f8fafc',
+                  borderRadius: '8px 8px 0 0',
+                  paddingLeft: '16px',
+                  paddingRight: '16px'
+                }}>
+                  {availableResumes.generated && (
+                    <button
+                      onClick={() => switchResume('generated')}
+                      style={{
+                        padding: '12px 24px',
+                        border: activeResumeType === 'generated' ? '2px solid #3b82f6' : '2px solid #e5e7eb',
+                        borderRadius: '8px',
+                        backgroundColor: activeResumeType === 'generated' ? '#3b82f6' : 'white',
+                        color: activeResumeType === 'generated' ? 'white' : '#374151',
+                        fontSize: '15px',
+                        fontWeight: activeResumeType === 'generated' ? '600' : '500',
+                        cursor: 'pointer',
+                        transition: 'all 0.3s ease',
+                        boxShadow: activeResumeType === 'generated' 
+                          ? '0 4px 12px rgba(59, 130, 246, 0.4)' 
+                          : '0 2px 4px rgba(0,0,0,0.1)',
+                        transform: activeResumeType === 'generated' ? 'translateY(-1px)' : 'translateY(0)',
+                        minWidth: '140px'
+                      }}
+                      onMouseEnter={(e) => {
+                        if (activeResumeType !== 'generated') {
+                          e.currentTarget.style.backgroundColor = '#f8fafc';
+                          e.currentTarget.style.borderColor = '#3b82f6';
+                          e.currentTarget.style.transform = 'translateY(-1px)';
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        if (activeResumeType !== 'generated') {
+                          e.currentTarget.style.backgroundColor = 'white';
+                          e.currentTarget.style.borderColor = '#e5e7eb';
+                          e.currentTarget.style.transform = 'translateY(0)';
+                        }
+                      }}
+                    >
+                      {availableResumes.generated.label}
+                    </button>
+                  )}
+                  {availableResumes.uploaded && (
+                    <button
+                      onClick={() => switchResume('uploaded')}
+                      style={{
+                        padding: '12px 24px',
+                        border: activeResumeType === 'uploaded' ? '2px solid #3b82f6' : '2px solid #e5e7eb',
+                        borderRadius: '8px',
+                        backgroundColor: activeResumeType === 'uploaded' ? '#3b82f6' : 'white',
+                        color: activeResumeType === 'uploaded' ? 'white' : '#374151',
+                        fontSize: '15px',
+                        fontWeight: activeResumeType === 'uploaded' ? '600' : '500',
+                        cursor: 'pointer',
+                        transition: 'all 0.3s ease',
+                        boxShadow: activeResumeType === 'uploaded' 
+                          ? '0 4px 12px rgba(59, 130, 246, 0.4)' 
+                          : '0 2px 4px rgba(0,0,0,0.1)',
+                        transform: activeResumeType === 'uploaded' ? 'translateY(-1px)' : 'translateY(0)',
+                        minWidth: '140px'
+                      }}
+                      onMouseEnter={(e) => {
+                        if (activeResumeType !== 'uploaded') {
+                          e.currentTarget.style.backgroundColor = '#f8fafc';
+                          e.currentTarget.style.borderColor = '#3b82f6';
+                          e.currentTarget.style.transform = 'translateY(-1px)';
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        if (activeResumeType !== 'uploaded') {
+                          e.currentTarget.style.backgroundColor = 'white';
+                          e.currentTarget.style.borderColor = '#e5e7eb';
+                          e.currentTarget.style.transform = 'translateY(0)';
+                        }
+                      }}
+                    >
+                      {availableResumes.uploaded.label}
+                    </button>
+                  )}
+                </div>
+              )}
+
+              {/* Original Resume Visibility Control */}
+              {originalResumeUrl && activeResumeType === 'uploaded' && (
+                <div className={styles.visibilityCard} style={{ marginBottom: '20px' }}>
+                  <div className={styles.visibilityInfo} style={{ marginBottom: '16px' }}>
+                    <div className={styles.visibilityHeader}>
+                      <FiSettings className={styles.visibilityIcon} />
+                      <h3>Original Resume Visibility</h3>
+                    </div>
+                    <p style={{ margin: '4px 0 0 0', fontSize: '14px', color: '#6b7280' }}>
+                      Control whether employers can see your original uploaded resume.
+                    </p>
                   </div>
-                )}
-              </div>
+                  
+                  <div className={styles.visibilityToggle} style={{ 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    justifyContent: 'flex-start',
+                    gap: '12px'
+                  }}>
+                    <label className={styles.toggle}>
+                      <input
+                        type="checkbox"
+                        checked={showOriginalToEmployers}
+                        onChange={(e) => handleOriginalResumeVisibilityToggle(e.target.checked)}
+                      />
+                      <span className={styles.slider}></span>
+                    </label>
+                    <span className={styles.toggleLabel} style={{ 
+                      fontWeight: '500',
+                      fontSize: '14px',
+                      color: showOriginalToEmployers ? '#059669' : '#6b7280',
+                      flex: '1'
+                    }}>
+                      {showOriginalToEmployers ? 'Visible to employers' : 'Hidden from employers'}
+                    </span>
+                  </div>
+                </div>
+              )}
+
+              {/* PDF Preview */}
+              {resumePreviewUrl && (
+                <div className={styles.pdfPreviewSection} style={{ position: 'relative' }}>
+                  <iframe
+                    src={resumePreviewUrl}
+                    width="100%"
+                    height="600px"
+                    style={{ border: '1px solid #e5e7eb', borderRadius: '8px' }}
+                    title="Resume Preview"
+                  />
+                  {/* Open in New Tab button */}
+                  <div style={{
+                    position: 'absolute',
+                    top: '100px',
+                    right: '16px',
+                    zIndex: 10
+                  }}>
+                    <button
+                      onClick={async () => {
+                        const url = activeResumeType === 'generated' 
+                          ? availableResumes.generated?.url 
+                          : availableResumes.uploaded?.url;
+                        if (url) {
+                          try {
+                            // Fetch as blob and open in new tab
+                            const response = await fetch(url, { mode: 'cors' });
+                            const blob = await response.blob();
+                            const blobUrl = URL.createObjectURL(new Blob([blob], { type: 'application/pdf' }));
+                            window.open(blobUrl, '_blank');
+                          } catch (error) {
+                            console.error('Error opening in new tab:', error);
+                            // Fallback to direct URL
+                            window.open(url, '_blank');
+                          }
+                        }
+                      }}
+                      style={{
+                        padding: '8px 16px',
+                        backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                        color: '#374151',
+                        border: '1px solid #e5e7eb',
+                        borderRadius: '6px',
+                        cursor: 'pointer',
+                        fontSize: '13px',
+                        fontWeight: '500',
+                        boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '6px'
+                      }}
+                    >
+                      <FiEye size={14} />
+                      Open in New Tab
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {uploading && (
+                <div className={styles.uploadProgress}>
+                  <div className={styles.spinner}></div>
+                  <p>Uploading resume...</p>
+                </div>
+              )}
             </div>
           )}
 
           {activeSection === 'privacy' && (
             <div className={styles.privacySection}>
               <div className={styles.sectionHeader}>
-                <h2>Privacy & Notifications</h2>
-                <p className={styles.sectionDescription}>Manage your privacy settings and notification preferences</p>
+                <h2>Notifications</h2>
+                <p className={styles.sectionDescription}>Manage your notification preferences</p>
               </div>
 
               <div className={styles.preferencesContent}>
-                {/* Privacy Settings */}
-                <div className={styles.preferenceGroup}>
-                  <div className={styles.groupHeader}>
-                    <FiEye className={styles.groupIcon} />
-                    <h3>Privacy Settings</h3>
-                  </div>
-                  
-                  <div className={styles.alertsGrid}>
-                    <div className={styles.alertCard}>
-                      <div className={styles.alertInfo}>
-                        <h4 className={styles.alertTitle}>Profile Visibility</h4>
-                        <p className={styles.alertDescription}>Control who can view your profile and personal information</p>
-                        <select
-                          value={editedProfile?.privacySettings?.profileVisibility || 'employers_only'}
-                          onChange={(e) => handleInputChange('privacySettings.profileVisibility', e.target.value)}
-                          className={styles.select}
-                          style={{ marginTop: '8px', width: '100%' }}
-                        >
-                          <option value="public">🌐 Public - Visible to everyone</option>
-                          <option value="employers_only">🏢 Employers Only - Only verified employers</option>
-                          <option value="private">🔒 Private - Only you can see</option>
-                        </select>
-                      </div>
-                    </div>
-
-                    <div className={styles.alertCard}>
-                      <div className={styles.alertInfo}>
-                        <h4 className={styles.alertTitle}>Direct Contact</h4>
-                        <p className={styles.alertDescription}>Allow employers to contact you directly about opportunities</p>
-                      </div>
-                      <label className={styles.toggle}>
-                        <input
-                          type="checkbox"
-                          checked={editedProfile?.privacySettings?.allowEmployerContact ?? true}
-                          onChange={(e) => handleInputChange('privacySettings.allowEmployerContact', e.target.checked)}
-                        />
-                        <span className={styles.slider}></span>
-                      </label>
-                    </div>
-                  </div>
-                </div>
-
                 {/* Job Alerts & Notifications */}
                 <div className={styles.preferenceGroup}>
                   <div className={styles.groupHeader}>
@@ -982,257 +1204,6 @@ const SettingsTab: React.FC<SettingsTabProps> = ({ onNavigate }) => {
                 </div>
 
                 {/* Save functionality is handled by the main save button in the header */}
-              </div>
-            </div>
-          )}
-
-
-          {activeSection === 'account' && (
-            <div className={styles.accountSection}>
-              <div className={styles.sectionHeader}>
-                <h2>Account Management</h2>
-              </div>
-
-              <div className={styles.accountContent}>
-                {/* Profile Picture Section */}
-                <div className={styles.profilePictureSection}>
-                  <h3>Profile Picture</h3>
-                  <div className={styles.profilePictureUpload}>
-                    <div className={styles.currentPicture}>
-                      {profile.profilePicture ? (
-                        <img 
-                          src={getImageSrc(profile.profilePicture)} 
-                          alt="Profile" 
-                          style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }}
-                        />
-                      ) : (
-                        <FiUser className={styles.defaultAvatar} />
-                      )}
-                    </div>
-                    <div className={styles.pictureActions}>
-                      <label className={styles.uploadPictureButton}>
-                        <FiUpload />
-                        {profile.profilePicture ? 'Change Photo' : 'Upload Photo'}
-                        <input
-                          type="file"
-                          accept="image/*"
-                          onChange={handleProfilePictureChange}
-                          style={{ display: 'none' }}
-                          disabled={uploadingPicture}
-                        />
-                      </label>
-                      {profile.profilePicture && (
-                        <button 
-                          onClick={handleRemoveProfilePicture}
-                          className={styles.removePictureButton}
-                          disabled={uploadingPicture}
-                        >
-                          <FiTrash2 />
-                          Remove
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                  {uploadingPicture && (
-                    <div className={styles.uploadProgress}>
-                      <div className={styles.spinner}></div>
-                      <span>Uploading photo...</span>
-                    </div>
-                  )}
-                </div>
-
-                <div className={styles.accountInfo}>
-                  <h3>Account Information</h3>
-                  <div className={styles.accountGrid}>
-                    <div className={styles.accountCard}>
-                      <div className={styles.cardHeader}>
-                        <FiMail className={styles.cardIcon} />
-                        <h4>Email Address</h4>
-                      </div>
-                      <p className={styles.cardValue}>{profile?.email}</p>
-                    </div>
-                    
-                    <div className={styles.accountCard}>
-                      <div className={styles.cardHeader}>
-                        <FiUser className={styles.cardIcon} />
-                        <h4>Account Status</h4>
-                      </div>
-                      <div className={styles.statusBadge}>
-                        <FiCheck className={styles.statusIcon} />
-                        <span>Active</span>
-                      </div>
-                    </div>
-                    
-                    <div className={styles.accountCard}>
-                      <div className={styles.cardHeader}>
-                        <FiSettings className={styles.cardIcon} />
-                        <h4>Member Since</h4>
-                      </div>
-                      <p className={styles.cardValue}>
-                        {profile?.createdAt ? new Date(profile.createdAt).toLocaleDateString() : new Date().toLocaleDateString()}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                <div className={styles.passwordSection}>
-                  <div className={styles.passwordHeader}>
-                    <h3>Password & Security</h3>
-                    {checkingAuthMethods ? (
-                      <div className={styles.loadingText}>Checking account type...</div>
-                    ) : !userAuthMethods.hasPassword ? (
-                      <div className={styles.googleAuthInfo}>
-                        <div className={styles.infoCard}>
-                          <FiSettings className={styles.infoIcon} />
-                          <div>
-                            <h4>Google Account</h4>
-                            <p>Your account uses Google sign-in. To change your password, please visit your Google Account settings.</p>
-                            <a 
-                              href="https://myaccount.google.com/security" 
-                              target="_blank" 
-                              rel="noopener noreferrer"
-                              className={styles.googleLink}
-                            >
-                              Manage Google Account →
-                            </a>
-                          </div>
-                        </div>
-                      </div>
-                    ) : !showPasswordForm ? (
-                      <button 
-                        className={styles.changePasswordButton}
-                        onClick={() => setShowPasswordForm(true)}
-                      >
-                        <FiEdit2 />
-                        Change Password
-                      </button>
-                    ) : null}
-                  </div>
-                  
-                  {showPasswordForm && userAuthMethods.hasPassword && (
-                    <form onSubmit={handlePasswordUpdate} className={styles.passwordForm}>
-                      <div className={styles.formGroup}>
-                        <label>Current Password</label>
-                        <div className={styles.passwordInputWrapper}>
-                          <input
-                            type={showPasswords.current ? "text" : "password"}
-                            value={passwordData.currentPassword}
-                            onChange={(e) => setPasswordData({...passwordData, currentPassword: e.target.value})}
-                            className={styles.passwordInput}
-                            placeholder="Enter your current password"
-                            required
-                          />
-                          <button
-                            type="button"
-                            className={styles.passwordToggle}
-                            onClick={() => togglePasswordVisibility('current')}
-                          >
-                            {showPasswords.current ? <FiEye /> : <FiEye style={{opacity: 0.5}} />}
-                          </button>
-                        </div>
-                      </div>
-                      <div className={styles.formGroup}>
-                        <label>New Password</label>
-                        <div className={styles.passwordInputWrapper}>
-                          <input
-                            type={showPasswords.new ? "text" : "password"}
-                            value={passwordData.newPassword}
-                            onChange={(e) => setPasswordData({...passwordData, newPassword: e.target.value})}
-                            className={styles.passwordInput}
-                            placeholder="Enter new password (min 6 characters)"
-                            required
-                            minLength={6}
-                          />
-                          <button
-                            type="button"
-                            className={styles.passwordToggle}
-                            onClick={() => togglePasswordVisibility('new')}
-                          >
-                            {showPasswords.new ? <FiEye /> : <FiEye style={{opacity: 0.5}} />}
-                          </button>
-                        </div>
-                      </div>
-                      <div className={styles.formGroup}>
-                        <label>Confirm New Password</label>
-                        <div className={styles.passwordInputWrapper}>
-                          <input
-                            type={showPasswords.confirm ? "text" : "password"}
-                            value={passwordData.confirmPassword}
-                            onChange={(e) => setPasswordData({...passwordData, confirmPassword: e.target.value})}
-                            className={styles.passwordInput}
-                            placeholder="Confirm your new password"
-                            required
-                            minLength={6}
-                          />
-                          <button
-                            type="button"
-                            className={styles.passwordToggle}
-                            onClick={() => togglePasswordVisibility('confirm')}
-                          >
-                            {showPasswords.confirm ? <FiEye /> : <FiEye style={{opacity: 0.5}} />}
-                          </button>
-                        </div>
-                      </div>
-                      {error && (
-                        <div className={styles.passwordError}>
-                          <FiX className={styles.errorIcon} />
-                          {error}
-                        </div>
-                      )}
-                      <div className={styles.passwordActions}>
-                        <button type="submit" className={styles.updateButton} disabled={updatingPassword}>
-                          <FiSave />
-                          {updatingPassword ? 'Updating...' : 'Update Password'}
-                        </button>
-                        <button 
-                          type="button" 
-                          className={styles.cancelButton}
-                          onClick={() => {
-                            setShowPasswordForm(false);
-                            setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' });
-                            setError(null);
-                          }}
-                        >
-                          <FiX />
-                          Cancel
-                        </button>
-                      </div>
-                    </form>
-                  )}
-                </div>
-
-                <div className={styles.dangerZone}>
-                  <h3>⚠️ Danger Zone</h3>
-                  <div className={styles.dangerActions}>
-                    <div className={styles.dangerCard}>
-                      <div className={styles.dangerInfo}>
-                        <div className={styles.dangerHeader}>
-                          <FiEye className={styles.dangerIcon} />
-                          <h4>Deactivate Account</h4>
-                        </div>
-                        <p>Temporarily disable your account. You can reactivate it anytime by signing back in.</p>
-                      </div>
-                      <button className={styles.deactivateButton}>
-                        <FiEye />
-                        Deactivate
-                      </button>
-                    </div>
-                    
-                    <div className={styles.dangerCard}>
-                      <div className={styles.dangerInfo}>
-                        <div className={styles.dangerHeader}>
-                          <FiTrash2 className={styles.dangerIcon} />
-                          <h4>Delete Account</h4>
-                        </div>
-                        <p>Permanently delete your account and all associated data. This action cannot be undone.</p>
-                      </div>
-                      <button className={styles.deleteButton}>
-                        <FiTrash2 />
-                        Delete Account
-                      </button>
-                    </div>
-                  </div>
-                </div>
               </div>
             </div>
           )}

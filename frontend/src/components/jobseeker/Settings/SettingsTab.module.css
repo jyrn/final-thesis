@@ -639,6 +639,86 @@
   flex-shrink: 0;
 }
 
+.basicInfoSection {
+  margin-top: 32px;
+  padding: 24px;
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+}
+
+.basicInfoSection h3 {
+  font-size: 18px;
+  font-weight: 600;
+  color: #1f2937;
+  margin: 0 0 8px 0;
+}
+
+.sectionNote {
+  font-size: 14px;
+  color: #6b7280;
+  margin: 0 0 24px 0;
+  font-style: italic;
+}
+
+.visibilityCard {
+  margin-top: 24px;
+  padding: 20px;
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+}
+
+.visibilityInfo {
+  margin-bottom: 16px;
+}
+
+.visibilityHeader {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.visibilityHeader h3 {
+  font-size: 16px;
+  font-weight: 600;
+  color: #1f2937;
+  margin: 0;
+}
+
+.visibilityIcon {
+  width: 18px;
+  height: 18px;
+  color: #6b7280;
+}
+
+.visibilityInfo p {
+  font-size: 14px;
+  color: #6b7280;
+  margin: 0;
+}
+
+.visibilityToggle {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.toggleLabel {
+  font-size: 14px;
+  font-weight: 500;
+  color: #374151;
+}
+
+.pdfPreviewSection h3 {
+  font-size: 16px;
+  font-weight: 600;
+  color: #1f2937;
+  margin: 0 0 12px 0;
+  padding: 0 4px;
+}
+
 .displayValue a {
   color: #3182ce;
   text-decoration: none;

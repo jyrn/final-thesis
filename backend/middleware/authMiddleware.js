@@ -3,17 +3,15 @@ const admin = require('../config/firebase');
 const verifyToken = async (req, res, next) => {
   try {
     const authHeader = req.headers.authorization;
-    console.log('Auth header:', authHeader);
     
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
       return res.status(401).json({ 
         success: false, 
-        error: 'No valid authorization header provided' 
+        error: 'Access denied. No token provided or invalid format.' 
       });
     }
 
     const token = authHeader.split('Bearer ')[1];
-    console.log('Extracted token length:', token?.length);
     
     if (!token || token.trim() === '') {
       return res.status(401).json({ 

@@ -193,7 +193,6 @@ router.post('/', verifyToken, async (req, res) => {
 
 // ------------------ EMPLOYER GET APPLICATIONS ------------------
 router.get('/employer', verifyToken, async (req, res) => {
-  console.log(`🎯 [${new Date().toLocaleTimeString()}] GET /api/applications/employer called by user: ${req.user?.uid}`);
   try {
     const { uid } = req.user;
     const { status, jobId } = req.query;
@@ -209,7 +208,6 @@ router.get('/employer', verifyToken, async (req, res) => {
     const Resume = require('../models/Resume');
     const User = require('../models/User');
     
-    console.log(`🚀 [${new Date().toLocaleTimeString()}] Processing ${applications.length} applications for employer`);
     
     const formattedApplications = await Promise.all(applications.map(async (app) => {
       // Try to get fresh resume data from Resume collection
@@ -251,21 +249,15 @@ router.get('/employer', verifyToken, async (req, res) => {
       let profilePicture = null;
       try {
         const jobSeekerUser = await User.findOne({ uid: app.jobSeekerUid }).select('profilePicture');
-        console.log(`🔍 User ${app.jobSeekerUid} (${currentResumeData?.personalInfo?.name || app.applicantName}):`);
         
         if (jobSeekerUser?.profilePicture) {
           // Only accept cloud URLs
           if (jobSeekerUser.profilePicture.startsWith('https://') || jobSeekerUser.profilePicture.startsWith('http://')) {
             profilePicture = jobSeekerUser.profilePicture;
-            console.log(`   - ✅ Using cloud URL: ${jobSeekerUser.profilePicture.substring(0, 50)}...`);
-          } else {
-            console.log(`   - ⚠️ Non-cloud URL detected, ignoring legacy data`);
           }
-        } else {
-          console.log(`   - ℹ️ No profile picture in database`);
         }
       } catch (userError) {
-        console.log('❌ Error fetching profile picture for application:', app._id, userError.message);
+        // Error fetching profile picture, continue without it
       }
       
       

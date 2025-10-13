@@ -435,45 +435,84 @@ export const ApplicantDetailsModal: React.FC<ApplicantDetailsModalProps> = ({
         {(availableResumes.generated || availableResumes.uploaded) && (
           <div style={{
             display: 'flex',
-            gap: '8px',
-            padding: '12px 20px',
-            borderBottom: '1px solid #e5e7eb',
-            backgroundColor: '#f9fafb'
+            gap: '12px',
+            padding: '16px 20px',
+            borderBottom: '2px solid #e5e7eb',
+            backgroundColor: '#f8fafc',
+            borderRadius: '8px 8px 0 0'
           }}>
             {availableResumes.generated && (
               <button
                 onClick={() => switchResume('generated')}
                 style={{
-                  padding: '8px 16px',
-                  border: 'none',
-                  borderRadius: '6px',
+                  padding: '12px 24px',
+                  border: activeResumeType === 'generated' ? '2px solid #3b82f6' : '2px solid #e5e7eb',
+                  borderRadius: '8px',
                   backgroundColor: activeResumeType === 'generated' ? '#3b82f6' : 'white',
                   color: activeResumeType === 'generated' ? 'white' : '#374151',
-                  fontWeight: activeResumeType === 'generated' ? '600' : '400',
+                  fontSize: '15px',
+                  fontWeight: activeResumeType === 'generated' ? '600' : '500',
                   cursor: 'pointer',
-                  transition: 'all 0.2s',
-                  boxShadow: activeResumeType === 'generated' ? '0 2px 4px rgba(59, 130, 246, 0.3)' : '0 1px 2px rgba(0,0,0,0.1)'
+                  transition: 'all 0.3s ease',
+                  boxShadow: activeResumeType === 'generated' 
+                    ? '0 4px 12px rgba(59, 130, 246, 0.4)' 
+                    : '0 2px 4px rgba(0,0,0,0.1)',
+                  transform: activeResumeType === 'generated' ? 'translateY(-1px)' : 'translateY(0)',
+                  minWidth: '140px'
+                }}
+                onMouseEnter={(e) => {
+                  if (activeResumeType !== 'generated') {
+                    e.currentTarget.style.backgroundColor = '#f8fafc';
+                    e.currentTarget.style.borderColor = '#3b82f6';
+                    e.currentTarget.style.transform = 'translateY(-1px)';
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (activeResumeType !== 'generated') {
+                    e.currentTarget.style.backgroundColor = 'white';
+                    e.currentTarget.style.borderColor = '#e5e7eb';
+                    e.currentTarget.style.transform = 'translateY(0)';
+                  }
                 }}
               >
-                📄 {availableResumes.generated.label}
+                {availableResumes.generated.label}
               </button>
             )}
             {availableResumes.uploaded && (
               <button
                 onClick={() => switchResume('uploaded')}
                 style={{
-                  padding: '8px 16px',
-                  border: 'none',
-                  borderRadius: '6px',
+                  padding: '12px 24px',
+                  border: activeResumeType === 'uploaded' ? '2px solid #3b82f6' : '2px solid #e5e7eb',
+                  borderRadius: '8px',
                   backgroundColor: activeResumeType === 'uploaded' ? '#3b82f6' : 'white',
                   color: activeResumeType === 'uploaded' ? 'white' : '#374151',
-                  fontWeight: activeResumeType === 'uploaded' ? '600' : '400',
+                  fontSize: '15px',
+                  fontWeight: activeResumeType === 'uploaded' ? '600' : '500',
                   cursor: 'pointer',
-                  transition: 'all 0.2s',
-                  boxShadow: activeResumeType === 'uploaded' ? '0 2px 4px rgba(59, 130, 246, 0.3)' : '0 1px 2px rgba(0,0,0,0.1)'
+                  transition: 'all 0.3s ease',
+                  boxShadow: activeResumeType === 'uploaded' 
+                    ? '0 4px 12px rgba(59, 130, 246, 0.4)' 
+                    : '0 2px 4px rgba(0,0,0,0.1)',
+                  transform: activeResumeType === 'uploaded' ? 'translateY(-1px)' : 'translateY(0)',
+                  minWidth: '140px'
+                }}
+                onMouseEnter={(e) => {
+                  if (activeResumeType !== 'uploaded') {
+                    e.currentTarget.style.backgroundColor = '#f8fafc';
+                    e.currentTarget.style.borderColor = '#3b82f6';
+                    e.currentTarget.style.transform = 'translateY(-1px)';
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (activeResumeType !== 'uploaded') {
+                    e.currentTarget.style.backgroundColor = 'white';
+                    e.currentTarget.style.borderColor = '#e5e7eb';
+                    e.currentTarget.style.transform = 'translateY(0)';
+                  }
                 }}
               >
-                📎 {availableResumes.uploaded.label}
+                {availableResumes.uploaded.label}
               </button>
             )}
           </div>
@@ -495,7 +534,7 @@ export const ApplicantDetailsModal: React.FC<ApplicantDetailsModalProps> = ({
               {/* Fallback button if iframe doesn't work */}
               <div style={{
                 position: 'absolute',
-                top: '16px',
+                top: '100px',
                 right: '16px',
                 zIndex: 10
               }}>
