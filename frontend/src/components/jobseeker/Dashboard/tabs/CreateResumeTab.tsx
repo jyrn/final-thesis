@@ -366,6 +366,7 @@ const CreateResumeTab: React.FC<CreateResumeTabProps> = ({
   const [showUploadedToEmployers, setShowUploadedToEmployers] = useState(false); // Show uploaded resume to employers
   const [showUploadConsentModal, setShowUploadConsentModal] = useState(false); // Show consent modal after upload
   const [pendingUploadFile, setPendingUploadFile] = useState<File | null>(null); // File waiting for consent
+  const [isUploadingConsent, setIsUploadingConsent] = useState(false); // Loading state for consent upload
   const [showStickyButton, setShowStickyButton] = useState(false); // New state variable
   const [showInstructions, setShowInstructions] = useState(false); // Collapsible instructions
 
@@ -1963,6 +1964,8 @@ const CreateResumeTab: React.FC<CreateResumeTabProps> = ({
   const handleUploadConsentYes = async () => {
     if (!pendingUploadFile) return;
     
+    setIsUploadingConsent(true);
+    
     try {
       console.log('📤 User consented - uploading original resume to cloud...');
       const uploadResult = await uploadOriginalResumeToCloud(pendingUploadFile);
@@ -1980,6 +1983,7 @@ const CreateResumeTab: React.FC<CreateResumeTabProps> = ({
       console.error('❌ Failed to upload original resume:', error);
       alert('Failed to upload your resume to cloud. You can still use the generated resume.');
     } finally {
+      setIsUploadingConsent(false);
       setShowUploadConsentModal(false);
       setPendingUploadFile(null);
     }
@@ -4350,18 +4354,28 @@ const CreateResumeTab: React.FC<CreateResumeTabProps> = ({
 
       {/* Upload Consent Modal */}
       {showUploadConsentModal && (
-        <div style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          backgroundColor: 'rgba(0, 0, 0, 0.5)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          zIndex: 9999
-        }}>
+        <div 
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: isUploadingConsent ? 'rgba(0, 0, 0, 0.7)' : 'rgba(0, 0, 0, 0.5)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 9999,
+            cursor: isUploadingConsent ? 'wait' : 'default'
+          }}
+          onClick={(e) => {
+            // Prevent closing modal during upload
+            if (isUploadingConsent) {
+              e.preventDefault();
+              e.stopPropagation();
+            }
+          }}
+        >
           <div style={{
             backgroundColor: 'white',
             borderRadius: '12px',
@@ -4385,23 +4399,27 @@ const CreateResumeTab: React.FC<CreateResumeTabProps> = ({
                 color: '#1f2937',
                 marginBottom: '8px'
               }}>
-                Show Your Resume to Employers?
+                {isUploadingConsent ? 'Uploading Your Resume...' : 'Show Your Resume to Employers?'}
               </h2>
               <p style={{ 
                 fontSize: '15px', 
                 color: '#6b7280',
                 lineHeight: '1.6'
               }}>
-                Would you like to save your original uploaded resume and show it to employers alongside the generated resume?
+                {isUploadingConsent 
+                  ? 'Please wait while we securely upload your resume to the cloud. This may take a few moments.'
+                  : 'Would you like to save your original uploaded resume and show it to employers alongside the generated resume?'
+                }
               </p>
             </div>
 
-            <div style={{
-              backgroundColor: '#f3f4f6',
-              borderRadius: '8px',
-              padding: '16px',
-              marginBottom: '24px'
-            }}>
+            {!isUploadingConsent && (
+              <div style={{
+                backgroundColor: '#f3f4f6',
+                borderRadius: '8px',
+                padding: '16px',
+                marginBottom: '24px'
+              }}>
               <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px', marginBottom: '12px' }}>
                 <span style={{ fontSize: '20px' }}>✅</span>
                 <div>
@@ -4424,63 +4442,124 @@ const CreateResumeTab: React.FC<CreateResumeTabProps> = ({
                   </span>
                 </div>
               </div>
-            </div>
+              </div>
+            )}
 
             <div style={{ display: 'flex', gap: '12px' }}>
               <button
                 onClick={handleUploadConsentNo}
+                disabled={isUploadingConsent}
                 style={{
                   flex: 1,
                   padding: '12px 24px',
                   border: '2px solid #e5e7eb',
                   borderRadius: '8px',
-                  backgroundColor: 'white',
-                  color: '#374151',
+                  backgroundColor: isUploadingConsent ? '#f3f4f6' : 'white',
+                  color: isUploadingConsent ? '#9ca3af' : '#374151',
                   fontSize: '15px',
                   fontWeight: '600',
-                  cursor: 'pointer',
+                  cursor: isUploadingConsent ? 'not-allowed' : 'pointer',
                   transition: 'all 0.2s',
+                  opacity: isUploadingConsent ? 0.6 : 1
                 }}
                 onMouseEnter={(e) => {
-                  e.currentTarget.style.backgroundColor = '#f9fafb';
-                  e.currentTarget.style.borderColor = '#d1d5db';
+                  if (!isUploadingConsent) {
+                    e.currentTarget.style.backgroundColor = '#f9fafb';
+                    e.currentTarget.style.borderColor = '#d1d5db';
+                  }
                 }}
                 onMouseLeave={(e) => {
-                  e.currentTarget.style.backgroundColor = 'white';
-                  e.currentTarget.style.borderColor = '#e5e7eb';
+                  if (!isUploadingConsent) {
+                    e.currentTarget.style.backgroundColor = 'white';
+                    e.currentTarget.style.borderColor = '#e5e7eb';
+                  }
                 }}
               >
                 No, Thanks
               </button>
               <button
                 onClick={handleUploadConsentYes}
+                disabled={isUploadingConsent}
                 style={{
                   flex: 1,
                   padding: '12px 24px',
                   border: 'none',
                   borderRadius: '8px',
-                  backgroundColor: '#3b82f6',
+                  backgroundColor: isUploadingConsent ? '#9ca3af' : '#3b82f6',
                   color: 'white',
                   fontSize: '15px',
                   fontWeight: '600',
-                  cursor: 'pointer',
+                  cursor: isUploadingConsent ? 'not-allowed' : 'pointer',
                   transition: 'all 0.2s',
-                  boxShadow: '0 4px 6px -1px rgba(59, 130, 246, 0.3)'
+                  boxShadow: isUploadingConsent ? 'none' : '0 4px 6px -1px rgba(59, 130, 246, 0.3)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '8px'
                 }}
                 onMouseEnter={(e) => {
-                  e.currentTarget.style.backgroundColor = '#2563eb';
-                  e.currentTarget.style.transform = 'translateY(-1px)';
-                  e.currentTarget.style.boxShadow = '0 6px 8px -1px rgba(59, 130, 246, 0.4)';
+                  if (!isUploadingConsent) {
+                    e.currentTarget.style.backgroundColor = '#2563eb';
+                    e.currentTarget.style.transform = 'translateY(-1px)';
+                    e.currentTarget.style.boxShadow = '0 6px 8px -1px rgba(59, 130, 246, 0.4)';
+                  }
                 }}
                 onMouseLeave={(e) => {
-                  e.currentTarget.style.backgroundColor = '#3b82f6';
-                  e.currentTarget.style.transform = 'translateY(0)';
-                  e.currentTarget.style.boxShadow = '0 4px 6px -1px rgba(59, 130, 246, 0.3)';
+                  if (!isUploadingConsent) {
+                    e.currentTarget.style.backgroundColor = '#3b82f6';
+                    e.currentTarget.style.transform = 'translateY(0)';
+                    e.currentTarget.style.boxShadow = '0 4px 6px -1px rgba(59, 130, 246, 0.3)';
+                  }
                 }}
               >
-                Yes, Show It!
+                {isUploadingConsent ? (
+                  <>
+                    <div style={{
+                      width: '16px',
+                      height: '16px',
+                      border: '2px solid transparent',
+                      borderTop: '2px solid white',
+                      borderRadius: '50%',
+                      animation: 'spin 1s linear infinite'
+                    }} />
+                    Uploading...
+                  </>
+                ) : (
+                  'Yes, Show It!'
+                )}
               </button>
             </div>
+            
+            {isUploadingConsent && (
+              <div style={{
+                marginTop: '16px',
+                textAlign: 'center',
+                padding: '12px',
+                backgroundColor: '#f0f9ff',
+                borderRadius: '8px',
+                border: '1px solid #e0f2fe'
+              }}>
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '8px',
+                  color: '#0369a1',
+                  fontSize: '14px',
+                  fontWeight: '500'
+                }}>
+                  <div style={{
+                    width: '12px',
+                    height: '12px',
+                    border: '2px solid transparent',
+                    borderTop: '2px solid #0369a1',
+                    borderRadius: '50%',
+                    animation: 'spin 1s linear infinite'
+                  }} />
+                  Securely uploading your resume to the cloud...
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}

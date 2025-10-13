@@ -104,6 +104,7 @@ export const ApplicantDetailsModal: React.FC<ApplicantDetailsModalProps> = ({
     uploaded?: { url: string; label: string };
   }>({});
   const [activeResumeType, setActiveResumeType] = useState<'generated' | 'uploaded'>('generated');
+  const [isLoadingResume, setIsLoadingResume] = useState(false);
 
   // Fetch detailed application data when modal opens
   useEffect(() => {

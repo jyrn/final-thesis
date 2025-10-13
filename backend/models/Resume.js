@@ -57,6 +57,10 @@ const ResumeSchema = new mongoose.Schema({
     type: Boolean, // User consent to show original uploaded resume to employers
     default: false
   },
+  showToEmployers: {
+    type: Boolean, // User consent to show generated resume to employers
+    default: true
+  },
   
   // Processing Status
   processingStatus: {
