@@ -2164,9 +2164,13 @@ const CreateResumeTab: React.FC<CreateResumeTabProps> = ({
           throw new Error(result.error || 'Failed to parse resume data');
         }
         
-      } catch (error) {        alert(`Failed to parse resume: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      } catch (error) {        alert(`Failed to parse resume: ${error instanceof Error ? error.message : 'Unknown error'}`);
       } finally {
         setResumeUploading(false);
+        // Clear the file input so the same file can be uploaded again
+        if (resumeFileInputRef.current) {
+          resumeFileInputRef.current.value = '';
+        }
       }
     }
   };
