@@ -34,14 +34,14 @@ const TermsModal: React.FC<TermsModalProps> = ({ isOpen, onClose, onAccept, type
             <div className={styles.termsContent}>
               <h3>1. Acceptance of Terms</h3>
               <p>
-                By accessing and using the PESO Job Portal as {isEmployer ? 'an employer' : 'a job seeker'}, you accept and agree to be bound by the terms 
+                By accessing and using the SkillSync Job Portal as {isEmployer ? 'an employer' : 'a job seeker'}, you accept and agree to be bound by the terms 
                 and provisions of this agreement in accordance with the <strong>Philippine Data Privacy Act of 2012 (RA 10173)</strong> 
                 and other relevant Philippine labor and cybercrime laws.
               </p>
 
 <h3>2. Use License</h3>
               <p>
-                Permission is granted to temporarily use the PESO Job Portal for personal, non-commercial 
+                Permission is granted to temporarily use the SkillSync Job Portal for personal, non-commercial 
                 job searching and recruitment purposes only, in compliance with the <strong>Department of Labor and Employment (DOLE)</strong> 
                 regulations and the <strong>Bureau of Local Employment (BLE)</strong> guidelines. This is the grant of a limited, 
                 non-exclusive, non-transferable license to use the service.
@@ -165,7 +165,7 @@ const TermsModal: React.FC<TermsModalProps> = ({ isOpen, onClose, onAccept, type
               <h3>7. Disclaimer and Limitation of Liability</h3>
               <p>
                 The information on this portal is provided on an 'as is' basis. To the fullest extent 
-                permitted by Philippine law, PESO excludes all representations, warranties, conditions and terms, 
+                permitted by Philippine law, SkillSync excludes all representations, warranties, conditions and terms, 
                 except those required under the <strong>Consumer Act of the Philippines (RA 7394)</strong> and 
                 other mandatory consumer protection laws.
               </p>

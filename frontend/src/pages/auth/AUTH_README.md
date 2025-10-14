@@ -1,6 +1,6 @@
 # Authentication Flow Documentation
 
-This document outlines the authentication flow for the PESO job portal.
+This document outlines the authentication flow for the SkillSync job portal.
 
 ## Components
 

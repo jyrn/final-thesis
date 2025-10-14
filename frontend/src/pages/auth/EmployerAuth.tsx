@@ -706,9 +706,6 @@ const EmployerAuth: React.FC = () => {
             <div className={styles.journeyText}>
               <p>{registrationStep === 2 ? "Upload required documents to verify your company" : "Take the first step toward finding the right talent and start your hiring journey with us."}</p>
             </div>
-            <div className={styles.decorativeCircle1}></div>
-            <div className={styles.decorativeCircle2}></div>
-            <div className={styles.decorativeCircle3}></div>
           </div>
         </div>
 
@@ -1193,7 +1190,7 @@ const EmployerAuth: React.FC = () => {
       <SuccessModal
         isOpen={showSuccessModal}
         title={isLogin ? "Login Successful!" : "Account Created Successfully!"}
-        message={isLogin ? "Welcome back to PESO Job Portal! Redirecting to your dashboard..." : "Welcome to PESO Job Portal! Please upload your required company documents to complete your registration and access your dashboard."}
+        message={isLogin ? "Welcome back to SkillSync Job Portal! Redirecting to your dashboard..." : "Welcome to SkillSync Job Portal! Please upload your required company documents to complete your registration and access your dashboard."}
         onClose={isLogin ? handleLoginSuccessModalClose : handleSuccessModalClose}
         buttonText={isLogin ? "Go to Dashboard" : "Go to Dashboard"}
       />
