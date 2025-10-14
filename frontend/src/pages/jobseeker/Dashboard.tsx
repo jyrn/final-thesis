@@ -800,6 +800,7 @@ const Dashboard: React.FC = () => {
           userInitial={resume?.personalInfo?.name?.charAt(0) || 'U'}
           userProfilePicture={userProfile?.profilePicture}
           onMenuClick={() => setIsSidebarOpen(!isSidebarOpen)}
+          onProfileClick={() => setActiveTab('profile')}
           onFilterClick={activeTab === 'jobs' ? () => setShowFilterModal(true) : undefined}
           notifications={notifications}
           showSearch={activeTab === 'jobs'}
@@ -859,9 +860,10 @@ const Dashboard: React.FC = () => {
                 </span>
               )}
             </button>
-            <div 
+            <button 
               className={styles.userAvatar}
-              aria-label="User profile"
+              onClick={() => setActiveTab('profile')}
+              aria-label="Go to settings"
             >
               {userProfile?.profilePicture ? (
                 <img 
@@ -872,7 +874,7 @@ const Dashboard: React.FC = () => {
               ) : (
                 resume?.personalInfo?.name?.charAt(0) || 'U'
               )}
-            </div>
+            </button>
           </div>
         </header>
 

@@ -1160,6 +1160,7 @@ const EmployerDashboard: React.FC = () => {
           userInitial={companyProfileData?.companyName?.charAt(0) || 'E'}
           profilePicture={userProfile?.profilePicture}
           onMenuClick={() => setSidebarOpen(!sidebarOpen)}
+          onProfileClick={() => setActiveTab('settings')}
           notifications={1}
         />
       </div>
@@ -1190,9 +1191,10 @@ const EmployerDashboard: React.FC = () => {
                 </span>
               )}
             </button>
-            <div 
+            <button 
               className={layoutStyles.userAvatar}
-              aria-label="User profile"
+              onClick={() => setActiveTab('settings')}
+              aria-label="Go to settings"
             >
               {userProfile?.profilePicture ? (
                 <img 
@@ -1203,7 +1205,7 @@ const EmployerDashboard: React.FC = () => {
               ) : (
                 companyProfileData?.companyName?.charAt(0) || 'E'
               )}
-            </div>
+            </button>
           </div>
         </header>
 
