@@ -9,9 +9,10 @@ interface StatsGridProps {
     openPositions: number;
     hiredThisMonth: number;
   };
+  onNavigate?: (tab: string) => void;
 }
 
-export const StatsGrid: React.FC<StatsGridProps> = ({ stats }) => {
+export const StatsGrid: React.FC<StatsGridProps> = ({ stats, onNavigate }) => {
   return (
     <div style={{ 
       display: 'grid',
@@ -19,8 +20,14 @@ export const StatsGrid: React.FC<StatsGridProps> = ({ stats }) => {
       gap: '1.5rem',
       marginBottom: '2rem'
     }}>
-      <div className={cardStyles.statCard}>
-        <div className={`${cardStyles.statIcon} ${cardStyles.primary}`}>
+      <div className={cardStyles.statCard} onClick={() => onNavigate?.('applicants')} style={{cursor: 'pointer'}}>
+        <div className={`${cardStyles.statIcon} ${cardStyles.primary}`} style={{
+          background: 'linear-gradient(135deg, #667eea, #764ba2)',
+          boxShadow: '0 4px 16px rgba(102, 126, 234, 0.3)',
+          width: '56px',
+          height: '56px',
+          borderRadius: '14px'
+        }}>
           <FiUsers size={28} />
         </div>
         <div className={cardStyles.statContent}>
@@ -33,8 +40,14 @@ export const StatsGrid: React.FC<StatsGridProps> = ({ stats }) => {
         </div>
       </div>
 
-      <div className={cardStyles.statCard}>
-        <div className={`${cardStyles.statIcon} ${cardStyles.success}`}>
+      <div className={cardStyles.statCard} onClick={() => onNavigate?.('applicants')} style={{cursor: 'pointer'}}>
+        <div className={`${cardStyles.statIcon} ${cardStyles.success}`} style={{
+          background: 'linear-gradient(135deg, #667eea, #764ba2)',
+          boxShadow: '0 4px 16px rgba(102, 126, 234, 0.3)',
+          width: '56px',
+          height: '56px',
+          borderRadius: '14px'
+        }}>
           <FiUserCheck size={28} />
         </div>
         <div className={cardStyles.statContent}>
@@ -47,8 +60,14 @@ export const StatsGrid: React.FC<StatsGridProps> = ({ stats }) => {
         </div>
       </div>
 
-      <div className={cardStyles.statCard}>
-        <div className={`${cardStyles.statIcon} ${cardStyles.warning}`}>
+      <div className={cardStyles.statCard} onClick={() => onNavigate?.('jobs')} style={{cursor: 'pointer'}}>
+        <div className={`${cardStyles.statIcon} ${cardStyles.warning}`} style={{
+          background: 'linear-gradient(135deg, #667eea, #764ba2)',
+          boxShadow: '0 4px 16px rgba(102, 126, 234, 0.3)',
+          width: '56px',
+          height: '56px',
+          borderRadius: '14px'
+        }}>
           <FiBriefcase size={28} />
         </div>
         <div className={cardStyles.statContent}>
@@ -61,8 +80,14 @@ export const StatsGrid: React.FC<StatsGridProps> = ({ stats }) => {
         </div>
       </div>
 
-      <div className={cardStyles.statCard}>
-        <div className={`${cardStyles.statIcon} ${cardStyles.info}`}>
+      <div className={cardStyles.statCard} onClick={() => onNavigate?.('applicants')} style={{cursor: 'pointer'}}>
+        <div className={`${cardStyles.statIcon} ${cardStyles.info}`} style={{
+          background: 'linear-gradient(135deg, #667eea, #764ba2)',
+          boxShadow: '0 4px 16px rgba(102, 126, 234, 0.3)',
+          width: '56px',
+          height: '56px',
+          borderRadius: '14px'
+        }}>
           <FiCalendar size={28} />
         </div>
         <div className={cardStyles.statContent}>

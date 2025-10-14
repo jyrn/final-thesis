@@ -718,15 +718,17 @@
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;
   border: none;
-  border-radius: 8px;
-  padding: 0.75rem 1.5rem;
+  border-radius: 12px;
+  padding: 0.875rem 1.5rem;
+  font-size: 1rem;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.3s ease;
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 0.5rem;
-  flex: 0 0 70%;
+  width: 100%;
 }
 
 .applyButton:hover {
@@ -900,22 +902,19 @@
   
   .footerContent {
     display: flex;
-    justify-content: space-between;
+    justify-content: center;
     align-items: center;
     gap: 0.5rem;
   }
   
   .saveButton {
-    flex: 0 0 35%;
-    font-size: 0.75rem;
-    padding: 0.625rem 0.75rem;
+    display: none;
   }
   
   .applyButton {
-    flex: 0 0 65%;
+    width: 100%;
     font-size: 0.875rem;
     padding: 0.625rem 1rem;
-    margin-left: auto;
   }
   
   .jobMeta {

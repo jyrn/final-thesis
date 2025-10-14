@@ -41,6 +41,7 @@ import { ActiveJobPosts } from '../../components/employer/dashboard/ActiveJobPos
 import { ApplicantsView } from '../../components/employer/dashboard/ApplicantsView';
 import MobileHeader from '../../components/employer/dashboard/MobileHeader';
 import { getImageSrc } from '../../utils/imageUtils';
+import { useAutoRefresh, useTimeSinceRefresh } from '../../hooks/useAutoRefresh';
 // Removed mock data imports - using real backend data only
 import { 
   Applicant
@@ -265,61 +266,62 @@ const EmployerDashboard: React.FC = () => {
   // Add a useEffect to debug userProfile state changes
   useEffect(() => {  }, [userProfile]);
 
-  // Load jobs from backend when auth is ready and user is verified
-  useEffect(() => {
+  // Extracted loadJobs function for reusability
+  const loadJobs = async () => {
     if (!isAuthReady || !currentUser || isCheckingVerification || userVerificationStatus !== 'verified') {
       return;
     }
 
-    const loadJobs = async () => {
-      try {
-        setIsLoadingJobs(true);
-        const response = await jobApiService.getEmployerJobs();
-        
-        // Convert backend jobs to Job format
-        const convertedJobs: Job[] = response.jobs.map((job: any) => ({
-          id: job._id || job.id,
-          _id: job._id,
-          title: job.title,
-          company: job.company || 'Your Company',
-          companyLogo: job.companyLogo || userProfile?.profilePicture || '',
-          location: job.location,
-          description: job.description,
-          salary: job.salary || (job.salaryMin && job.salaryMax ? `₱${job.salaryMin?.toLocaleString()} - ₱${job.salaryMax?.toLocaleString()}` : undefined),
-          salaryMin: job.salaryMin,
-          salaryMax: job.salaryMax,
-          type: job.type,
-          level: job.level || job.experienceLevel || 'Mid-level',
-          experienceLevel: job.experienceLevel || job.level,
-          department: job.department,
-          isRemote: job.workplaceType === 'Remote' || job.remote || false,
-          isHybrid: job.workplaceType === 'Hybrid' || job.hybrid || false,
-          workplaceType: job.workplaceType as 'On-site' | 'Hybrid' | 'Remote',
-          remote: job.workplaceType === 'Remote' || job.remote || false,
-          requirements: job.requirements || [],
-          responsibilities: job.responsibilities || [],
-          benefits: job.benefits || [],
-          educationLevel: job.educationLevel || '',
-          preferredCourse: job.preferredCourse || '',
-          postedDate: job.createdAt || job.postedDate || new Date().toISOString(),
-          lastUpdated: job.updatedAt,
-          posted: job.createdAt || job.postedDate || new Date().toISOString(),
-          status: job.status,
-          applicants: job.applicantCount || 0,
-          applicantCount: job.applicantCount || 0,
-          views: job.views || 0,
-          urgency: 'medium' as const,
-          matchQuality: 85
-        }));
-        
-        setJobPostings(convertedJobs);
-      } catch (error) {        // Set empty array instead of mock data
-        setJobPostings([]);
-      } finally {
-        setIsLoadingJobs(false);
-      }
-    };
+    try {
+      setIsLoadingJobs(true);
+      const response = await jobApiService.getEmployerJobs();
+      
+      // Convert backend jobs to Job format
+      const convertedJobs: Job[] = response.jobs.map((job: any) => ({
+        id: job._id || job.id,
+        _id: job._id,
+        title: job.title,
+        company: job.company || 'Your Company',
+        companyLogo: job.companyLogo || userProfile?.profilePicture || '',
+        location: job.location,
+        description: job.description,
+        salary: job.salary || (job.salaryMin && job.salaryMax ? `₱${job.salaryMin?.toLocaleString()} - ₱${job.salaryMax?.toLocaleString()}` : undefined),
+        salaryMin: job.salaryMin,
+        salaryMax: job.salaryMax,
+        type: job.type,
+        level: job.level || job.experienceLevel || 'Mid-level',
+        experienceLevel: job.experienceLevel || job.level,
+        department: job.department,
+        isRemote: job.workplaceType === 'Remote' || job.remote || false,
+        isHybrid: job.workplaceType === 'Hybrid' || job.hybrid || false,
+        workplaceType: job.workplaceType as 'On-site' | 'Hybrid' | 'Remote',
+        remote: job.workplaceType === 'Remote' || job.remote || false,
+        requirements: job.requirements || [],
+        responsibilities: job.responsibilities || [],
+        benefits: job.benefits || [],
+        educationLevel: job.educationLevel || '',
+        preferredCourse: job.preferredCourse || '',
+        postedDate: job.createdAt || job.postedDate || new Date().toISOString(),
+        lastUpdated: job.updatedAt,
+        posted: job.createdAt || job.postedDate || new Date().toISOString(),
+        status: job.status,
+        applicants: job.applicantCount || 0,
+        applicantCount: job.applicantCount || 0,
+        views: job.views || 0,
+        urgency: 'medium' as const,
+        matchQuality: 85
+      }));
+      
+      setJobPostings(convertedJobs);
+    } catch (error) {      // Set empty array instead of mock data
+      setJobPostings([]);
+    } finally {
+      setIsLoadingJobs(false);
+    }
+  };
 
+  // Load jobs from backend when auth is ready and user is verified
+  useEffect(() => {
     loadJobs();
   }, [isAuthReady, currentUser, isCheckingVerification, userVerificationStatus, userProfile]);
 
@@ -368,78 +370,98 @@ const EmployerDashboard: React.FC = () => {
   const [applications, setApplications] = useState<Applicant[]>([]);
   const [isLoadingApplications, setIsLoadingApplications] = useState(true);
 
-  // Load applications from backend when auth is ready and user is verified
-  useEffect(() => {
+  // Extracted loadApplications function for reusability
+  const loadApplications = async () => {
     if (!isAuthReady || !currentUser || isCheckingVerification || userVerificationStatus !== 'verified') {
       return;
     }
 
-    const loadApplications = async () => {
-      try {
-        setIsLoadingApplications(true);
-        
-        const token = await currentUser.getIdToken();
-        
-        const response = await fetch('http://localhost:3001/api/applications/employer', {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          }
-        });
-
-
-        if (response.ok) {
-          const data = await response.json();          const applicationsArray = data.data || [];
-          
-          // If no applications, show empty state instead of mock data
-          if (!data.data || data.data.length === 0) {
-            setApplications([]);
-            return;
-          }
-          
-          // Convert backend applications to Applicant format
-          const convertedApplications: Applicant[] = applicationsArray.map((app: any) => {
-            // Debug logs removed - system working correctly
-            
-            return {
-              id: app._id,
-              name: app.applicant?.name || app.resumeData?.personalInfo?.name || 'Unknown Applicant',
-              position: app.jobTitle || 'Unknown Position',
-              email: app.applicant?.email || app.resumeData?.personalInfo?.email || '',
-              phone: app.applicant?.phone || app.resumeData?.personalInfo?.phone || '',
-              location: app.applicant?.address || app.resumeData?.personalInfo?.address || 'Metro Manila',
-              salary: app.jobSalary || '₱80,000',
-              expectedSalary: app.resumeData?.expectedSalary || '₱70,000 - ₱90,000',
-              experience: app.resumeData?.experience?.[0]?.duration || app.resumeData?.workExperience?.[0]?.duration || '2+ years',
-              skills: app.resumeData?.skills || [],
-              education: app.resumeData?.education?.[0]?.degree || app.resumeData?.education?.[0]?.institution || '',
-              appliedDate: app.appliedDate,
-              status: app.status,
-              match: 85, // Default match score
-              matchPercentage: 85,
-              matchScore: 85,
-              jobTitle: app.jobTitle || 'Unknown Position',
-              jobId: app.jobId,
-              resumeUrl: app.resumeData ? '#' : undefined,
-              coverLetter: app.coverLetter || '',
-              notes: app.notes || '',
-              avatar: app.applicant?.profilePicture || undefined
-            };
-          });
-          
-          setApplications(convertedApplications);
-        } else {          const errorText = await response.text();          // Show empty state - no mock data fallback
-          setApplications([]);
+    try {
+      setIsLoadingApplications(true);
+      
+      const token = await currentUser.getIdToken();
+      
+      const response = await fetch('http://localhost:3001/api/applications/employer', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
         }
-      } catch (error) {        // Show empty state - no mock data fallback
-        setApplications([]);
-      } finally {
-        setIsLoadingApplications(false);
-      }
-    };
+      });
 
+
+      if (response.ok) {
+        const data = await response.json();        const applicationsArray = data.data || [];
+        
+        // If no applications, show empty state instead of mock data
+        if (!data.data || data.data.length === 0) {
+          setApplications([]);
+          return;
+        }
+        
+        // Convert backend applications to Applicant format
+        const convertedApplications: Applicant[] = applicationsArray.map((app: any) => {
+          // Debug logs removed - system working correctly
+          
+          return {
+            id: app._id,
+            name: app.applicant?.name || app.resumeData?.personalInfo?.name || 'Unknown Applicant',
+            position: app.jobTitle || 'Unknown Position',
+            email: app.applicant?.email || app.resumeData?.personalInfo?.email || '',
+            phone: app.applicant?.phone || app.resumeData?.personalInfo?.phone || '',
+            location: app.applicant?.address || app.resumeData?.personalInfo?.address || 'Metro Manila',
+            salary: app.jobSalary || '₱80,000',
+            expectedSalary: app.resumeData?.expectedSalary || '₱70,000 - ₱90,000',
+            experience: app.resumeData?.experience?.[0]?.duration || app.resumeData?.workExperience?.[0]?.duration || '2+ years',
+            skills: app.resumeData?.skills || [],
+            education: app.resumeData?.education?.[0]?.degree || app.resumeData?.education?.[0]?.institution || '',
+            appliedDate: app.appliedDate,
+            status: app.status,
+            match: 85, // Default match score
+            matchPercentage: 85,
+            matchScore: 85,
+            jobTitle: app.jobTitle || 'Unknown Position',
+            jobId: app.jobId,
+            resumeUrl: app.resumeData ? '#' : undefined,
+            coverLetter: app.coverLetter || '',
+            notes: app.notes || '',
+            avatar: app.applicant?.profilePicture || undefined
+          };
+        });
+        
+        setApplications(convertedApplications);
+      } else {        const errorText = await response.text();        // Show empty state - no mock data fallback
+        setApplications([]);
+      }
+    } catch (error) {      // Show empty state - no mock data fallback
+      setApplications([]);
+    } finally {
+      setIsLoadingApplications(false);
+    }
+  };
+
+  // Load applications from backend when auth is ready and user is verified
+  useEffect(() => {
     loadApplications();
   }, [isAuthReady, currentUser, isCheckingVerification, userVerificationStatus]);
+
+  // Combined refresh function for both jobs and applications
+  const refreshAllData = async () => {
+    await Promise.all([loadJobs(), loadApplications()]);
+  };
+
+  // Auto-refresh hook - refreshes every 30 seconds
+  const { refresh: manualRefresh, isRefreshing, lastRefreshTime } = useAutoRefresh(
+    refreshAllData,
+    {
+      interval: 30000, // 30 seconds
+      enabled: isAuthReady && !!currentUser && !isCheckingVerification && userVerificationStatus === 'verified',
+      refreshOnMount: false,
+      refreshOnFocus: true
+    }
+  );
+
+  // Get formatted time since last refresh
+  const timeSinceRefresh = useTimeSinceRefresh(lastRefreshTime);
 
   // Use real applications data only
   const enhancedApplicants: Applicant[] = applications.sort((a, b) => (b.matchPercentage || 0) - (a.matchPercentage || 0));
@@ -1167,7 +1189,7 @@ const EmployerDashboard: React.FC = () => {
                 />
 
                 {/* Enhanced Stats Grid */}
-                <StatsGrid stats={realTimeStats} />
+                <StatsGrid stats={realTimeStats} onNavigate={(tab) => setActiveTab(tab as TabType)} />
 
                 {/* Quick Actions Section */}
                 <QuickActions 
