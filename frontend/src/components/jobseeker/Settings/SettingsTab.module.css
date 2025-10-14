@@ -811,6 +811,51 @@
   margin: 0 0 8px 0;
 }
 
+.sectionHeaderWithAction {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 24px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.sectionHeaderWithAction h3 {
+  margin: 0;
+}
+
+.inputWrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.formInput {
+  width: 100%;
+  padding: 14px 16px 14px 44px;
+  border: 2px solid #e5e7eb;
+  border-radius: 8px;
+  font-size: 14px;
+  color: #374151;
+  transition: all 0.2s ease;
+  background: white;
+}
+
+.formInput:focus {
+  outline: none;
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+  transform: translateY(-1px);
+}
+
+.inputWrapper .fieldIcon {
+  position: absolute;
+  left: 14px;
+  z-index: 1;
+  color: #9ca3af;
+  pointer-events: none;
+}
+
 .sectionNote {
   font-size: 14px;
   color: #6b7280;

@@ -8,7 +8,6 @@ import { useNavigate } from 'react-router-dom';
 import PDFPreview from '../../shared/PDFPreview';
 import { getImageSrc } from '../../../utils/imageUtils';
 
-
 interface JobseekerProfile {
   _id?: string;
   firstName: string;
@@ -16,6 +15,7 @@ interface JobseekerProfile {
   middleName?: string;
   email: string;
   phone?: string;
+  phoneNumber?: string;
   address?: {
     street?: string;
     city?: string;
@@ -81,12 +81,19 @@ const SettingsTab: React.FC<SettingsTabProps> = ({ onNavigate }) => {
   const [updatingPassword, setUpdatingPassword] = useState(false);
   const [showResumeEditModal, setShowResumeEditModal] = useState(false);
   const [parsedResumeData, setParsedResumeData] = useState(null);
-  const [showPasswordForm, setShowPasswordForm] = useState(false);
-  const [userAuthMethods, setUserAuthMethods] = useState<{hasPassword: boolean; providers: string[]}>({
-    hasPassword: true,
-    providers: []
+  const [checkingAuthMethods, setCheckingAuthMethods] = useState(true);
+  const [userAuthMethods, setUserAuthMethods] = useState({
+    hasPassword: false,
+    hasGoogle: false
   });
-  const [checkingAuthMethods, setCheckingAuthMethods] = useState(false);
+  const [isEditingBasicInfo, setIsEditingBasicInfo] = useState(false);
+  const [editedProfile, setEditedProfile] = useState({
+    firstName: '',
+    lastName: '',
+    email: ''
+  });
+  const [savingBasicInfo, setSavingBasicInfo] = useState(false);
+  const [showPasswordForm, setShowPasswordForm] = useState(false);
   const [originalResumeUrl, setOriginalResumeUrl] = useState<string | null>(null);
   const [showOriginalToEmployers, setShowOriginalToEmployers] = useState(false);
   const [availableResumes, setAvailableResumes] = useState<{
@@ -114,9 +121,15 @@ const SettingsTab: React.FC<SettingsTabProps> = ({ onNavigate }) => {
 
   const checkUserAuthMethods = async () => {
     try {
-      setCheckingAuthMethods(true);      const methods = await firebaseAuthService.checkUserAuthMethods();      setUserAuthMethods(methods);
-    } catch (error) {      // Default to showing password form if there's an error
-      setUserAuthMethods({ hasPassword: true, providers: [] });
+      setCheckingAuthMethods(true);      
+      const methods = await firebaseAuthService.checkUserAuthMethods();      
+      setUserAuthMethods({
+        hasPassword: methods.hasPassword || false,
+        hasGoogle: methods.providers?.includes('google.com') || false
+      });
+    } catch (error) {      
+      // Default to showing password form if there's an error
+      setUserAuthMethods({ hasPassword: true, hasGoogle: false });
     } finally {
       setCheckingAuthMethods(false);
     }
@@ -285,6 +298,58 @@ const SettingsTab: React.FC<SettingsTabProps> = ({ onNavigate }) => {
       setError(err.message || 'Failed to remove profile picture');
     } finally {
       setUploadingPicture(false);
+    }
+  };
+
+  const handleEditBasicInfo = () => {
+    if (profile) {
+      setEditedProfile({
+        firstName: profile.firstName || '',
+        lastName: profile.lastName || '',
+        email: profile.email || ''
+      });
+      setIsEditingBasicInfo(true);
+    }
+  };
+
+  const handleCancelEditBasicInfo = () => {
+    setIsEditingBasicInfo(false);
+    setEditedProfile({
+      firstName: '',
+      lastName: '',
+      email: ''
+    });
+  };
+
+  const handleSaveBasicInfo = async () => {
+    try {
+      setSavingBasicInfo(true);
+      setError(null);
+
+      const updateData = {
+        firstName: editedProfile.firstName.trim(),
+        lastName: editedProfile.lastName.trim()
+      };
+
+      const response = await apiService.put('/jobseekers/profile', updateData);
+      
+      if (response.success) {
+        setProfile(prev => prev ? { 
+          ...prev, 
+          firstName: updateData.firstName,
+          lastName: updateData.lastName
+        } : null);
+        
+        setIsEditingBasicInfo(false);
+        setSuccess('Basic information updated successfully!');
+        setTimeout(() => setSuccess(null), 3000);
+      } else {
+        setError(response.error || 'Failed to update basic information');
+      }
+    } catch (err: any) {
+      setError(err.message || 'Failed to update basic information');
+    } finally {
+      setSavingBasicInfo(false);
     }
   };
 
@@ -679,28 +744,95 @@ const SettingsTab: React.FC<SettingsTabProps> = ({ onNavigate }) => {
                   )}
                 </div>
 
-                {/* Basic Information - Only show essential fields */}
+                {/* Basic Information - Editable fields */}
                 <div className={styles.basicInfoSection}>
-                  <h3>Basic Information</h3>
-                  <p className={styles.sectionNote}>This information is from your registration and cannot be changed here.</p>
-                  
-                  <div className={styles.formRow}>
-                    <div className={styles.formGroup}>
-                      <label>First Name</label>
-                      <div className={styles.displayValue}>
-                        <FiUser className={styles.fieldIcon} />
-                        {profile.firstName || 'Not specified'}
+                  <div className={styles.sectionHeaderWithAction}>
+                    <h3>Basic Information</h3>
+                    {!isEditingBasicInfo ? (
+                      <button 
+                        className={styles.editButton}
+                        onClick={handleEditBasicInfo}
+                        type="button"
+                      >
+                        <FiEdit2 />
+                        Edit
+                      </button>
+                    ) : (
+                      <div className={styles.editActions}>
+                        <button 
+                          className={styles.saveButton}
+                          onClick={handleSaveBasicInfo}
+                          disabled={savingBasicInfo}
+                          type="button"
+                        >
+                          <FiSave />
+                          {savingBasicInfo ? 'Saving...' : 'Save'}
+                        </button>
+                        <button 
+                          className={styles.cancelButton}
+                          onClick={handleCancelEditBasicInfo}
+                          disabled={savingBasicInfo}
+                          type="button"
+                        >
+                          <FiX />
+                          Cancel
+                        </button>
                       </div>
-                    </div>
-                    <div className={styles.formGroup}>
-                      <label>Last Name</label>
-                      <div className={styles.displayValue}>
-                        <FiUser className={styles.fieldIcon} />
-                        {profile.lastName || 'Not specified'}
-                      </div>
-                    </div>
+                    )}
                   </div>
-
+                  
+                  {!isEditingBasicInfo ? (
+                    <>
+                      <div className={styles.formRow}>
+                        <div className={styles.formGroup}>
+                          <label>First Name</label>
+                          <div className={styles.displayValue}>
+                            <FiUser className={styles.fieldIcon} />
+                            {profile.firstName || 'Not specified'}
+                          </div>
+                        </div>
+                        <div className={styles.formGroup}>
+                          <label>Last Name</label>
+                          <div className={styles.displayValue}>
+                            <FiUser className={styles.fieldIcon} />
+                            {profile.lastName || 'Not specified'}
+                          </div>
+                        </div>
+                      </div>
+                      
+                    </>
+                  ) : (
+                    <>
+                      <div className={styles.formRow}>
+                        <div className={styles.formGroup}>
+                          <label>First Name</label>
+                          <div className={styles.inputWrapper}>
+                            <FiUser className={styles.fieldIcon} />
+                            <input
+                              type="text"
+                              value={editedProfile.firstName}
+                              onChange={(e) => setEditedProfile(prev => ({ ...prev, firstName: e.target.value }))}
+                              className={styles.formInput}
+                              placeholder="Enter your first name"
+                            />
+                          </div>
+                        </div>
+                        <div className={styles.formGroup}>
+                          <label>Last Name</label>
+                          <div className={styles.inputWrapper}>
+                            <FiUser className={styles.fieldIcon} />
+                            <input
+                              type="text"
+                              value={editedProfile.lastName}
+                              onChange={(e) => setEditedProfile(prev => ({ ...prev, lastName: e.target.value }))}
+                              className={styles.formInput}
+                              placeholder="Enter your last name"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    </>
+                  )}
                 </div>
 
                 {/* Account Management Section */}
