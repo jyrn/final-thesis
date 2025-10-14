@@ -14,9 +14,7 @@ router.get('/', authMiddleware, adminMiddleware, async (req, res) => {
       data: mlResumes,
       count: mlResumes.length
     });
-  } catch (error) {
-    console.error('Error fetching ML resumes:', error);
-    res.status(500).json({
+  } catch (error) {    res.status(500).json({
       success: false,
       message: 'Failed to fetch ML resumes',
       error: error.message
@@ -49,9 +47,7 @@ router.get('/search', authMiddleware, adminMiddleware, async (req, res) => {
       count: mlResumes.length,
       searchedSkills: skillsArray
     });
-  } catch (error) {
-    console.error('Error searching ML resumes:', error);
-    res.status(500).json({
+  } catch (error) {    res.status(500).json({
       success: false,
       message: 'Failed to search ML resumes',
       error: error.message
@@ -85,9 +81,7 @@ router.get('/jobseeker/:uid', authMiddleware, async (req, res) => {
       success: true,
       data: mlResume
     });
-  } catch (error) {
-    console.error('Error fetching ML resume:', error);
-    res.status(500).json({
+  } catch (error) {    res.status(500).json({
       success: false,
       message: 'Failed to fetch ML resume',
       error: error.message
@@ -123,9 +117,7 @@ router.post('/sync', authMiddleware, adminMiddleware, async (req, res) => {
       totalResumes: resumes.length,
       errors: errors.length > 0 ? errors : undefined
     });
-  } catch (error) {
-    console.error('Error syncing resumes:', error);
-    res.status(500).json({
+  } catch (error) {    res.status(500).json({
       success: false,
       message: 'Failed to sync resumes',
       error: error.message
@@ -163,9 +155,7 @@ router.post('/sync/:resumeId', authMiddleware, async (req, res) => {
       message: 'Resume synced successfully',
       data: mlResume
     });
-  } catch (error) {
-    console.error('Error syncing resume:', error);
-    res.status(500).json({
+  } catch (error) {    res.status(500).json({
       success: false,
       message: 'Failed to sync resume',
       error: error.message
@@ -196,9 +186,7 @@ router.delete('/:id', authMiddleware, adminMiddleware, async (req, res) => {
       message: 'ML resume deleted successfully',
       data: mlResume
     });
-  } catch (error) {
-    console.error('Error deleting ML resume:', error);
-    res.status(500).json({
+  } catch (error) {    res.status(500).json({
       success: false,
       message: 'Failed to delete ML resume',
       error: error.message
@@ -227,9 +215,7 @@ router.get('/stats', authMiddleware, adminMiddleware, async (req, res) => {
         topSkills: skillStats
       }
     });
-  } catch (error) {
-    console.error('Error fetching ML resume stats:', error);
-    res.status(500).json({
+  } catch (error) {    res.status(500).json({
       success: false,
       message: 'Failed to fetch ML resume statistics',
       error: error.message

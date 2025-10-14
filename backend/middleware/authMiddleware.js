@@ -27,9 +27,7 @@ const verifyToken = async (req, res, next) => {
     const user = await User.findOne({ uid: decodedToken.uid });
     
     // Block removed users from logging in
-    if (user && user.status === 'removed') {
-      console.log(`🚫 Blocked login attempt from removed user: ${user.email}`);
-      return res.status(403).json({
+    if (user && user.status === 'removed') {      return res.status(403).json({
         success: false,
         error: 'Account has been removed',
         message: 'Your account has been permanently removed from the system.'
@@ -37,18 +35,14 @@ const verifyToken = async (req, res, next) => {
     }
     
     // Auto-reactivate suspended users on login
-    if (user && user.status === 'inactive') {
-      console.log(`🔄 Auto-reactivating suspended user: ${user.email}`);
-      await User.updateOne(
+    if (user && user.status === 'inactive') {      await User.updateOne(
         { uid: decodedToken.uid },
         { 
           status: 'active',
           suspendedAt: null,
           lastLoginAt: new Date()
         }
-      );
-      console.log(`✅ User ${user.email} reactivated successfully`);
-    } else if (user) {
+      );    } else if (user) {
       // Update last login for active users
       await User.updateOne(
         { uid: decodedToken.uid },
@@ -61,10 +55,7 @@ const verifyToken = async (req, res, next) => {
       role: user?.role || null
     };
     next();
-  } catch (error) {
-    console.error('Error verifying token:', error);
-    console.error('Token verification failed with:', error.message);
-    return res.status(401).json({ 
+  } catch (error) {    return res.status(401).json({ 
       success: false, 
       error: 'Invalid token',
       details: error.message

@@ -10,14 +10,14 @@ mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/peso-job-
 
 async function updateDocumentStatuses() {
   try {
-    console.log('🔄 Starting document status update...');
+    console.log(' Starting document status update...');
     
     // Find all employers with documents
     const employers = await Employer.find({
       documents: { $exists: true, $ne: [] }
     });
     
-    console.log(`📋 Found ${employers.length} employers with documents`);
+    console.log(` Found ${employers.length} employers with documents`);
     
     let updatedCount = 0;
     
@@ -45,15 +45,15 @@ async function updateDocumentStatuses() {
       if (hasUpdates) {
         await employer.save();
         updatedCount++;
-        console.log(`✅ Updated documents for employer: ${employer.companyName}`);
+        console.log(` Updated documents for employer: ${employer.companyName}`);
       }
     }
     
-    console.log(`🎉 Successfully updated ${updatedCount} employers`);
+    console.log(` Successfully updated ${updatedCount} employers`);
     console.log('✨ Document status update complete!');
     
   } catch (error) {
-    console.error('❌ Error updating document statuses:', error);
+    console.error(' Error updating document statuses:', error);
   } finally {
     mongoose.connection.close();
   }

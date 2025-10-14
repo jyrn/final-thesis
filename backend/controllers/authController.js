@@ -629,9 +629,9 @@ const authController = {
         await admin.auth().updateUser(user.uid, {
           emailVerified: true
         });
-        console.log(`✅ Firebase email verification updated for user: ${user.uid}`);
+        console.log(` Firebase email verification updated for user: ${user.uid}`);
       } catch (firebaseError) {
-        console.error('❌ Failed to update Firebase email verification:', firebaseError);
+        console.error(' Failed to update Firebase email verification:', firebaseError);
         // Don't fail the request if Firebase update fails, as database is already updated
       }
 

@@ -45,15 +45,7 @@ const ResumeUploadPrompt: React.FC<ResumeUploadPromptProps> = ({ isOpen, onClose
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0];
-    if (selectedFile) {
-      console.log('File selected:', {
-        name: selectedFile.name,
-        type: selectedFile.type,
-        size: selectedFile.size,
-        sizeInMB: (selectedFile.size / 1024 / 1024).toFixed(2)
-      });
-      
-      // Check file type
+    if (selectedFile) {      // Check file type
       if (selectedFile.type !== 'application/pdf') {
         setError(`Invalid file type: ${selectedFile.type}. Please upload a PDF file.`);
         return;
@@ -66,9 +58,7 @@ const ResumeUploadPrompt: React.FC<ResumeUploadPromptProps> = ({ isOpen, onClose
       }
       
       setFile(selectedFile);
-      setError('');
-      console.log('File accepted successfully');
-    }
+      setError('');    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -83,9 +73,7 @@ const ResumeUploadPrompt: React.FC<ResumeUploadPromptProps> = ({ isOpen, onClose
       await onUpload(file);
       onClose();
     } catch (err) {
-      setError('Failed to upload resume. Please try again.');
-      console.error('Upload error:', err);
-    } finally {
+      setError('Failed to upload resume. Please try again.');    } finally {
       setIsLoading(false);
     }
   };

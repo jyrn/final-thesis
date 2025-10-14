@@ -53,9 +53,7 @@ const AdminDashboard: React.FC = () => {
       setStats(statsData);
       setPendingEmployers(employersData);
       setJobs(jobsData.jobs || []);
-    } catch (error) {
-      console.error('Error fetching dashboard data:', error);
-    } finally {
+    } catch (error) {    } finally {
       setLoading(false);
     }
   };
@@ -65,9 +63,7 @@ const AdminDashboard: React.FC = () => {
       setLoading(true);
       await adminService.verifyEmployer(employerId, action, reason);
       await fetchDashboardData(); // Refresh data
-    } catch (error) {
-      console.error('Error handling employer action:', error);
-    } finally {
+    } catch (error) {    } finally {
       setLoading(false);
     }
   };
@@ -76,9 +72,7 @@ const AdminDashboard: React.FC = () => {
     try {
       await adminService.verifyDocument(documentId, action, reason, notes);
       fetchDashboardData(); // Refresh to get updated document statuses
-    } catch (error) {
-      console.error('Error updating document status:', error);
-    }
+    } catch (error) {    }
   };
 
   const handleBulkDocumentAction = async (documentIds: string[], action: 'approve' | 'reject', reason?: string) => {
@@ -92,9 +86,7 @@ const AdminDashboard: React.FC = () => {
         await adminService.bulkVerifyDocuments(firstDoc.employerId, documentIds, action, reason);
         fetchDashboardData(); // Refresh to get updated document statuses
       }
-    } catch (error) {
-      console.error('Error bulk updating document status:', error);
-    }
+    } catch (error) {    }
   };
 
   const getTabInfo = (tab: string) => {
@@ -182,9 +174,7 @@ const AdminDashboard: React.FC = () => {
         URL.revokeObjectURL(url);
       } else {
         // Handle JSON fallback
-        const data = await response.json();
-        console.warn('PDF generation failed, downloading JSON:', data.pdfError);
-        const blob = new Blob([JSON.stringify(data.report, null, 2)], { type: 'application/json' });
+        const data = await response.json();        const blob = new Blob([JSON.stringify(data.report, null, 2)], { type: 'application/json' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
@@ -192,9 +182,7 @@ const AdminDashboard: React.FC = () => {
         a.click();
         URL.revokeObjectURL(url);
       }
-    } catch (error) {
-      console.error('Error generating report:', error);
-      alert('Failed to generate report. Please try again.');
+    } catch (error) {      alert('Failed to generate report. Please try again.');
     }
   };
 

@@ -31,58 +31,25 @@ class CertificationsParser extends BaseParser {
       
       if (combinedText) {
         // Extract only certification-related content from combined section
-        certsText = this.extractCertificationsFromCombined(combinedText);
-        console.log('🎓 Found certifications in combined section');
-      }
-    }
-    
-    console.log('🎓 Context format:', context.format);
-    console.log('🎓 Certifications section found:', !!certsText);
-    console.log('🎓 Certifications section length:', certsText ? certsText.length : 0);
-    
-    // Detect format from context
-    const format = context.format || 'standard';
-    console.log('🎓 Using format:', format);
-    
-    if (format === 'pipe-separated') {
-      console.log('🎓 Using pipe-separated format, parsing from full text');
-      return this.parsePipeSeparated(text); // Use full text for pipe-separated
-    } else if (format === 'standard-bullets') {
-      console.log('🎓 Using bullet format for certifications');
-      return this.parseBulletFormat(certsText || text);
-    } else if (format === 'contact-heavy') {
-      console.log('🎓 Using contact-heavy format for certifications');
-      return this.parseContactHeavyFormat(certsText || text);
-    } else {
-      console.log('🎓 Using standard format');
-      // For standard format, prefer section text but fallback to full text
-      const textToUse = certsText || text;
-      console.log('🎓 Text source:', certsText ? 'section' : 'full text');
-      return this.parseStandard(textToUse);
+        certsText = this.extractCertificationsFromCombined(combinedText);      }
+    }    // Detect format from context
+    const format = context.format || 'standard';    if (format === 'pipe-separated') {      return this.parsePipeSeparated(text); // Use full text for pipe-separated
+    } else if (format === 'standard-bullets') {      return this.parseBulletFormat(certsText || text);
+    } else if (format === 'contact-heavy') {      return this.parseContactHeavyFormat(certsText || text);
+    } else {      // For standard format, prefer section text but fallback to full text
+      const textToUse = certsText || text;      return this.parseStandard(textToUse);
     }
   }
 
   /**
    * Parse pipe-separated format
    */
-  parsePipeSeparated(text) {
-    console.log('🎓 Using pipe-separated parsing');
-    console.log('🎓 Text length for certification parsing:', text.length);
-    console.log('🎓 First 300 chars of text:', text.substring(0, 300));
-    const certifications = [];
+  parsePipeSeparated(text) {    const certifications = [];
     
     // Test if we can find certification keywords first
     const certKeywords = ['Certificate', 'Certification', 'Google', 'Microsoft', 'Coursera', 'Academy'];
-    const foundKeywords = certKeywords.filter(keyword => text.includes(keyword));
-    console.log('🎓 Found certification keywords:', foundKeywords);
-    
-    const certPattern = /([A-Z][^|]{10,100}?)\s*\|\s*([^|]+?)(January|February|March|April|May|June|July|August|September|October|November|December)\s*(\d{4})/gi;
-    let match;
-    
-    console.log('🎓 Testing certification pattern...');
-    while ((match = certPattern.exec(text)) !== null) {
-      console.log('🎓 Found potential certification match:', match[0]);
-      const name = match[1] ? match[1].trim() : '';
+    const foundKeywords = certKeywords.filter(keyword => text.includes(keyword));    const certPattern = /([A-Z][^|]{10,100}?)\s*\|\s*([^|]+?)(January|February|March|April|May|June|July|August|September|October|November|December)\s*(\d{4})/gi;
+    let match;    while ((match = certPattern.exec(text)) !== null) {      const name = match[1] ? match[1].trim() : '';
       const issuer = match[2] ? match[2].trim() : '';
       const month = match[3];
       const year = match[4];
@@ -103,10 +70,7 @@ class CertificationsParser extends BaseParser {
         issuer: issuer ? issuer.replace(/Issued\s*by\s*/gi, '').trim() : 'Unknown',
         date,
         description: ''
-      });
-      
-      console.log('🎓 ✅ Found certification:', name);
-    }
+      });    }
     
     this.confidence = certifications.length > 0 ? 0.9 : 0;
     return { data: certifications, confidence: this.confidence };
@@ -115,16 +79,10 @@ class CertificationsParser extends BaseParser {
   /**
    * Parse standard format
    */
-  parseStandard(text) {
-    console.log(' Using standard parsing');
-    console.log(' Standard format text sample:', text.substring(0, 500));
-    const certifications = [];
+  parseStandard(text) {    const certifications = [];
     
     // Split into lines for line-by-line parsing (Hannah's format)
-    const lines = text.split('\n').map(l => l ? l.trim() : '').filter(l => l.length > 0);
-    console.log(' Processing', lines.length, 'lines for certifications');
-    
-    for (let i = 0; i < lines.length; i++) {
+    const lines = text.split('\n').map(l => l ? l.trim() : '').filter(l => l.length > 0);    for (let i = 0; i < lines.length; i++) {
       const line = lines[i];
       
       // Skip section headers and empty lines
@@ -158,10 +116,7 @@ class CertificationsParser extends BaseParser {
           expirationDate: '',
           credentialId: '',
           description: ''
-        });
-        
-        console.log(' Found certification:', name, '-', issuer, `(${month} ${year})`);
-      }
+        });      }
       
       // Also try simpler pattern: "Name Date" (for lines without |)
       else if (line.match(/\b(Certificate|Certification|Google|Microsoft|Coursera|Academy)\b/i)) {
@@ -187,35 +142,21 @@ class CertificationsParser extends BaseParser {
             expirationDate: '',
             credentialId: '',
             description: ''
-          });
-          
-          console.log(' Found simple certification:', name, `(${month} ${year})`);
-        }
+          });        }
       }
-    }
-    
-    console.log('🎓 Total certifications found:', certifications.length);
-    return { data: certifications, confidence: certifications.length > 0 ? 0.8 : 0 };
+    }    return { data: certifications, confidence: certifications.length > 0 ? 0.8 : 0 };
   }
 
   /**
    * Parse bullet format certifications
    */
-  parseBulletFormat(text) {
-    console.log('🎓 Using bullet format parsing');
-    const certifications = [];
+  parseBulletFormat(text) {    const certifications = [];
     
     // Check if this is Hannah's concatenated format (all certs in one line)
     const hasApril2025 = text.includes('April2025');
     const hasJune2025 = text.includes('June2025');
     const hasOctober2025 = text.includes('October2025');
-    const hasMultipleCertsInLine = text.includes('Student Mobility Programme') && text.includes('Google UX Design');
-    
-    console.log(`🎓 Concatenated format detection: April2025=${hasApril2025}, June2025=${hasJune2025}, October2025=${hasOctober2025}, length=${text.length}, multipleCerts=${hasMultipleCertsInLine}`);
-    
-    if ((hasApril2025 && hasJune2025 && hasOctober2025) || hasMultipleCertsInLine) {
-      console.log('🎓 Detected Hannah\'s concatenated certification format');
-      const concatenatedCerts = this.parseConcatenatedCertifications(text);
+    const hasMultipleCertsInLine = text.includes('Student Mobility Programme') && text.includes('Google UX Design');    if ((hasApril2025 && hasJune2025 && hasOctober2025) || hasMultipleCertsInLine) {      const concatenatedCerts = this.parseConcatenatedCertifications(text);
       if (concatenatedCerts.length > 0) {
         return { data: concatenatedCerts, confidence: 0.9 };
       }
@@ -298,10 +239,7 @@ class CertificationsParser extends BaseParser {
             expirationDate: '',
             credentialId: '',
             description: ''
-          });
-          
-          console.log(`🎓 ✅ Found bullet certification: ${name}`);
-        }
+          });        }
       }
     }
     
@@ -311,9 +249,7 @@ class CertificationsParser extends BaseParser {
   /**
    * Parse contact-heavy format certifications
    */
-  parseContactHeavyFormat(text) {
-    console.log('🎓 Using contact-heavy format parsing');
-    const certifications = [];
+  parseContactHeavyFormat(text) {    const certifications = [];
     const lines = text.split('\n').map(l => l ? l.trim() : '').filter(l => l.length > 0);
     
     for (const line of lines) {
@@ -361,10 +297,7 @@ class CertificationsParser extends BaseParser {
             expirationDate: '',
             credentialId: '',
             description: ''
-          });
-          
-          console.log('🎓 ✅ Found contact-heavy certification:', name);
-        }
+          });        }
       }
     }
     
@@ -398,9 +331,7 @@ class CertificationsParser extends BaseParser {
   /**
    * Parse concatenated certifications (Hannah's PDF format)
    */
-  parseConcatenatedCertifications(text) {
-    console.log('🎓 Parsing concatenated certifications');
-    const certifications = [];
+  parseConcatenatedCertifications(text) {    const certifications = [];
     
     // Hannah's specific patterns - extract each certification individually
     const certPatterns = [
@@ -464,10 +395,7 @@ class CertificationsParser extends BaseParser {
           expirationDate: '',
           credentialId: '',
           description: ''
-        });
-        
-        console.log(`🎓 ✅ Added concatenated certification: ${cert.name} (${extractedDate})`);
-      }
+        });      }
     }
     
     return certifications;

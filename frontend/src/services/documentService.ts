@@ -64,7 +64,6 @@ class DocumentService {
 
       return data;
     } catch (error) {
-      console.error('Document upload error:', error);
       throw error;
     }
   }
@@ -88,7 +87,6 @@ class DocumentService {
 
       return data.document;
     } catch (error) {
-      console.error('Document fetch error:', error);
       throw error;
     }
   }
@@ -108,7 +106,6 @@ class DocumentService {
 
       return data.documents;
     } catch (error) {
-      console.error('Documents fetch error:', error);
       throw error;
     }
   }
@@ -119,7 +116,6 @@ class DocumentService {
       // Open cloud URL directly in new tab
       window.open(doc.url, '_blank');
     } catch (error) {
-      console.error('Error viewing document:', error);
       throw new Error('Failed to view document');
     }
   }
@@ -136,7 +132,6 @@ class DocumentService {
       link.click();
       document.body.removeChild(link);
     } catch (error) {
-      console.error('Error downloading document:', error);
       throw new Error('Failed to download document');
     }
   }

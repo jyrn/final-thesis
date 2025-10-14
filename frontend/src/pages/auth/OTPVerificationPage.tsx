@@ -106,9 +106,7 @@ const OTPVerificationPage: React.FC = () => {
       } else {
         setError(response.error || 'Invalid OTP. Please try again.');
       }
-    } catch (err: any) {
-      console.error('OTP verification error:', err);
-      setError(err.message || 'An error occurred while verifying OTP. Please try again.');
+    } catch (err: any) {      setError(err.message || 'An error occurred while verifying OTP. Please try again.');
     } finally {
       setIsLoading(false);
     }
@@ -130,9 +128,7 @@ const OTPVerificationPage: React.FC = () => {
       } else {
         setError(response.error || 'Failed to resend OTP.');
       }
-    } catch (err: any) {
-      console.error('Resend OTP error:', err);
-      setError(err.message || 'An error occurred while resending OTP.');
+    } catch (err: any) {      setError(err.message || 'An error occurred while resending OTP.');
     } finally {
       setResendLoading(false);
     }

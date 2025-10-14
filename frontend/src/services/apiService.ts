@@ -479,9 +479,7 @@ class ApiService {
     try {
       const response = await fetch(`${API_BASE_URL.replace('/api', '')}/`);
       return response.ok;
-    } catch (error) {
-      console.error('API connection test failed:', error);
-      return false;
+    } catch (error) {      return false;
     }
   }
 }

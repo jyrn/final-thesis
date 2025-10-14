@@ -14,9 +14,7 @@ const authService = {
       // Mock email verification for now - replace with actual API call when backend is ready
       await new Promise(resolve => setTimeout(resolve, 1000));
       
-      // Simulate successful verification
-      console.log('Mock email verification for token:', token);
-      return { 
+      // Simulate successful verification      return { 
         success: true, 
         message: 'Email verified successfully!' 
       };
@@ -31,9 +29,7 @@ const authService = {
       // Mock resend verification for now - replace with actual API call when backend is ready
       await new Promise(resolve => setTimeout(resolve, 1000));
       
-      // Simulate successful resend
-      console.log('Mock resend verification email to:', email);
-      return { 
+      // Simulate successful resend      return { 
         success: true, 
         message: 'Verification email sent successfully!' 
       };
@@ -60,9 +56,7 @@ const authService = {
       }
 
       return { success: true, ...data };
-    } catch (error) {
-      console.error('Forgot password error:', error);
-      return handleNetworkError(error);
+    } catch (error) {      return handleNetworkError(error);
     }
   },
 
@@ -91,9 +85,7 @@ const authService = {
       }
 
       return { success: true, ...data };
-    } catch (error) {
-      console.error('Reset password error:', error);
-      return { 
+    } catch (error) {      return { 
         success: false, 
         error: error instanceof Error ? error.message : 'An unknown error occurred' 
       };
@@ -102,9 +94,7 @@ const authService = {
 };
 
 // Enhanced error handling for network issues
-const handleNetworkError = (error: any): ApiResponse<never> => {
-  console.error('Network error:', error);
-  if (error.name === 'TypeError' && error.message.includes('Failed to fetch')) {
+const handleNetworkError = (error: any): ApiResponse<never> => {  if (error.name === 'TypeError' && error.message.includes('Failed to fetch')) {
     return {
       success: false,
       error: 'Unable to connect to the server. Please check your internet connection and try again.'

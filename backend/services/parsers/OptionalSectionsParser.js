@@ -59,9 +59,6 @@ class OptionalSectionsParser extends BaseParser {
     if (!orgText || orgText.trim().length < 10) {
       return organizations;
     }
-    
-    console.log('💫 Found organizations section, length:', orgText.length);
-    
     // Pattern 1: "Organization Name | Location\nDate Range\nRole"
     const pattern1 = /([A-Z][A-Za-z\s&,.'()]+(?:Rondalla|Society|Organization|Association|Committee|Team|Council|Group|Club|JPCS|Lumieres|Lasallian))\s*[|]\s*([A-Z][A-Za-z\s]+)\s*\n?\s*(\d{4})\s*[-–]\s*(\d{4}|Present|Current)\s*\n?\s*([A-Z][A-Za-z\s]+)/gi;
     
@@ -86,8 +83,6 @@ class OptionalSectionsParser extends BaseParser {
         location,
         description
       });
-      
-      console.log(`💫 ✅ Found organization: ${organization} - ${role}`);
     }
     
     // Pattern 2: Line-by-line format with pipe separator
@@ -141,8 +136,6 @@ class OptionalSectionsParser extends BaseParser {
               location,
               description: description.trim()
             });
-            
-            console.log(`💫 ✅ Found organization: ${organization} - ${role}`);
           }
         }
         
@@ -186,8 +179,6 @@ class OptionalSectionsParser extends BaseParser {
                 location: '',
                 description: description.trim()
               });
-              
-              console.log(`💫 ✅ Found organization: ${organization}`);
             }
           }
         }
@@ -221,9 +212,6 @@ class OptionalSectionsParser extends BaseParser {
     if (!awardsText || awardsText.trim().length < 10) {
       return awards;
     }
-    
-    console.log('💫 Found awards section, length:', awardsText.length);
-    
     // Pattern: "Award Name - Issuer, Date"
     const pattern = /([A-Z][A-Za-z\s']+(?:Award|Prize|Medal|Honor|Recognition|Scholarship|Grant))\s*[-–]?\s*([A-Za-z\s,&]+)?,?\s*(January|February|March|April|May|June|July|August|September|October|November|December)?\s*(\d{4})/gi;
     
@@ -239,8 +227,6 @@ class OptionalSectionsParser extends BaseParser {
         date: year,
         description: ''
       });
-      
-      console.log(`💫 ✅ Found award: ${title}`);
     }
     
     // Also try bullet point format
@@ -261,8 +247,6 @@ class OptionalSectionsParser extends BaseParser {
             date: year,
             description: ''
           });
-          
-          console.log(`💫 ✅ Found award: ${trimmed.substring(0, 50)}`);
         }
       }
     }

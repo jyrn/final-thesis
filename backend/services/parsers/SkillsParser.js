@@ -61,9 +61,7 @@ class SkillsParser extends BaseParser {
       ['EXPERIENCE', 'WORK EXPERIENCE', 'PROJECTS', 'EDUCATION', 'CERTIFICATIONS']
     );
     
-    // Strategy 1: Keyword matching from skill database
-    console.log('💡 Strategy 1: Keyword matching...');
-    for (const [category, categorySkills] of Object.entries(this.skillDatabase)) {
+    // Strategy 1: Keyword matching from skill database    for (const [category, categorySkills] of Object.entries(this.skillDatabase)) {
       for (const skill of categorySkills) {
         const regex = new RegExp('\\b' + skill + '\\b', 'i');
         if (regex.test(text)) {
@@ -76,14 +74,8 @@ class SkillsParser extends BaseParser {
           }
         }
       }
-    }
-    
-    console.log('💡 Found', skills.length, 'skills via keyword matching');
-    
-    // Strategy 2: Parse comma-separated skills from skills section
-    if (skillsText) {
-      console.log('💡 Strategy 2: Parsing skills section...');
-      const cleanText = skillsText
+    }    // Strategy 2: Parse comma-separated skills from skills section
+    if (skillsText) {      const cleanText = skillsText
         .replace(/Skills?\s*(?:and\s+Abilities)?:?/gi, '')
         .replace(/Technical\s*Skills?:?/gi, '')
         .replace(/Soft\s*Skills?:?/gi, '');
@@ -109,11 +101,7 @@ class SkillsParser extends BaseParser {
     // Convert to simple array of skill names
     const skillNames = skills.map(s => s.name);
     
-    this.confidence = skillNames.length > 0 ? 0.9 : 0;
-    
-    console.log('💡 SkillsParser: Extraction complete -', skillNames.length, 'skills (confidence:', this.confidence.toFixed(2), ')');
-    
-    return {
+    this.confidence = skillNames.length > 0 ? 0.9 : 0;    return {
       data: skillNames,
       confidence: this.confidence,
       metadata: {

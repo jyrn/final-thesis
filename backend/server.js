@@ -11,7 +11,6 @@ const jobRoutes = require('./routes/jobRoutes');
 const applicationRoutes = require('./routes/applicationRoutes');
 const resumeRoutes = require('./routes/resumeRoutes');
 const adminRoutes = require('./routes/adminRoutes');
-const fixAdminIndexes = require('./routes/fixAdminIndexes');
 const { getInstance: getMLServiceManager } = require('./services/ml/MLServiceManager');
 
 // Initialize Express app
@@ -29,15 +28,9 @@ if (process.env.ENABLE_ML_SERVICES !== 'false') {
   mlServiceManager.startAll()
     .then((success) => {
       mlServicesEnabled = success;
-      if (success) {
-        console.log('✓ Advanced ML features enabled');
-      } else {
-        console.log('Running in basic mode (ML services disabled)');
-      }
     })
     .catch((error) => {
-      console.error('Failed to start ML services:', error.message);
-      console.log('Running in basic mode (ML services disabled)');
+      // ML services failed to start, running in basic mode
     });
 }
 
@@ -70,7 +63,6 @@ app.use('/api/jobs', jobRoutes);
 app.use('/api/applications', applicationRoutes);
 app.use('/api/resumes', resumeRoutes);
 app.use('/api/admin', adminRoutes);
-app.use('/api/fix', fixAdminIndexes);
 
 // Basic route for testing
 app.get('/', (req, res) => {
@@ -79,7 +71,6 @@ app.get('/', (req, res) => {
 
 // Error handling middleware
 app.use((err, req, res, next) => {
-  console.error(err.stack);
   res.status(500).send('Server Error');
 });
 
@@ -95,13 +86,11 @@ app.get('/api/ml-services/status', (req, res) => {
 
 // Graceful shutdown
 process.on('SIGTERM', async () => {
-  console.log('Shutting down...');
   await mlServiceManager.stopAll();
   process.exit(0);
 });
 
 process.on('SIGINT', async () => {
-  console.log('Shutting down...');
   await mlServiceManager.stopAll();
   process.exit(0);
 });
@@ -109,5 +98,5 @@ process.on('SIGINT', async () => {
 // Start server
 const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+  // Server started
 });

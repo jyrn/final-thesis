@@ -30,15 +30,6 @@ class AdvancedResumeParser {
     this.consistencyValidator = new ConsistencyValidator();
     this.reviewQueueService = new ReviewQueueService();
     this.mlParser = new MLResumeParser();
-
-    console.log('🚀 Advanced Resume Parser initialized');
-    console.log('   Configuration:', {
-      BERT_NER: this.config.useBERTNER,
-      Layout_Analysis: this.config.useLayoutAnalysis,
-      Knowledge_Integration: this.config.useKnowledgeIntegration,
-      Validation: this.config.useValidation,
-      HITL: this.config.useHITL
-    });
   }
 
   /**
@@ -46,36 +37,26 @@ class AdvancedResumeParser {
    */
   async parse(text, options = {}) {
     const startTime = Date.now();
-    console.log('\n🚀 ========================================');
-    console.log('🚀 ADVANCED RESUME PARSER: Starting');
-    console.log('🚀 ========================================');
-
     try {
       // Step 1: Document Layout Analysis (if PDF path provided)
       let processedText = text;
       let layoutMetadata = {};
 
       if (options.pdfPath && this.config.useLayoutAnalysis) {
-        console.log('\n📐 STEP 1: Document Layout Analysis');
         const layoutResult = await this.analyzeLayout(options.pdfPath);
         if (layoutResult.success) {
           processedText = layoutResult.text;
           layoutMetadata = layoutResult.metadata;
-          console.log('   ✅ Layout analysis complete');
-          console.log(`   - Detected ${layoutMetadata.num_pages} pages`);
-          console.log(`   - Layout type: ${layoutMetadata.layout_type}`);
         }
       }
 
       // Step 2: Base ML Parsing
-      console.log('\n🤖 STEP 2: Base ML Parsing');
       const mlResult = await this.mlParser.parse(processedText);
       let parsedData = mlResult.data;
       let metadata = mlResult.metadata;
 
       // Step 3: BERT NER Enhancement (if enabled)
       if (this.config.useBERTNER) {
-        console.log('\n🧠 STEP 3: BERT NER Enhancement');
         const nerResult = await this.enhanceWithBERTNER(processedText, parsedData);
         if (nerResult.success) {
           parsedData = this.mergeBERTResults(parsedData, nerResult.entities);
@@ -83,35 +64,26 @@ class AdvancedResumeParser {
             entityCount: nerResult.entity_count,
             confidence: nerResult.overall_confidence
           };
-          console.log('   ✅ BERT NER enhancement complete');
-          console.log(`   - Extracted ${nerResult.entity_count} entities`);
         }
       }
 
       // Step 4: Knowledge Integration
       if (this.config.useKnowledgeIntegration) {
-        console.log('\n📚 STEP 4: Knowledge Integration');
         parsedData = this.integrateKnowledge(parsedData);
-        console.log('   ✅ Knowledge integration complete');
       }
 
       // Step 5: Consistency Validation
       let validationResult = { valid: true, errors: [], warnings: [] };
       if (this.config.useValidation) {
-        console.log('\n✅ STEP 5: Consistency Validation');
         validationResult = this.consistencyValidator.validateResume(parsedData);
         parsedData.validationErrors = validationResult.errors;
         parsedData.validationWarnings = validationResult.warnings;
         metadata.validationScore = validationResult.score;
-        console.log(`   - Validation score: ${validationResult.score}/100`);
-        console.log(`   - Errors: ${validationResult.errors.length}`);
-        console.log(`   - Warnings: ${validationResult.warnings.length}`);
       }
 
       // Step 6: Human-in-the-Loop Queue (if needed)
       let hitlResult = { addedToQueue: false };
       if (this.config.useHITL && options.userId) {
-        console.log('\n👤 STEP 6: HITL Review Check');
         hitlResult = await this.reviewQueueService.addToQueueIfNeeded(
           options.userId,
           options.resumeId,
@@ -120,23 +92,11 @@ class AdvancedResumeParser {
           metadata
         );
         if (hitlResult.addedToQueue) {
-          console.log(`   ⚠️  Added to review queue (priority: ${hitlResult.priority})`);
-          console.log(`   - Reason: ${hitlResult.reason}`);
         } else {
-          console.log('   ✅ No review needed');
         }
       }
 
       const duration = ((Date.now() - startTime) / 1000).toFixed(2);
-
-      console.log('\n🚀 ========================================');
-      console.log('🚀 ADVANCED RESUME PARSER: Complete');
-      console.log('🚀 ========================================');
-      console.log(`🚀 Duration: ${duration}s`);
-      console.log(`🚀 Overall Confidence: ${(metadata.overallConfidence * 100).toFixed(1)}%`);
-      console.log(`🚀 Validation Score: ${metadata.validationScore || 'N/A'}/100`);
-      console.log('🚀 ========================================\n');
-
       return {
         success: true,
         data: parsedData,
@@ -152,10 +112,7 @@ class AdvancedResumeParser {
       };
 
     } catch (error) {
-      console.error('❌ Error in advanced parsing:', error);
-      
       // Fallback to basic ML parsing
-      console.log('⚠️  Falling back to basic ML parsing...');
       const fallbackResult = await this.mlParser.parse(text);
       
       return {
@@ -180,7 +137,6 @@ class AdvancedResumeParser {
       
       // Check if file exists
       if (!fs.existsSync(pdfPath)) {
-        console.warn('⚠️  PDF file not found:', pdfPath);
         return { success: false };
       }
 
@@ -208,9 +164,7 @@ class AdvancedResumeParser {
       };
     } catch (error) {
       if (error.code === 'ECONNREFUSED') {
-        console.warn('⚠️  Layout analysis service not available (service not started)');
       } else {
-        console.error('⚠️  Layout analysis failed:', error.message);
       }
       return { success: false };
     }
@@ -235,9 +189,7 @@ class AdvancedResumeParser {
       };
     } catch (error) {
       if (error.code === 'ECONNREFUSED') {
-        console.warn('⚠️  BERT NER service not available (service not started)');
       } else {
-        console.error('⚠️  BERT NER failed:', error.message);
       }
       return { success: false };
     }
@@ -257,7 +209,6 @@ class AdvancedResumeParser {
         
         // Validate that it's not an institution name
         if (this.isInstitutionName(nameText)) {
-          console.log(`   ⚠️  Rejected institution name from BERT: ${nameText}`);
         } else {
           const nameParts = nameText.split(/\s+/);
           
@@ -270,7 +221,6 @@ class AdvancedResumeParser {
             parsedData.personalInfo.firstName = nameParts[0];
             parsedData.personalInfo.lastName = nameParts.length > 1 ? 
               nameParts.slice(1).join(' ') : '';
-            console.log(`   ✅ Name from BERT: ${nameText} (confidence: ${nameEntity.confidence.toFixed(2)})`);
           }
         }
       }

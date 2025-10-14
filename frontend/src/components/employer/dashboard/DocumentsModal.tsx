@@ -96,9 +96,7 @@ export const DocumentsModal: React.FC<DocumentsModalProps> = ({
           setExistingDocuments(documentsMap);
         }
       }
-    } catch (error) {
-      console.error('Error loading documents:', error);
-    } finally {
+    } catch (error) {    } finally {
       setIsLoadingDocuments(false);
     }
   };
@@ -193,9 +191,7 @@ export const DocumentsModal: React.FC<DocumentsModalProps> = ({
       } else {
         throw new Error(result.message || 'Upload failed');
       }
-    } catch (error) {
-      console.error('Document upload error:', error);
-      setUploadStatus(prev => ({ ...prev, [key]: 'error' }));
+    } catch (error) {      setUploadStatus(prev => ({ ...prev, [key]: 'error' }));
       setErrorMessages(prev => ({ ...prev, [key]: error instanceof Error ? error.message : 'Upload failed. Please try again.' }));
     }
   };
@@ -204,16 +200,7 @@ export const DocumentsModal: React.FC<DocumentsModalProps> = ({
     const file = event.target.files?.[0];
     if (file) {
       // Clear previous error
-      setErrorMessages(prev => ({ ...prev, [key]: '' }));
-      
-      console.log('File details:', {
-        name: file.name,
-        type: file.type,
-        size: file.size,
-        sizeInMB: (file.size / 1024 / 1024).toFixed(2)
-      });
-      
-      // Validate file type - PDF only (check both MIME type and extension)
+      setErrorMessages(prev => ({ ...prev, [key]: '' }));      // Validate file type - PDF only (check both MIME type and extension)
       const isPDF = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
       if (!isPDF) {
         setUploadStatus(prev => ({ ...prev, [key]: 'error' }));
@@ -235,10 +222,7 @@ export const DocumentsModal: React.FC<DocumentsModalProps> = ({
   };
 
   const handleViewDocument = async (documentType: string) => {
-    try {
-      console.log('🔍 Attempting to preview document:', documentType);
-      
-      // Get Firebase auth token
+    try {      // Get Firebase auth token
       const { auth } = require('../../../config/firebase');
       const user = auth.currentUser;
       if (!user) {
@@ -259,13 +243,7 @@ export const DocumentsModal: React.FC<DocumentsModalProps> = ({
         type: documentType,
         url: url,
         name: documentName
-      });
-      
-      console.log('📄 Opening PDF preview for:', documentName);
-      
-    } catch (error) {
-      console.error('❌ Error viewing document:', error);
-      alert(`Unable to preview document: ${error.message}`);
+      });    } catch (error) {      alert(`Unable to preview document: ${error.message}`);
     }
   };
 

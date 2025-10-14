@@ -404,9 +404,7 @@ const CreateResumeTab: React.FC<CreateResumeTabProps> = ({
         ];
         setRegions(fallbackRegions);
       }
-    } catch (error) {
-      console.error('Error loading PSGC data:', error);
-      setRegions([]);
+    } catch (error) {      setRegions([]);
     }
   }, []);
 
@@ -433,9 +431,7 @@ const CreateResumeTab: React.FC<CreateResumeTabProps> = ({
         }
         
         setProvinces(provinceData);
-      } catch (error) {
-        console.error('Error loading provinces:', error);
-        setProvinces([]);
+      } catch (error) {        setProvinces([]);
       }
     } else {
       setProvinces([]);
@@ -470,9 +466,7 @@ const CreateResumeTab: React.FC<CreateResumeTabProps> = ({
         }
         
         setCities(cityData);
-      } catch (error) {
-        console.error('Error loading cities:', error);
-        setCities([]);
+      } catch (error) {        setCities([]);
       }
     } else {
       setCities([]);
@@ -505,9 +499,7 @@ const CreateResumeTab: React.FC<CreateResumeTabProps> = ({
         }
         
         setBarangays(barangayData);
-      } catch (error) {
-        console.error('Error loading barangays:', error);
-        setBarangays([]);
+      } catch (error) {        setBarangays([]);
       }
     } else {
       setBarangays([]);
@@ -775,9 +767,7 @@ const CreateResumeTab: React.FC<CreateResumeTabProps> = ({
         const barangayData = psgc.getBarangaysByMunicipality(city).find((b: any) => (b.bgy_code || b.brgy_code || b.brgyCode) === barangay);
         barangayName = barangayData ? (barangayData.name || barangayData.brgyDesc) : '';
       }
-    } catch (error) {
-      console.warn('Error getting location display names:', error);
-      // Continue with empty strings if PSGC fails
+    } catch (error) {      // Continue with empty strings if PSGC fails
     }
 
     return { regionName, provinceName, cityName, barangayName };
@@ -785,12 +775,7 @@ const CreateResumeTab: React.FC<CreateResumeTabProps> = ({
 
   // Function to load existing resume data from database
   const loadExistingResumeData = async () => {
-    try {
-      console.log('Loading resume data from database...');
-      
-      if (!auth.currentUser) {
-        console.log('No authenticated user found');
-        return;
+    try {      if (!auth.currentUser) {        return;
       }
       
       const token = await auth.currentUser.getIdToken();
@@ -803,10 +788,7 @@ const CreateResumeTab: React.FC<CreateResumeTabProps> = ({
       });
 
       if (response.ok) {
-        const result = await response.json();
-        console.log('Loaded resume data from database:', result.data);
-        
-        // Transform database data back to form format
+        const result = await response.json();        // Transform database data back to form format
         const dbData = result.data;
         const transformedData = {
           personalInfo: {
@@ -858,11 +840,7 @@ const CreateResumeTab: React.FC<CreateResumeTabProps> = ({
             { id: 'education', type: 'education', title: 'Educational Background' },
             { id: 'skills', type: 'skills', title: 'Skills' }
           ]
-        };
-        
-        console.log('Transformed data for form:', transformedData);
-        
-        setResumeData(transformedData);
+        };        setResumeData(transformedData);
         setHasExistingResume(true);
         setIsPDFReady(true); // Resume exists, PDF is ready
         
@@ -898,15 +876,9 @@ const CreateResumeTab: React.FC<CreateResumeTabProps> = ({
         if (onResumeDataChange) {
           onResumeDataChange(transformedData);
         }
-      } else if (response.status === 404) {
-        console.log('No existing resume found in database');
-        // No existing resume, keep default empty state
-      } else {
-        console.error('Error loading resume:', response.statusText);
-      }
-    } catch (error) {
-      console.error('Error loading existing resume data:', error);
-    }
+      } else if (response.status === 404) {        // No existing resume, keep default empty state
+      } else {      }
+    } catch (error) {    }
   };
 
   // Load existing resume data on component mount
@@ -1312,9 +1284,7 @@ const CreateResumeTab: React.FC<CreateResumeTabProps> = ({
         // Position photo on the top left - 2x2 ID picture format
         doc.addImage(personalInfo.photo, 'JPEG', margin, yPosition, photoWidth, photoHeight);
         hasPhoto = true;
-      } catch (error) {
-        console.error('Error adding photo to PDF:', error);
-      }
+      } catch (error) {      }
     }
     
     // Name - positioned next to photo, large and bold in blue
@@ -1893,9 +1863,7 @@ const CreateResumeTab: React.FC<CreateResumeTabProps> = ({
       setHasUnsavedChanges(false);
       setHasExistingResume(true);
       
-    } catch (error) {
-      console.error('Error saving resume:', error);
-      setShowGeneratingModal(false);
+    } catch (error) {      setShowGeneratingModal(false);
       alert('Error saving resume. Please try again.');
     } finally {
       setIsSaving(false);
@@ -1966,22 +1934,16 @@ const CreateResumeTab: React.FC<CreateResumeTabProps> = ({
     
     setIsUploadingConsent(true);
     
-    try {
-      console.log('📤 User consented - uploading original resume to cloud...');
-      const uploadResult = await uploadOriginalResumeToCloud(pendingUploadFile);
+    try {      const uploadResult = await uploadOriginalResumeToCloud(pendingUploadFile);
       
       if (uploadResult.success && uploadResult.data) {
         setUploadedResumeFile(pendingUploadFile);
         setUploadedResumeUrl(uploadResult.data.cloudUrl);
-        setShowUploadedToEmployers(true);
-        console.log('✅ Original resume uploaded:', uploadResult.data.cloudUrl);
-        alert('Your original resume has been saved and will be shown to employers!');
+        setShowUploadedToEmployers(true);        alert('Your original resume has been saved and will be shown to employers!');
       } else {
         throw new Error(uploadResult.message || 'Upload failed');
       }
-    } catch (error) {
-      console.error('❌ Failed to upload original resume:', error);
-      alert('Failed to upload your resume to cloud. You can still use the generated resume.');
+    } catch (error) {      alert('Failed to upload your resume to cloud. You can still use the generated resume.');
     } finally {
       setIsUploadingConsent(false);
       setShowUploadConsentModal(false);
@@ -1989,9 +1951,7 @@ const CreateResumeTab: React.FC<CreateResumeTabProps> = ({
     }
   };
 
-  const handleUploadConsentNo = () => {
-    console.log('❌ User declined - not uploading original resume');
-    setShowUploadConsentModal(false);
+  const handleUploadConsentNo = () => {    setShowUploadConsentModal(false);
     setPendingUploadFile(null);
     setShowUploadedToEmployers(false);
   };
@@ -2020,9 +1980,7 @@ const CreateResumeTab: React.FC<CreateResumeTabProps> = ({
         let errorMessage = `HTTP ${response.status}`;
         try {
           const errorData = await response.json();
-          errorMessage = errorData.message || errorData.error || errorMessage;
-          console.error('❌ Server error details:', errorData);
-        } catch (parseError) {
+          errorMessage = errorData.message || errorData.error || errorMessage;        } catch (parseError) {
           const errorText = await response.text();
           errorMessage = errorText || errorMessage;
         }
@@ -2031,9 +1989,7 @@ const CreateResumeTab: React.FC<CreateResumeTabProps> = ({
 
       const result = await response.json();
       return result;
-    } catch (error) {
-      console.error('❌ Original resume upload error:', error);
-      return {
+    } catch (error) {      return {
         success: false,
         message: error instanceof Error ? error.message : 'Failed to upload original resume'
       };
@@ -2043,19 +1999,11 @@ const CreateResumeTab: React.FC<CreateResumeTabProps> = ({
   // Function to save resume to database
   const saveResumeToDatabase = async (resumeData: ResumeData, pdfBase64: string, uploadedResumeUrl: string | null = null) => {
     try {
-      // Get Firebase ID token instead of localStorage
-      console.log('=== DEBUGGING FIREBASE AUTHENTICATION ===');
-      console.log('Current Firebase user:', auth.currentUser);
-      
-      if (!auth.currentUser) {
+      // Get Firebase ID token instead of localStorage      if (!auth.currentUser) {
         throw new Error('You must be logged in to save a resume. Please sign in first.');
       }
       
-      const token = await auth.currentUser.getIdToken();
-      console.log('Firebase token obtained:', !!token);
-      console.log('Token length:', token?.length);
-      
-      if (!token) {
+      const token = await auth.currentUser.getIdToken();      if (!token) {
         throw new Error('No authentication token found. Please log in again.');
       }
 
@@ -2092,17 +2040,11 @@ const CreateResumeTab: React.FC<CreateResumeTabProps> = ({
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
-        console.error('API Error Response:', errorData);
-        throw new Error(errorData.error || 'Failed to save resume');
+        const errorData = await response.json();        throw new Error(errorData.error || 'Failed to save resume');
       }
 
-      const result = await response.json();
-      console.log('Resume saved successfully:', result);
-      return result;
-    } catch (error) {
-      console.error('Error saving resume to database:', error);
-      throw error;
+      const result = await response.json();      return result;
+    } catch (error) {      throw error;
     }
   };
 
@@ -2166,9 +2108,7 @@ const CreateResumeTab: React.FC<CreateResumeTabProps> = ({
         } else {
           throw new Error(result.message || 'Upload failed');
         }
-      } catch (error) {
-        console.error('Photo upload error:', error);
-        alert(`Failed to upload photo: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      } catch (error) {        alert(`Failed to upload photo: ${error instanceof Error ? error.message : 'Unknown error'}`);
       } finally {
         setPhotoUploading(false);
       }
@@ -2224,9 +2164,7 @@ const CreateResumeTab: React.FC<CreateResumeTabProps> = ({
           throw new Error(result.error || 'Failed to parse resume data');
         }
         
-      } catch (error) {
-        console.error('Resume upload error:', error);
-        alert(`Failed to parse resume: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      } catch (error) {        alert(`Failed to parse resume: ${error instanceof Error ? error.message : 'Unknown error'}`);
       } finally {
         setResumeUploading(false);
       }
@@ -2244,23 +2182,17 @@ const CreateResumeTab: React.FC<CreateResumeTabProps> = ({
       if (personalInfo.firstName && personalInfo.lastName) {
         updatePersonalInfo('firstName', capitalizeWords(personalInfo.firstName));
         updatePersonalInfo('lastName', capitalizeWords(personalInfo.lastName));
-      } else if (personalInfo.fullName) {
-        console.log('🔄 Parsing fullName:', personalInfo.fullName);
-        const nameParts = personalInfo.fullName.trim().split(/\s+/);
+      } else if (personalInfo.fullName) {        const nameParts = personalInfo.fullName.trim().split(/\s+/);
         if (nameParts.length >= 2) {
           updatePersonalInfo('firstName', capitalizeWords(nameParts[0]));
           updatePersonalInfo('lastName', capitalizeWords(nameParts.slice(1).join(' ')));
         }
-      } else if (personalInfo.name) {
-        console.log('🔄 Parsing name field:', personalInfo.name);
-        const nameParts = personalInfo.name.trim().split(/\s+/);
+      } else if (personalInfo.name) {        const nameParts = personalInfo.name.trim().split(/\s+/);
         if (nameParts.length >= 2) {
           updatePersonalInfo('firstName', capitalizeWords(nameParts[0]));
           updatePersonalInfo('lastName', capitalizeWords(nameParts.slice(1).join(' ')));
         }
-      } else {
-        console.log('❌ No name information found in parsed data');
-      }
+      } else {      }
       
       if (personalInfo.email) {
         updatePersonalInfo('email', personalInfo.email);
@@ -2276,9 +2208,7 @@ const CreateResumeTab: React.FC<CreateResumeTabProps> = ({
       if (personalInfo.address) {
         updatePersonalInfo('address', personalInfo.address);
       }
-    } else {
-      console.log('❌ No personalInfo found in parsed data');
-    }
+    } else {    }
     
     // Update summary
     if (parsedData.summary) {
@@ -2308,35 +2238,12 @@ const CreateResumeTab: React.FC<CreateResumeTabProps> = ({
     }
     
     // Update education
-    if (parsedData.education && parsedData.education.length > 0) {
-      console.log('Raw parsed education data:', parsedData.education);
-      
-      // Log each education entry in detail
-      parsedData.education.forEach((edu: any, index: number) => {
-        console.log(`Education Entry ${index + 1}:`, {
-          degree: edu.degree,
-          school: edu.school,
-          location: edu.location,
-          startDate: edu.startDate,
-          endDate: edu.endDate,
-          description: edu.description,
-          raw: edu.raw || 'N/A'
-        });
-        console.log(`Entry ${index + 1} validation:`, {
-          hasDegree: !!edu.degree,
-          hasSchool: !!edu.school,
-          degreeLength: edu.degree?.length || 0,
-          schoolLength: edu.school?.length || 0
-        });
-      });
+    if (parsedData.education && parsedData.education.length > 0) {      // Log each education entry in detail
+      parsedData.education.forEach((edu: any, index: number) => {      });
       
       const validEducations = parsedData.education.filter((edu: any) => 
         (edu.degree && edu.degree.trim().length > 0) || (edu.school && edu.school.trim().length > 0)
-      );
-      console.log('Valid education entries count:', validEducations.length);
-      console.log('Valid education entries:', validEducations);
-      
-      if (validEducations.length > 0) {
+      );      if (validEducations.length > 0) {
         const mappedEducations = validEducations.map((edu: any) => ({
           degree: edu.degree || '',
           school: edu.school || '',
@@ -2344,21 +2251,11 @@ const CreateResumeTab: React.FC<CreateResumeTabProps> = ({
           startDate: edu.startDate || '',
           endDate: edu.endDate || '',
           description: edu.description || ''
-        }));
-        
-        console.log('Mapped education for form:', mappedEducations);
-        
-        setResumeData(prev => ({
+        }));        setResumeData(prev => ({
           ...prev,
           education: mappedEducations
-        }));
-        console.log('Updated education in form - SUCCESS');
-      } else {
-        console.log('No valid education entries found');
-      }
-    } else {
-      console.log('No education data in parsed result');
-    }
+        }));      } else {      }
+    } else {    }
     // Update skills
     if (parsedData.skills && parsedData.skills.length > 0) {
       const validSkills = parsedData.skills.filter((skill: string) => skill.trim());
@@ -2580,9 +2477,7 @@ const CreateResumeTab: React.FC<CreateResumeTabProps> = ({
       setResumeParseSuccess(false);
       setPhotoUploadSuccess(false);
       setIsPDFReady(false);
-      setIsResumeGenerated(false);
-      console.log('All fields cleared by user');
-    }
+      setIsResumeGenerated(false);    }
   };
 
   return (

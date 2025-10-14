@@ -15,22 +15,11 @@ class ResumeFormatClassifier {
    * @param {string} text - Raw resume text
    * @returns {object} - Classification result with confidence
    */
-  classifyFormat(text) {
-    console.log('🤖 ML Classifier: Extracting features...');
-    console.log('🤖 ML Classifier: Text sample for analysis:', text.substring(0, 300));
-    
-    const features = this.extractFeatures(text);
-    console.log('🤖 ML Classifier: Features extracted:', features);
-    
-    // Store features
+  classifyFormat(text) {    const features = this.extractFeatures(text);    // Store features
     this.features = features;
     
     // Classify based on features
-    this.classification = this.classifyByFeatures(this.features, text);
-    
-    console.log('🤖 ML Classifier: Classification result:', this.classification);
-    
-    return this.classification;
+    this.classification = this.classifyByFeatures(this.features, text);    return this.classification;
   }
 
   /**
@@ -160,7 +149,7 @@ class ResumeFormatClassifier {
     }
     
     // Classification 3: Contact-Heavy Format (like Jiro's resume with icons)
-    const hasContactSymbols = text.match(/[📧📱🌐💼]/g) || text.match(/[•▪▫]/g);
+    const hasContactSymbols = text.match(/[���]/g) || text.match(/[•▪▫]/g);
     if (hasContactSymbols && features.lineCount > 15) {
       classifications.push({
         format: 'contact-heavy',

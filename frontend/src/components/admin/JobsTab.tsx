@@ -25,14 +25,10 @@ const JobsTab: React.FC<JobsTabProps> = ({ jobs, onJobStatusChange }) => {
     setSelectedJob(null);
   };
 
-  const handleEditJob = (job: Job) => {
-    console.log('Edit job:', job);
-    // TODO: Implement job editing functionality
+  const handleEditJob = (job: Job) => {    // TODO: Implement job editing functionality
   };
 
-  const handleDeleteJob = (jobId: string) => {
-    console.log('Delete job:', jobId);
-    // TODO: Implement job deletion with confirmation
+  const handleDeleteJob = (jobId: string) => {    // TODO: Implement job deletion with confirmation
     if (window.confirm('Are you sure you want to remove this job posting?')) {
       // TODO: Call delete API
     }

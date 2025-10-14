@@ -34,9 +34,7 @@ class PersonalInfoParser extends BaseParser {
     for (const pattern of emailPatterns) {
       const emailMatch = text.match(pattern);
       if (emailMatch) {
-        personalInfo.email = emailMatch[1].trim();
-        console.log('👤 Found email:', personalInfo.email);
-        break;
+        personalInfo.email = emailMatch[1].trim();        break;
       }
     }
 
@@ -50,25 +48,19 @@ class PersonalInfoParser extends BaseParser {
     for (const pattern of phonePatterns) {
       const phoneMatch = text.match(pattern);
       if (phoneMatch) {
-        personalInfo.phone = phoneMatch[1].trim();
-        console.log('👤 Found phone:', personalInfo.phone);
-        break;
+        personalInfo.phone = phoneMatch[1].trim();        break;
       }
     }
 
     // Extract LinkedIn
     const linkedinMatch = text.match(/linkedin\.com\/in\/([a-z0-9\-]+)/i);
     if (linkedinMatch) {
-      personalInfo.linkedin = `https://linkedin.com/in/${linkedinMatch[1]}`;
-      console.log('👤 Found LinkedIn:', personalInfo.linkedin);
-    }
+      personalInfo.linkedin = `https://linkedin.com/in/${linkedinMatch[1]}`;    }
 
     // Extract GitHub
     const githubMatch = text.match(/github\.com\/([a-z0-9\-]+)/i);
     if (githubMatch) {
-      personalInfo.github = `https://github.com/${githubMatch[1]}`;
-      console.log('👤 Found GitHub:', personalInfo.github);
-    }
+      personalInfo.github = `https://github.com/${githubMatch[1]}`;    }
 
     // Extract name (top of resume, before email)
     const nameResult = this.extractName(text, personalInfo.email);
@@ -81,11 +73,7 @@ class PersonalInfoParser extends BaseParser {
       lastName: 0.3,
       email: 0.2,
       phone: 0.2
-    });
-
-    console.log('👤 PersonalInfoParser: Extraction complete (confidence:', this.confidence.toFixed(2), ')');
-
-    return {
+    });    return {
       data: personalInfo,
       confidence: this.confidence
     };
@@ -94,12 +82,7 @@ class PersonalInfoParser extends BaseParser {
   /**
    * Extract name from resume text
    */
-  extractName(text, email = '') {
-    console.log('👤 Extracting name...');
-    
-    // Strategy 1: Look at first 800 characters (increased for    // Enhanced name extraction for different formats
-    console.log('👤 Extracting name...');
-    const lines = text.split('\n').filter(line => line.trim());
+  extractName(text, email = '') {    // Strategy 1: Look at first 800 characters (increased for    // Enhanced name extraction for different formats    const lines = text.split('\n').filter(line => line.trim());
     
     // Try multiple name extraction strategies
     const nameResult = this.extractNameFromText(text);
@@ -108,21 +91,14 @@ class PersonalInfoParser extends BaseParser {
         firstName: nameResult.firstName,
         lastName: nameResult.lastName
       };
-    } else {
-      console.log('👤 ⚠️ Could not extract name');
-      return { firstName: '', lastName: '' };
+    } else {      return { firstName: '', lastName: '' };
     }
   }
 
   extractNameFromText(text) {
     // Strategy 1: Look at first 800 characters (increased for more coverage)
     const topSection = text.substring(0, 800);
-    const lines = topSection.split('\n').filter(l => l.trim().length > 0);
-    
-    console.log('👤 First 10 lines for name extraction:');
-    lines.slice(0, 10).forEach((line, i) => {
-      console.log(`👤   Line ${i + 1}: "${line.trim()}"`);
-    });
+    const lines = topSection.split('\n').filter(l => l.trim().length > 0);    lines.slice(0, 10).forEach((line, i) => {    });
     
     // Try to find name in first several lines
     for (let i = 0; i < Math.min(lines.length, 10); i++) {
@@ -163,11 +139,7 @@ class PersonalInfoParser extends BaseParser {
           // If we have 3 parts like "Hannah Nicole Comia", use first and last
           else if (nameParts.length === 3) {
             lastName = nameParts[2]; // Use the actual last name, not middle name
-          }
-          
-          console.log(`👤 Found name at start of line ${i + 1}:`, firstName, lastName);
-          console.log(`👤 Full name parts:`, nameParts);
-          return {
+          }          return {
             firstName: firstName,
             lastName: lastName
           };
@@ -175,22 +147,16 @@ class PersonalInfoParser extends BaseParser {
       }
       
       // Skip if line contains email, phone, or URLs (but we already checked for name at start)
-      if (line.match(/@|http|www\.|linkedin|github|\+?\d{3}[\s\-]\d{3}|tel:|phone/i)) {
-        console.log(`👤   Skipping line ${i + 1}: contains contact info`);
-        continue;
+      if (line.match(/@|http|www\.|linkedin|github|\+?\d{3}[\s\-]\d{3}|tel:|phone/i)) {        continue;
       }
       
       // Skip if line contains common resume headers
-      if (line.match(/^(RESUME|CV|CURRICULUM|VITAE|PROFILE|SUMMARY|OBJECTIVE|CONTACT|EDUCATION|EXPERIENCE|SKILLS|PROJECTS)$/i)) {
-        console.log(`👤   Skipping line ${i + 1}: is section header`);
-        continue;
+      if (line.match(/^(RESUME|CV|CURRICULUM|VITAE|PROFILE|SUMMARY|OBJECTIVE|CONTACT|EDUCATION|EXPERIENCE|SKILLS|PROJECTS)$/i)) {        continue;
       }
       
       // Pattern 1: First Last or First Middle Last (standard case)
       const nameMatch = line.match(/^([A-Z][a-z]+(?:\s+[A-Z][a-z]*\.?)*)\s+([A-Z][a-z]+)$/);
-      if (nameMatch) {
-        console.log('👤 Found name (pattern match):', nameMatch[1], nameMatch[2]);
-        return {
+      if (nameMatch) {        return {
           firstName: nameMatch[1],
           lastName: nameMatch[2]
         };
@@ -198,9 +164,7 @@ class PersonalInfoParser extends BaseParser {
       
       // Pattern 2: ALL CAPS name
       const allCapsMatch = line.match(/^([A-Z]{2,})\s+([A-Z]{2,})(?:\s+[A-Z]{2,})?$/);
-      if (allCapsMatch) {
-        console.log('👤 Found name (all caps):', allCapsMatch[1], allCapsMatch[2]);
-        return {
+      if (allCapsMatch) {        return {
           firstName: this.toTitleCase(allCapsMatch[1]),
           lastName: this.toTitleCase(allCapsMatch[2])
         };
@@ -210,9 +174,7 @@ class PersonalInfoParser extends BaseParser {
       const mixedCaseMatch = line.match(/^([A-Z][a-zA-Z]+)\s+([A-Z][a-zA-Z]*\.?\s+)?([A-Z][a-zA-Z]+)$/);
       if (mixedCaseMatch && line.length < 50 && !line.match(/\d/)) {
         const firstName = mixedCaseMatch[1];
-        const lastName = mixedCaseMatch[3];
-        console.log('👤 Found name (mixed case):', firstName, lastName);
-        return {
+        const lastName = mixedCaseMatch[3];        return {
           firstName: firstName,
           lastName: lastName
         };
@@ -220,9 +182,7 @@ class PersonalInfoParser extends BaseParser {
       
       // Pattern 4: Name with comma (Last, First format)
       const commaMatch = line.match(/^([A-Z][a-zA-Z]+),\s+([A-Z][a-zA-Z]+)$/);
-      if (commaMatch) {
-        console.log('👤 Found name (comma format):', commaMatch[2], commaMatch[1]);
-        return {
+      if (commaMatch) {        return {
           firstName: commaMatch[2],
           lastName: commaMatch[1]
         };
@@ -235,9 +195,7 @@ class PersonalInfoParser extends BaseParser {
           // Check next line for potential last name
           if (i + 1 < lines.length) {
             const nextLine = lines[i + 1].trim();
-            if (nextLine.length > 2 && nextLine.length < 30 && /^[A-Z][a-zA-Z]+$/.test(nextLine) && !nextLine.match(/\d|@|http/)) {
-              console.log('👤 Found name (split lines):', words[0], nextLine);
-              return {
+            if (nextLine.length > 2 && nextLine.length < 30 && /^[A-Z][a-zA-Z]+$/.test(nextLine) && !nextLine.match(/\d|@|http/)) {              return {
                 firstName: words[0],
                 lastName: nextLine
               };
@@ -250,14 +208,9 @@ class PersonalInfoParser extends BaseParser {
     // Strategy 2: Extract from email if available
     if (email) {
       const emailName = this.extractNameFromEmail(email);
-      if (emailName.firstName && emailName.lastName) {
-        console.log('👤 Found name (from email):', emailName.firstName, emailName.lastName);
-        return emailName;
+      if (emailName.firstName && emailName.lastName) {        return emailName;
       }
-    }
-    
-    console.log('👤 ⚠️ Could not extract name');
-    return { firstName: '', lastName: '' };
+    }    return { firstName: '', lastName: '' };
   }
 
   /**

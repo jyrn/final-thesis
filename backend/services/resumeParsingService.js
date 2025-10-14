@@ -231,10 +231,7 @@ class ResumeParsingService {
     for (const addressPattern of addressPatterns) {
       const match = text.match(addressPattern.pattern);
       if (match) {
-        const address = addressPattern.extract(match).trim();
-        console.log(`🔍 Address pattern matched (score ${addressPattern.score}):`, address.substring(0, 100));
-        
-        // Validate address quality
+        const address = addressPattern.extract(match).trim();        // Validate address quality
         if (address.length >= 10 && 
             address.length <= 200 && 
             !address.includes('@') && 
@@ -252,12 +249,8 @@ class ResumeParsingService {
           
           if (score > bestScore) {
             bestScore = score;
-            bestAddress = address;
-            console.log(`✅ Address accepted (score ${score}):`, address.substring(0, 100));
-          }
-        } else {
-          console.log(`❌ Address rejected (validation failed):`, address.substring(0, 100));
-        }
+            bestAddress = address;          }
+        } else {        }
       }
     }
     
@@ -379,15 +372,9 @@ class ResumeParsingService {
       
       try {
         // Write PDF buffer to temporary file
-        fs.writeFileSync(tempPdfPath, pdfBuffer);
-        console.log(`📄 PDF file written: ${tempPdfPath}, Size: ${(pdfBuffer.length / 1024 / 1024).toFixed(2)}MB`);
-        
-        // Run Python script for text extraction
+        fs.writeFileSync(tempPdfPath, pdfBuffer);        // Run Python script for text extraction
         const pythonScript = path.join(__dirname, 'pdf_parser.py');
-        const python = spawn('python', [pythonScript, tempPdfPath]);
-        console.log('🐍 Starting Python PDF extraction...');
-        
-        let extractedText = '';
+        const python = spawn('python', [pythonScript, tempPdfPath]);        let extractedText = '';
         let errorOutput = '';
         
         python.stdout.on('data', (data) => {
@@ -400,9 +387,7 @@ class ResumeParsingService {
         
         // Set timeout for multi-page PDFs (2 minutes)
         const timeout = setTimeout(() => {
-          python.kill();
-          console.error('❌ PDF extraction timeout (2 minutes exceeded)');
-          reject(new Error('PDF extraction timeout - file may be too large or complex'));
+          python.kill();          reject(new Error('PDF extraction timeout - file may be too large or complex'));
         }, 120000);
 
         python.on('close', (code) => {
@@ -411,16 +396,10 @@ class ResumeParsingService {
           // Clean up temporary file
           try {
             fs.unlinkSync(tempPdfPath);
-          } catch (cleanupError) {
-            console.warn('Failed to cleanup temp file:', cleanupError);
-          }
+          } catch (cleanupError) {          }
           
-          if (code === 0) {
-            console.log(`✅ PDF extraction successful. Text length: ${extractedText.trim().length} characters`);
-            resolve(extractedText.trim());
-          } else {
-            console.error('❌ Python script error (code:', code, '):', errorOutput);
-            reject(new Error(`PDF extraction failed: ${errorOutput}`));
+          if (code === 0) {            resolve(extractedText.trim());
+          } else {            reject(new Error(`PDF extraction failed: ${errorOutput}`));
           }
         });
         
@@ -430,9 +409,7 @@ class ResumeParsingService {
           if (fs.existsSync(tempPdfPath)) {
             fs.unlinkSync(tempPdfPath);
           }
-        } catch (cleanupError) {
-          console.warn('Failed to cleanup temp file on error:', cleanupError);
-        }
+        } catch (cleanupError) {        }
         reject(error);
       }
     });
@@ -460,10 +437,7 @@ class ResumeParsingService {
     };
 
     try {
-      // Use advanced rule-based parsing
-      console.log('Starting advanced rule-based parsing...');
-      
-      // 1. Extract name using confidence scoring
+      // Use advanced rule-based parsing      // 1. Extract name using confidence scoring
       const nameResult = this.extractName(text);
       parsedData.personalInfo.firstName = nameResult.firstName;
       parsedData.personalInfo.lastName = nameResult.lastName;
@@ -495,36 +469,22 @@ class ResumeParsingService {
       }
 
       // 4. Detect sections using contextual analysis
-      const sections = this.detectSections(text);
-      console.log('Detected sections:', Object.keys(sections));
-
-      // 5. Extract address as a single field (for dropdown compatibility)
+      const sections = this.detectSections(text);      // 5. Extract address as a single field (for dropdown compatibility)
       const addressResult = this.extractAddress(text);
       if (addressResult) {
-        parsedData.personalInfo.address = addressResult;
-        console.log('✅ Extracted address:', addressResult);
-      } else {
-        console.log('❌ No address found in resume text');
-        // Try to find any location-related text for debugging
+        parsedData.personalInfo.address = addressResult;      } else {        // Try to find any location-related text for debugging
         const locationHints = text.match(/\b[A-Za-z\s,]+(?:City|Municipality|Province|Region|Philippines|Metro Manila)\b/gi);
-        if (locationHints) {
-          console.log('🔍 Found location hints:', locationHints.slice(0, 3));
-        }
+        if (locationHints) {        }
         
         // Debug: Show lines that might contain address info
         const addressKeywords = ['address', 'location', 'residence', 'home', 'city', 'province', 'philippines', 'metro manila'];
         const addressLines = text.split('\n').filter(line => 
           addressKeywords.some(keyword => line.toLowerCase().includes(keyword))
         );
-        if (addressLines.length > 0) {
-          console.log('🏠 Lines containing address keywords:', addressLines.slice(0, 3));
-          
-          // Try to extract address from contact info lines
+        if (addressLines.length > 0) {          // Try to extract address from contact info lines
           for (const line of addressLines.slice(0, 3)) {
             const cleanedAddress = this.extractAddressFromContactLine(line);
-            if (cleanedAddress) {
-              console.log('🏠 Extracted address from contact line:', cleanedAddress);
-              parsedData.personalInfo.address = cleanedAddress;
+            if (cleanedAddress) {              parsedData.personalInfo.address = cleanedAddress;
               break;
             }
           }
@@ -550,59 +510,33 @@ class ResumeParsingService {
       
       // Extract experience using detected section only
       if (sections.experience) {
-        const experienceText = lines.slice(sections.experience.startLine + 1, sections.experience.endLine + 1).join('\n');
-        console.log('📋 Experience section text:', experienceText.substring(0, 200) + '...');
-        parsedData.experience = this.parseExperience(experienceText);
-        console.log(`✅ Extracted ${parsedData.experience.length} experience entries`);
-      } else {
-        console.log('❌ No experience section detected - leaving blank');
-        parsedData.experience = [];
+        const experienceText = lines.slice(sections.experience.startLine + 1, sections.experience.endLine + 1).join('\n');        parsedData.experience = this.parseExperience(experienceText);      } else {        parsedData.experience = [];
       }
 
       // Extract education using detected section only
       if (sections.education) {
-        const educationText = lines.slice(sections.education.startLine + 1, sections.education.endLine + 1).join('\n');
-        console.log('🎓 Education section text:', educationText.substring(0, 200) + '...');
-        parsedData.education = this.parseEducation(educationText);
-        console.log(`✅ Extracted ${parsedData.education.length} education entries`);
-      } else {
-        console.log('❌ No education section detected - leaving blank');
-        parsedData.education = [];
+        const educationText = lines.slice(sections.education.startLine + 1, sections.education.endLine + 1).join('\n');        parsedData.education = this.parseEducation(educationText);      } else {        parsedData.education = [];
       }
 
       // Extract skills using detected section only
       if (sections.skills) {
         const skillsText = lines.slice(sections.skills.startLine + 1, sections.skills.endLine + 1).join('\n');
-        parsedData.skills = this.parseSkills(skillsText);
-        console.log(`✅ Extracted ${parsedData.skills.length} skills`);
-      } else {
-        console.log('❌ No skills section detected - leaving blank');
-        parsedData.skills = [];
+        parsedData.skills = this.parseSkills(skillsText);      } else {        parsedData.skills = [];
       }
 
       // Extract summary using detected section only
       if (sections.summary) {
         const summaryText = lines.slice(sections.summary.startLine + 1, sections.summary.endLine + 1).join('\n');
-        parsedData.summary = summaryText.trim();
-        console.log('✅ Extracted summary');
-      } else {
-        console.log('❌ No summary section detected - leaving blank');
-        parsedData.summary = '';
+        parsedData.summary = summaryText.trim();      } else {        parsedData.summary = '';
       }
 
       // Extract certifications using detected section only
       if (sections.certifications) {
         const certificationsText = lines.slice(sections.certifications.startLine + 1, sections.certifications.endLine + 1).join('\n');
-        parsedData.certifications = this.parseCertifications(certificationsText);
-        console.log(`✅ Extracted ${parsedData.certifications.length} certifications`);
-      } else {
-        console.log('❌ No certifications section detected - leaving blank');
-        parsedData.certifications = [];
+        parsedData.certifications = this.parseCertifications(certificationsText);      } else {        parsedData.certifications = [];
       }
 
-    } catch (error) {
-      console.error('Error parsing resume text:', error);
-    }
+    } catch (error) {    }
 
     return parsedData;
   }
@@ -740,16 +674,8 @@ class ResumeParsingService {
       .replace(/\s+/g, ' ') // Normalize whitespace
       .replace(/([a-z])([A-Z])/g, '$1 $2') // Add spaces between camelCase
       .replace(/(\d{4})\s*-\s*(\d{4}|\w+)/g, ' ($1 - $2)') // Normalize date format
-      .trim();
-    
-    console.log('🎓 Raw education text:', educationText);
-    console.log('🎓 Processed education text:', processedText);
-    
-    // Split by lines first, then group logically
-    const lines = educationText.split('\n').filter(line => line.trim());
-    console.log('🎓 Education lines:', lines);
-    
-    const entries = [];
+      .trim();    // Split by lines first, then group logically
+    const lines = educationText.split('\n').filter(line => line.trim());    const entries = [];
     let currentEntry = '';
     
     for (let i = 0; i < lines.length; i++) {
@@ -778,11 +704,7 @@ class ResumeParsingService {
     // Add the last entry
     if (currentEntry.trim()) {
       entries.push(currentEntry.trim());
-    }
-    
-    console.log(`🎓 Split education into ${entries.length} entries:`, entries.map(e => e.substring(0, 80) + '...'));
-
-    for (const entry of entries) {
+    }    for (const entry of entries) {
       const lines = entry.split('\n').filter(line => line.trim());
       if (lines.length === 0) continue;
 
@@ -797,11 +719,7 @@ class ResumeParsingService {
 
       let degreeFound = false;
       let schoolFound = false;
-      let dateFound = false;
-
-      console.log(`🎓 Processing entry lines:`, lines);
-      
-      // Process each line to extract information
+      let dateFound = false;      // Process each line to extract information
       for (let i = 0; i < lines.length; i++) {
         const line = lines[i].trim();
         
@@ -810,10 +728,7 @@ class ResumeParsingService {
         
         // Handle comma-separated format: "School,Degree" or "School, Degree"
         if (line.includes(',') && !degreeFound && !schoolFound) {
-          const parts = line.split(',').map(p => p.trim());
-          console.log(`🎓 Comma-separated parts:`, parts);
-          
-          for (let j = 0; j < parts.length; j++) {
+          const parts = line.split(',').map(p => p.trim());          for (let j = 0; j < parts.length; j++) {
             const part = parts[j];
             
             // Check if this part is a school (more specific patterns)
@@ -826,9 +741,7 @@ class ResumeParsingService {
               schoolName = schoolName.replace(/DeLaSalle/gi, 'De La Salle');
               schoolName = schoolName.replace(/SanPablo/gi, 'San Pablo');
               education.school = schoolName.trim();
-              schoolFound = true;
-              console.log('🏫 Found school from comma-separated:', education.school);
-            }
+              schoolFound = true;            }
             // Check if this part is a degree (avoid strand/subject descriptions)
             else if (part.match(/\b(?:Bachelor|Master|PhD|BS|BA|MS|MA|Science.*Computer|Arts|Senior\s*High|High\s*School)\b/i) && 
                      !part.match(/\b(?:Strand|Technology|Engineering|Mathematics|STEM)\b/i)) {
@@ -844,9 +757,7 @@ class ResumeParsingService {
                   } else if (part.match(/present|current/i)) {
                     education.endDate = 'present';
                   }
-                  dateFound = true;
-                  console.log(`📅 Found dates in degree part: ${education.startDate} - ${education.endDate}`);
-                }
+                  dateFound = true;                }
               }
               
               // Clean degree text (remove dates)
@@ -859,9 +770,7 @@ class ResumeParsingService {
               degreeName = degreeName.replace(/BachelorofScienceinComputerScience/gi, 'Bachelor of Science in Computer Science');
               degreeName = degreeName.replace(/SeniorHighSchool/gi, 'Senior High School');
               education.degree = degreeName.trim();
-              degreeFound = true;
-              console.log('🎓 Found degree from comma-separated:', education.degree);
-            }
+              degreeFound = true;            }
           }
           continue;
         }
@@ -880,9 +789,7 @@ class ResumeParsingService {
             } else if (line.match(/present|current/i)) {
               education.endDate = 'present';
             }
-          }
-          console.log(`📅 Found dates: ${education.startDate} - ${education.endDate}`);
-          continue;
+          }          continue;
         }
         
         // Also check for dates within comma-separated parts
@@ -900,9 +807,7 @@ class ResumeParsingService {
                 } else if (part.match(/present|current/i)) {
                   education.endDate = 'present';
                 }
-              }
-              console.log(`📅 Found dates in comma-separated part: "${part}" -> ${education.startDate} - ${education.endDate}`);
-              break;
+              }              break;
             }
           }
         }
@@ -934,9 +839,7 @@ class ResumeParsingService {
               const hasSchoolWords = /\b(?:University|College|Institute|School|Academy)\b/i.test(line);
               if (!hasSchoolWords || line.match(/\b(?:Bachelor|Master|PhD|BS|BA|MS|MA)\b/i)) {
                 education.degree = line;
-                degreeFound = true;
-                console.log('🎓 Found degree:', line);
-                break;
+                degreeFound = true;                break;
               }
             }
           }
@@ -950,9 +853,7 @@ class ResumeParsingService {
               const hasDegreeWords = /\b(?:Bachelor|Master|PhD|BS|BA|MS|MA|Doctorate|Associate|Certificate|Diploma)\b/i.test(line);
               if (!hasDegreeWords) {
                 education.school = line;
-                schoolFound = true;
-                console.log('🏫 Found school:', line);
-                break;
+                schoolFound = true;                break;
               }
             }
           }
@@ -967,13 +868,9 @@ class ResumeParsingService {
           if (line.length > 5 && !line.includes('•') && !line.match(/\b(?:GPA|Grade|Honor|Award|Present)\b/i)) {
             if (hasSchoolWords && !hasDegreeWords) {
               education.school = line;
-              schoolFound = true;
-              console.log('🏫 Assigned as school (fallback):', line);
-            } else if (hasDegreeWords || (!hasSchoolWords && line.length < 50)) {
+              schoolFound = true;            } else if (hasDegreeWords || (!hasSchoolWords && line.length < 50)) {
               education.degree = line;
-              degreeFound = true;
-              console.log('🎓 Assigned as degree (fallback):', line);
-            }
+              degreeFound = true;            }
           }
         }
         
@@ -993,9 +890,7 @@ class ResumeParsingService {
             education.description += '\n' + line;
           } else {
             education.description = line;
-          }
-          console.log('📝 Added to description:', line);
-        }
+          }        }
       }
 
       // Fallback logic if still no degree/school found
@@ -1126,26 +1021,15 @@ class ResumeParsingService {
    * Main method to parse uploaded resume
    */
   async parseResume(pdfBuffer) {
-    try {
-      console.log('Starting resume parsing...');
-      
-      // Extract text from PDF
-      const extractedText = await this.extractTextFromPDF(pdfBuffer);
-      console.log('Text extracted successfully, length:', extractedText.length);
-      
-      // Parse the extracted text
-      const parsedData = this.parseResumeText(extractedText);
-      console.log('Resume parsing completed');
-      
-      return {
+    try {      // Extract text from PDF
+      const extractedText = await this.extractTextFromPDF(pdfBuffer);      // Parse the extracted text
+      const parsedData = this.parseResumeText(extractedText);      return {
         success: true,
         data: parsedData,
         rawText: extractedText
       };
       
-    } catch (error) {
-      console.error('Resume parsing failed:', error);
-      return {
+    } catch (error) {      return {
         success: false,
         error: error.message,
         data: null

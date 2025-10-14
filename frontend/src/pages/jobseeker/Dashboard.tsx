@@ -161,12 +161,7 @@ const Dashboard: React.FC = () => {
                            experienceLevelMatch || requirementsMatch;
       
       // Debug logging (remove in production)
-      if (query && matchesSearch) {
-        console.log(`Search "${query}" matched job: ${job.title} at ${job.company}`, {
-          titleMatch, companyMatch, locationMatch, descriptionMatch, 
-          typeMatch, levelMatch, experienceLevelMatch, requirementsMatch
-        });
-      }
+      if (query && matchesSearch) {      }
       
       return matchesSearch;
     });
@@ -205,23 +200,7 @@ const Dashboard: React.FC = () => {
       const matchesFilters = jobTypeMatch && workplaceTypeMatch && positionLevelMatch && salaryMatch && locationMatch;
       
       // Debug logging for filters
-      if (activeFilters.jobType?.length > 0 || activeFilters.workplaceType || activeFilters.positionLevel?.length > 0) {
-        console.log(`Filter check for ${job.title}:`, {
-          jobTypeMatch, workplaceTypeMatch, positionLevelMatch, salaryMatch, locationMatch,
-          activeFilters: {
-            jobType: activeFilters.jobType,
-            workplaceType: activeFilters.workplaceType,
-            positionLevel: activeFilters.positionLevel
-          },
-          jobData: {
-            type: job.type,
-            isRemote: job.isRemote,
-            isHybrid: job.isHybrid,
-            level: job.level,
-            experienceLevel: job.experienceLevel
-          }
-        });
-      }
+      if (activeFilters.jobType?.length > 0 || activeFilters.workplaceType || activeFilters.positionLevel?.length > 0) {      }
       
       return matchesFilters;
     });
@@ -256,9 +235,7 @@ const Dashboard: React.FC = () => {
 
         localStorage.setItem('hasVisitedDashboard', 'true')
       } catch (err) {
-        setError('Failed to load data. Please try again later.')
-        console.error('Error loading data:', err)
-      }
+        setError('Failed to load data. Please try again later.')      }
     }
 
     loadData()
@@ -352,9 +329,7 @@ const Dashboard: React.FC = () => {
               
               // Load user profile data
               const userProfileResponse = await apiService.getUserProfile()
-              if (userProfileResponse.success && userProfileResponse.data) {
-                console.log('User profile response:', userProfileResponse.data)
-                setUserProfile(userProfileResponse.data.user)
+              if (userProfileResponse.success && userProfileResponse.data) {                setUserProfile(userProfileResponse.data.user)
               }
               
               // Load resume data
@@ -389,9 +364,7 @@ const Dashboard: React.FC = () => {
             resolve(user);
           });
         });
-      } catch (error) {
-        console.error('Error in auth data loading:', error);
-      }
+      } catch (error) {      }
     };
 
     loadAuthData();
@@ -409,11 +382,7 @@ const Dashboard: React.FC = () => {
       
       if (!uploadResponse.success) {
         throw new Error(uploadResponse.error || 'Failed to upload resume');
-      }
-      
-      console.log('Resume uploaded successfully:', uploadResponse.data);
-      
-      // Update the current resume state with the new upload
+      }      // Update the current resume state with the new upload
       setCurrentResume(uploadResponse.data);
       
       // Parse the resume for local display (this won't be integrated with NER service yet)
@@ -454,9 +423,7 @@ const Dashboard: React.FC = () => {
         setAttemptedJobId(null)
       }
     } catch (err) {
-      setError('Failed to parse resume. Please try again.')
-      console.error('Error parsing resume:', err)
-    }
+      setError('Failed to parse resume. Please try again.')    }
   }
 
   const handleSkipResume = () => {
@@ -521,10 +488,7 @@ const Dashboard: React.FC = () => {
     return jobsToShow;
   }
 
-  const handleSaveJob = async (jobId: string | number) => {
-    console.log('handleSaveJob called with jobId:', jobId);
-    
-    try {
+  const handleSaveJob = async (jobId: string | number) => {    try {
       const response = await apiService.toggleSavedJob(jobId);
       
       if (response.success) {
@@ -533,23 +497,12 @@ const Dashboard: React.FC = () => {
           const newSet = new Set(prev);
           
           if (response.data?.action === 'added') {
-            newSet.add(jobId);
-            console.log('Added job', jobId, 'to saved jobs');
-          } else if (response.data?.action === 'removed') {
-            newSet.delete(jobId);
-            console.log('Removed job', jobId, 'from saved jobs');
-          }
-          
-          console.log('Updated savedJobs:', Array.from(newSet));
-          return newSet;
+            newSet.add(jobId);          } else if (response.data?.action === 'removed') {
+            newSet.delete(jobId);          }          return newSet;
         });
-      } else {
-        console.error('Failed to save/unsave job:', response.error);
-        setError('Failed to save job. Please try again.');
+      } else {        setError('Failed to save job. Please try again.');
       }
-    } catch (error) {
-      console.error('Error saving/unsaving job:', error);
-      setError('Failed to save job. Please try again.');
+    } catch (error) {      setError('Failed to save job. Please try again.');
     }
   }
 
@@ -559,65 +512,22 @@ const Dashboard: React.FC = () => {
     const hasResumeData = resume && (resume.personalInfo || resume.skills || resume.experience)
     const hasResumeFile = userProfile?.resumeUrl && userProfile.resumeUrl.trim() !== ''
     const hasBasicProfile = userProfile && (userProfile.firstName || userProfile.email)
-    const hasResume = hasCurrentResume || hasResumeData || hasResumeFile || hasBasicProfile
-    
-    console.log('Resume validation check:', {
-      hasCurrentResume,
-      hasResumeData,
-      hasResumeFile,
-      hasBasicProfile,
-      hasResume,
-      currentResume: currentResume ? 'exists' : 'null',
-      resume: resume ? 'exists' : 'null',
-      resumeUrl: userProfile?.resumeUrl || 'none',
-      userProfile: userProfile ? 'exists' : 'null'
-    })
-    
-    if (!hasResume) {
-      console.log('No resume or profile found, showing upload prompt')
-      setAttemptedJobId(jobId)
+    const hasResume = hasCurrentResume || hasResumeData || hasResumeFile || hasBasicProfile    if (!hasResume) {      setAttemptedJobId(jobId)
       setShowResumeUpload(true)
       return
-    }
-    
-    console.log('Resume found, proceeding with application')
-    
-    // Find the job details for the success modal
-    const job = jobs.find(j => j.id === jobId);
-    console.log('Looking for job with ID:', jobId, 'in jobs array:', jobs.map(j => ({id: j.id, title: j.title})));
-    
-    if (!job) {
-      console.error('Job not found with ID:', jobId);
-      return;
-    }
-    
-    console.log('Job found:', job.title, 'proceeding with Firebase auth...');
-    
-    try {
+    }    // Find the job details for the success modal
+    const job = jobs.find(j => j.id === jobId);    if (!job) {      return;
+    }    try {
       // Get Firebase auth token directly instead of localStorage
       const { auth } = await import('../../config/firebase');
       const user = auth.currentUser;
       
-      if (!user) {
-        console.error('No authenticated user found');
-        alert('Please log in again to apply for jobs');
+      if (!user) {        alert('Please log in again to apply for jobs');
         window.location.href = '/auth/jobseeker';
         return;
       }
 
-      const token = await user.getIdToken();
-      console.log('Firebase token obtained:', !!token);
-      console.log('Token length:', token?.length || 0);
-
-      // Submit application to backend
-      console.log('Submitting application to backend...', {
-        jobId,
-        hasToken: !!token,
-        tokenLength: token?.length,
-        resumeData: resume ? 'present' : 'missing'
-      });
-
-      const response = await fetch('http://localhost:3001/api/applications', {
+      const token = await user.getIdToken();      // Submit application to backend      const response = await fetch('http://localhost:3001/api/applications', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -628,19 +538,8 @@ const Dashboard: React.FC = () => {
           resumeData: resume,
           coverLetter: '' // Optional cover letter
         })
-      });
-
-      console.log('Response received:', {
-        status: response.status,
-        statusText: response.statusText,
-        ok: response.ok
-      });
-      
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('Error response body:', errorText);
-        
-        if (response.status === 401) {
+      });      if (!response.ok) {
+        const errorText = await response.text();        if (response.status === 401) {
           alert('Authentication failed. Please log in again.');
           // Redirect to login or refresh token
           window.location.href = '/auth';
@@ -650,10 +549,7 @@ const Dashboard: React.FC = () => {
         throw new Error(`Failed to submit application: ${response.status} ${response.statusText}`);
       }
 
-      const result = await response.json();
-      console.log('Application submitted to backend:', result);
-      
-      // Apply through JobService
+      const result = await response.json();      // Apply through JobService
       const jobService = JobService.getInstance();
       const updatedJob = jobService.applyToJob(Number(jobId));
       
@@ -698,22 +594,14 @@ const Dashboard: React.FC = () => {
       
       // Show success message
       setError(null)
-    } catch (error) {
-      console.error('Error applying to job:', error);
-      setError('Failed to submit application. Please try again.');
+    } catch (error) {      setError('Failed to submit application. Please try again.');
     }
   }
 
-  const handleJobClick = (job: Job) => {
-    console.log('🎯 Job clicked:', job.title)
-    setSelectedJob(job)
-    setShowJobDetail(true)
-    console.log('📋 Modal should open:', true)
-  }
+  const handleJobClick = (job: Job) => {    setSelectedJob(job)
+    setShowJobDetail(true)  }
 
-  const handleFilterApply = (filters: any) => {
-    console.log('Applying filters:', filters)
-    setShowFilters(false)
+  const handleFilterApply = (filters: any) => {    setShowFilters(false)
   }
 
   // Function to get the display title based on active tab
@@ -800,6 +688,7 @@ const Dashboard: React.FC = () => {
           userInitial={resume?.personalInfo?.name?.charAt(0) || 'U'}
           userProfilePicture={userProfile?.profilePicture}
           onMenuClick={() => setIsSidebarOpen(!isSidebarOpen)}
+          onProfileClick={() => setActiveTab('profile')}
           onFilterClick={activeTab === 'jobs' ? () => setShowFilterModal(true) : undefined}
           notifications={notifications}
           showSearch={activeTab === 'jobs'}
@@ -826,9 +715,7 @@ const Dashboard: React.FC = () => {
           <div className={styles.headerLeft}>
             <button 
               className={styles.menuToggle}
-              onClick={() => {
-                console.log('Hamburger clicked, current state:', isSidebarOpen);
-                setIsSidebarOpen(!isSidebarOpen);
+              onClick={() => {                setIsSidebarOpen(!isSidebarOpen);
               }}
               aria-label="Toggle menu"
             >
@@ -859,9 +746,10 @@ const Dashboard: React.FC = () => {
                 </span>
               )}
             </button>
-            <div 
+            <button 
               className={styles.userAvatar}
-              aria-label="User profile"
+              onClick={() => setActiveTab('profile')}
+              aria-label="Go to settings"
             >
               {userProfile?.profilePicture ? (
                 <img 
@@ -872,7 +760,7 @@ const Dashboard: React.FC = () => {
               ) : (
                 resume?.personalInfo?.name?.charAt(0) || 'U'
               )}
-            </div>
+            </button>
           </div>
         </header>
 

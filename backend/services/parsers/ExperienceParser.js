@@ -29,10 +29,7 @@ class ExperienceParser extends BaseParser {
     );
     
     // If the extracted section is too short (likely wrong match), try finding EXPERIENCE after PROJECTS
-    if (!experienceText || experienceText.trim().length < 20) {
-      console.log('💼 ⚠️ Experience section too short, trying alternate extraction...');
-      
-      // Look for EXPERIENCE that appears after PROJECTS section
+    if (!experienceText || experienceText.trim().length < 20) {      // Look for EXPERIENCE that appears after PROJECTS section
       const projectsIndex = text.search(/\b(PROJECTS|Projects)\b/i);
       if (projectsIndex !== -1) {
         const textAfterProjects = text.substring(projectsIndex);
@@ -44,21 +41,12 @@ class ExperienceParser extends BaseParser {
           const nextSectionMatch = remainingText.match(/\n\s*(EDUCATION|SKILLS|CERTIFICATIONS|ACHIEVEMENTS)/i);
           experienceText = nextSectionMatch ? 
             remainingText.substring(0, nextSectionMatch.index) : 
-            remainingText;
-          console.log('💼 Found EXPERIENCE after PROJECTS, length:', experienceText.length);
-        }
+            remainingText;        }
       }
     }
     
-    if (!experienceText || experienceText.trim().length < 10) {
-      console.log('💼 ⚠️ No work experience section found');
-      return { data: experience, confidence: 0 };
-    }
-    
-    console.log('💼 Found experience section, length:', experienceText.length);
-    console.log('💼 First 300 chars of experience section:', experienceText.substring(0, 300));
-    
-    // Try multiple experience patterns
+    if (!experienceText || experienceText.trim().length < 10) {      return { data: experience, confidence: 0 };
+    }    // Try multiple experience patterns
     
     // Pattern 1: "Job Title - Company Name\nDate Range" (Adrian's format)
     const pattern1 = /([A-Z][A-Za-z\s]+(?:Intern|Assistant|Developer|Analyst|Manager|Director|Engineer|Specialist|Coordinator|Editor|Designer))\s*[-–]\s*([A-Z][A-Za-z\s&]+(?:Corp|Company|Solutions|Inc|LLC|Ltd))[^\n]*\s*\n?\s*([A-Z][a-z]+\s+\d{4})\s*-\s*([A-Z][a-z]+\s+\d{4}|Present|Current)/gi;
@@ -82,10 +70,7 @@ class ExperienceParser extends BaseParser {
         location: '',
         description,
         responsibilities: this.extractResponsibilities(description)
-      });
-      
-      console.log(`💼 ✅ Found experience (Pattern 1): ${title} at ${company}`);
-    }
+      });    }
     
     // Pattern 2: "Job Title - Company (Date Range)"
     if (experience.length === 0) {
@@ -108,10 +93,7 @@ class ExperienceParser extends BaseParser {
           location: '',
           description,
           responsibilities: this.extractResponsibilities(description)
-        });
-        
-        console.log(`💼 ✅ Found experience (Pattern 2): ${title} at ${company}`);
-      }
+        });      }
     }
     
     // Pattern 2.5: Adrian's specific format "Production Manager - Viral Coach LLC\nJune\n2024 - Present"
@@ -138,10 +120,7 @@ class ExperienceParser extends BaseParser {
           location: '',
           description,
           responsibilities: this.extractResponsibilities(description)
-        });
-        
-        console.log(`💼 ✅ Found experience (Pattern 2.5): ${title} at ${company}`);
-      }
+        });      }
     }
     
     // Pattern 2.6: Freelance work - flexible pattern to match various formats
@@ -174,10 +153,7 @@ class ExperienceParser extends BaseParser {
           location: '',
           description,
           responsibilities: this.extractResponsibilities(description)
-        });
-        
-        console.log(`💼 ✅ Found experience (Freelance Pattern): ${title}`);
-      }
+        });      }
     }
     
     // Pattern 3: Simple format "Title\nCompany\nDates"
@@ -204,20 +180,13 @@ class ExperienceParser extends BaseParser {
               location: '',
               description,
               responsibilities: this.extractResponsibilities(description)
-            });
-            
-            console.log(`💼 ✅ Found experience (Pattern 3): ${titleLine} at ${companyLine}`);
-            i += 2; // Skip processed lines
+            });            i += 2; // Skip processed lines
           }
         }
       }
     }
     
-    const confidence = this.calculateExperienceConfidence(experience, experienceText);
-    
-    console.log(`💼 ExperienceParser: Extraction complete (confidence: ${confidence.toFixed(2)})`);
-    
-    return {
+    const confidence = this.calculateExperienceConfidence(experience, experienceText);    return {
       data: experience,
       confidence: confidence
     };

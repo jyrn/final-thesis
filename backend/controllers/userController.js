@@ -32,9 +32,7 @@ const userController = {
         }
       });
 
-    } catch (error) {
-      console.error('Get profile error:', error);
-      res.status(500).json({
+    } catch (error) {      res.status(500).json({
         success: false,
         error: error.message || 'Failed to get user profile'
       });
@@ -91,9 +89,7 @@ const userController = {
         }
       });
 
-    } catch (error) {
-      console.error('Update profile error:', error);
-      res.status(500).json({
+    } catch (error) {      res.status(500).json({
         success: false,
         error: error.message || 'Failed to update user profile'
       });
@@ -116,9 +112,7 @@ const userController = {
           emailVerified: user.emailVerified
         } : null
       });
-    } catch (error) {
-      console.error('Check user exists error:', error);
-      res.status(500).json({
+    } catch (error) {      res.status(500).json({
         success: false,
         error: error.message || 'Failed to check user existence'
       });
@@ -154,9 +148,7 @@ const userController = {
         }
       });
 
-    } catch (error) {
-      console.error('Get user by UID error:', error);
-      res.status(500).json({
+    } catch (error) {      res.status(500).json({
         success: false,
         error: error.message || 'Failed to get user'
       });

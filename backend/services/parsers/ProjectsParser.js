@@ -21,27 +21,14 @@ class ProjectsParser extends BaseParser {
       ['EDUCATION', 'EXPERIENCE', 'SKILLS', 'CERTIFICATIONS']
     );
     
-    if (!projectsText) {
-      console.log('🚀 ⚠️ No projects section found');
-      return { data: projects, confidence: 0 };
-    }
-    
-    console.log('🚀 Found projects section, length:', projectsText.length);
-    
-    // Detect format and use appropriate strategy
+    if (!projectsText) {      return { data: projects, confidence: 0 };
+    }    // Detect format and use appropriate strategy
     const format = context.format || 'standard';
     
     // Check if text contains pipe-separated projects regardless of detected format
-    if (projectsText.includes('|') && projectsText.match(/[A-Z][A-Za-z\s\-]+\s*\|/)) {
-      console.log('🚀 Detected pipe format in projects text, using standard parser');
-      
-      // For complex formats like Shayla's, try paragraph split first
+    if (projectsText.includes('|') && projectsText.match(/[A-Z][A-Za-z\s\-]+\s*\|/)) {      // For complex formats like Shayla's, try paragraph split first
       const paragraphTest = projectsText.split(/\n\s*\n/);
-      const pipeTest = projectsText.split(/(?=^[A-Z][A-Za-z\s\-]+\s*\|)/m).filter(b => b.includes('|') && b.trim().length > 20);
-      
-      console.log(`🚀 Debug: paragraphTest.length = ${paragraphTest.length}, pipeTest.length = ${pipeTest.length}`);
-      
-      // Use paragraph parsing if we have more paragraphs than pipe blocks, or if we have 4+ paragraphs
+      const pipeTest = projectsText.split(/(?=^[A-Z][A-Za-z\s\-]+\s*\|)/m).filter(b => b.includes('|') && b.trim().length > 20);      // Use paragraph parsing if we have more paragraphs than pipe blocks, or if we have 4+ paragraphs
       // Also force paragraph parsing if we detect Hannah's format (multiple | separated projects)
       const pipeCount = (projectsText.match(/\|/g) || []).length;
       const hasMultiplePipeProjects = pipeCount >= 4 && (projectsText.includes('Figma') || projectsText.includes('UiPath') || projectsText.includes('React,'));
@@ -55,9 +42,7 @@ class ProjectsParser extends BaseParser {
       
       if ((paragraphTest.length > pipeTest.length && paragraphTest.length >= 4) || 
           (paragraphTest.length >= 5 && pipeTest.length <= 4) ||
-          hasMultiplePipeProjects || hasMultipleProjects || isHannahFormat) {
-        console.log('🚀 Using paragraph-based parsing for complex pipe format');
-        const result = this.parseStandard(projectsText);
+          hasMultiplePipeProjects || hasMultipleProjects || isHannahFormat) {        const result = this.parseStandard(projectsText);
         // Override the parsing strategy to use paragraphs
         result.data = this.parseProjectsFromParagraphs(projectsText);
         return result;
@@ -80,9 +65,7 @@ class ProjectsParser extends BaseParser {
   /**
    * Parse pipe-separated format (e.g., "Project Name | Tech Stack Description")
    */
-  parsePipeSeparated(text) {
-    console.log('🚀 Using pipe-separated parsing strategy');
-    const projects = [];
+  parsePipeSeparated(text) {    const projects = [];
     
     const projectPattern = /([A-Z][^|]{15,150}?)\s*\|([^|]+?)(?=\s+[A-Z][A-Za-z\s\-]{15,150}?\s*\||$)/g;
     let match;
@@ -92,15 +75,11 @@ class ProjectsParser extends BaseParser {
       const restOfContent = match[2].trim();
       
       // Skip if this looks like a certification instead of a project
-      if (projectName.match(/\b(Certificate|Certification|Programme|Program|Course|Training|Seminar|Workshop|Academy|Coursera|Google|Microsoft|Cisco|EFSET)\b/i)) {
-        console.log('🚀 ⏭️ Skipping certification:', projectName);
-        continue;
+      if (projectName.match(/\b(Certificate|Certification|Programme|Program|Course|Training|Seminar|Workshop|Academy|Coursera|Google|Microsoft|Cisco|EFSET)\b/i)) {        continue;
       }
       
       // Skip if it's just a date or location
-      if (projectName.match(/^\d{4}$|^(January|February|March|April|May|June|July|August|September|October|November|December)\s*\d{4}$/i)) {
-        console.log('🚀 ⏭️ Skipping date:', projectName);
-        continue;
+      if (projectName.match(/^\d{4}$|^(January|February|March|April|May|June|July|August|September|October|November|December)\s*\d{4}$/i)) {        continue;
       }
       
       // Extract technologies and description
@@ -125,10 +104,7 @@ class ProjectsParser extends BaseParser {
         startDate: '',
         endDate: '',
         url: ''
-      });
-      
-      console.log('🚀 ✅ Added project:', projectName);
-    }
+      });    }
     
     this.confidence = projects.length > 0 ? 0.9 : 0;
     return { data: projects, confidence: this.confidence };
@@ -137,9 +113,7 @@ class ProjectsParser extends BaseParser {
   /**
    * Parse bullet format (like Shayla's resume)
    */
-  parseBulletFormat(text) {
-    console.log('🚀 Using bullet format parsing strategy');
-    const projects = [];
+  parseBulletFormat(text) {    const projects = [];
     const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 0);
     
     let currentProject = null;
@@ -182,18 +156,13 @@ class ProjectsParser extends BaseParser {
     // Add the last project
     if (currentProject) {
       projects.push(currentProject);
-    }
-    
-    console.log('🚀 Bullet format parsing found', projects.length, 'projects');
-    return { data: projects, confidence: projects.length > 0 ? 0.85 : 0 };
+    }    return { data: projects, confidence: projects.length > 0 ? 0.85 : 0 };
   }
 
   /**
    * Parse contact-heavy format (like Jiro's resume)
    */
-  parseContactHeavyFormat(text) {
-    console.log('🚀 Using contact-heavy format parsing strategy');
-    const projects = [];
+  parseContactHeavyFormat(text) {    const projects = [];
     const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 0);
     
     let currentProject = null;
@@ -235,26 +204,19 @@ class ProjectsParser extends BaseParser {
     // Add the last project
     if (currentProject) {
       projects.push(currentProject);
-    }
-    
-    console.log('🚀 Contact-heavy format parsing found', projects.length, 'projects');
-    return { data: projects, confidence: projects.length > 0 ? 0.8 : 0 };
+    }    return { data: projects, confidence: projects.length > 0 ? 0.8 : 0 };
   }
 
   /**
    * Parse standard format
    */
-  parseStandard(text) {
-    console.log('🚀 Using standard parsing strategy');
-    const projects = [];
+  parseStandard(text) {    const projects = [];
     let projectBlocks = [];
     
     // Strategy 1: Pipe-separated projects (Hannah's format) - "Project Name | Technologies"
     const pipeSplit = text.split(/(?=^[A-Z][A-Za-z\s\-]+\s*\|)/m);
     if (pipeSplit.length > 1 && pipeSplit.some(b => b.includes('|') && b.trim().length > 20)) {
-      projectBlocks = pipeSplit.filter(block => block.includes('|') && block.trim().length > 20);
-      console.log('🚀 Using pipe-separated project split, found', projectBlocks.length, 'blocks');
-    }
+      projectBlocks = pipeSplit.filter(block => block.includes('|') && block.trim().length > 20);    }
     
     // Strategy 2: Paragraphs (check first for better results)
     const paragraphSplit = text.split(/\n\s*\n/);
@@ -264,21 +226,15 @@ class ProjectsParser extends BaseParser {
       // First try to split by project titles that appear before pipe symbols or bullet points
       const projectTitleSplit = text.split(/(?=^[A-Z][A-Za-z\s\-]+(?:System|Application|App|Management|Tracker|Platform|Tool|Website|Project|Monitoring|Banking|Expense|Quiz|Task)\s*[\|\•])/m);
       if (projectTitleSplit.length > 1 && projectTitleSplit.some(b => b.trim().length > 20)) {
-        projectBlocks = projectTitleSplit.filter(block => block.trim().length > 20);
-        console.log('🚀 Using project title split, found', projectBlocks.length, 'blocks');
-      } else {
+        projectBlocks = projectTitleSplit.filter(block => block.trim().length > 20);      } else {
         // Try splitting by project name patterns (more aggressive for Shayla/Carlo format)
         const aggressiveSplit = text.split(/(?=^(?:Web-Based|Full-Stack|Personal|Task|Air Quality|Lost and Found|Pet Adoption|Web Based)[A-Za-z\s\-]*(?:System|Application|App|Management|Tracker)\s*\|)/m);
         if (aggressiveSplit.length > 1 && aggressiveSplit.some(b => b.trim().length > 20)) {
-          projectBlocks = aggressiveSplit.filter(block => block.trim().length > 20);
-          console.log('🚀 Using aggressive project name split, found', projectBlocks.length, 'blocks');
-        } else {
+          projectBlocks = aggressiveSplit.filter(block => block.trim().length > 20);        } else {
           // Fallback to bullet point split - but only use if we don't have better options
           const bulletSplit = text.split(/(?=^[\-•\*]\s+[A-Z]|^\d+\.\s+[A-Z])/m);
           if (bulletSplit.length > 1 && bulletSplit.some(b => b.trim().length > 20)) {
-            projectBlocks = bulletSplit;
-            console.log('🚀 Using bullet point split');
-          }
+            projectBlocks = bulletSplit;          }
         }
       }
     }
@@ -293,13 +249,9 @@ class ProjectsParser extends BaseParser {
       });
       
       if (validParagraphs.length > projectBlocks.length) {
-        projectBlocks = paragraphSplit;
-        console.log('🚀 Using paragraph split (found more valid projects:', validParagraphs.length, ')');
-      }
+        projectBlocks = paragraphSplit;      }
     } else if (projectBlocks.length === 0 && paragraphSplit.length > 1) {
-      projectBlocks = paragraphSplit;
-      console.log('🚀 Using paragraph split');
-    }
+      projectBlocks = paragraphSplit;    }
     
     // Strategy 3: Technologies-based split (Adrian's format)
     if (projectBlocks.length === 0) {
@@ -330,16 +282,11 @@ class ProjectsParser extends BaseParser {
             }
             currentIndex = endIndex;
           }
-        }
-        
-        console.log('🚀 Using project name-based split, found', projectBlocks.length, 'blocks');
-      } else {
+        }      } else {
         // Fallback to technologies split
         const techSplit = text.split(/(?=\bTechnologies:\s*)/);
         if (techSplit.length > 1) {
-          projectBlocks = techSplit.filter(block => block.trim().length > 20);
-          console.log('🚀 Using technologies-based split, found', projectBlocks.length, 'blocks');
-        }
+          projectBlocks = techSplit.filter(block => block.trim().length > 20);        }
       }
     }
     
@@ -351,16 +298,10 @@ class ProjectsParser extends BaseParser {
       // Try splitting by sentence boundaries followed by project names
       const sentenceSplit = textToAnalyze.split(/\.\s+(?=[A-Z][A-Za-z\s\-]+(?:System|Application|App|Management|Monitoring|Tracker)\s*\|)/);
       if (sentenceSplit.length > 1 && sentenceSplit.length > projectBlocks.length) {
-        projectBlocks = sentenceSplit.filter(b => b.trim().length > 20);
-        console.log('🚀 Using sentence-based split, found', projectBlocks.length, 'blocks');
-      } else {
+        projectBlocks = sentenceSplit.filter(b => b.trim().length > 20);      } else {
         // Fallback to line-by-line analysis
         const lines = textToAnalyze.split(/\n/);
-        let currentProject = '';
-        
-        console.log('🚀 Analyzing lines for project patterns...');
-        
-        for (let i = 0; i < lines.length; i++) {
+        let currentProject = '';        for (let i = 0; i < lines.length; i++) {
           const trimmed = lines[i].trim();
           
           // Check if this line looks like a project title
@@ -376,9 +317,7 @@ class ProjectsParser extends BaseParser {
           if (isProjectTitle) {
             // Save previous project if exists
             if (currentProject.trim().length > 20) {
-              projectBlocks.push(currentProject);
-              console.log('🚀 Found project block via pattern matching');
-            }
+              projectBlocks.push(currentProject);            }
             currentProject = trimmed + '\n';
           } else if (trimmed.length > 0) {
             currentProject += trimmed + '\n';
@@ -390,27 +329,18 @@ class ProjectsParser extends BaseParser {
           projectBlocks.push(currentProject);
         }
         
-        if (projectBlocks.length > 0) {
-          console.log('🚀 Using pattern-based split, found', projectBlocks.length, 'blocks');
-        }
+        if (projectBlocks.length > 0) {        }
       }
     }
     
     // Strategy 4: Single project
     if (projectBlocks.length === 0) {
-      projectBlocks = [text];
-      console.log('🚀 Using single project');
-    }
+      projectBlocks = [text];    }
     
     // Process each project block
     for (let i = 0; i < projectBlocks.length; i++) {
       const block = projectBlocks[i];
-      const trimmed = block.trim();
-      console.log(`🚀 Processing block ${i + 1}/${projectBlocks.length}: "${trimmed.substring(0, 100)}..."`);
-      
-      if (trimmed.length < 20) {
-        console.log(`🚀 ⏭️ Skipping block ${i + 1}: too short (${trimmed.length} chars)`);
-        continue;
+      const trimmed = block.trim();      if (trimmed.length < 20) {        continue;
       }
       
       const lines = trimmed.split(/\n+/).filter(l => l.trim().length > 0);
@@ -450,18 +380,10 @@ class ProjectsParser extends BaseParser {
             break;
           }
         }
+      }      if (projectName.length < 5 || projectName.length > 150) {        continue;
       }
       
-      console.log(`🚀 Block ${i + 1} project name: "${projectName}"`);
-      
-      if (projectName.length < 5 || projectName.length > 150) {
-        console.log(`🚀 ⏭️ Skipping block ${i + 1}: invalid name length (${projectName.length})`);
-        continue;
-      }
-      
-      if (projectName.match(/^(Education|Experience|Projects|Skills|Certifications)/i)) {
-        console.log(`🚀 ⏭️ Skipping block ${i + 1}: section header detected`);
-        continue;
+      if (projectName.match(/^(Education|Experience|Projects|Skills|Certifications)/i)) {        continue;
       }
       
       // Extract description - handle both multi-line and single-line formats
@@ -528,16 +450,9 @@ class ProjectsParser extends BaseParser {
         startDate: '',
         endDate: '',
         url: ''
-      });
-      
-      console.log('🚀 ✅ Added project:', projectName);
-    }
+      });    }
     
-    this.confidence = projects.length > 0 ? 0.85 : 0;
-    
-    console.log('🚀 ProjectsParser: Extraction complete -', projects.length, 'projects (confidence:', this.confidence.toFixed(2), ')');
-    
-    return { data: projects, confidence: this.confidence };
+    this.confidence = projects.length > 0 ? 0.85 : 0;    return { data: projects, confidence: this.confidence };
   }
 
   /**
@@ -612,9 +527,7 @@ class ProjectsParser extends BaseParser {
         }
         
         if (foundProjects.length > projectSplit.length) {
-          projectSplit = foundProjects;
-          console.log('🚀 Using Hannah-specific project extraction, found', foundProjects.length, 'projects');
-        }
+          projectSplit = foundProjects;        }
       }
       
       // Ultimate fallback: Manual extraction for Hannah's, Shayla's, and Carlo's formats
@@ -627,9 +540,7 @@ class ProjectsParser extends BaseParser {
         singleText.includes('Air Quality Monitoring')
       );
       
-      if (projectSplit.length <= 3 && needsManualExtraction) {
-        console.log('🚀 Using manual project extraction for concatenated format');
-        const manualProjects = [];
+      if (projectSplit.length <= 3 && needsManualExtraction) {        const manualProjects = [];
         
         // Extract each project manually based on known patterns
         const patterns = [
@@ -754,35 +665,22 @@ class ProjectsParser extends BaseParser {
             
             // Create a project block with the name, tech, and cleaned description
             const projectBlock = `${pattern.name} | ${pattern.tech}\n${cleanDescription || description}`;
-            manualProjects.push(projectBlock);
-            console.log(`🚀 ✅ Manual extraction found: ${pattern.name}`);
-          }
+            manualProjects.push(projectBlock);          }
         }
         
         if (manualProjects.length >= 3) {
-          projectSplit = manualProjects;
-          console.log('🚀 Manual extraction found', manualProjects.length, 'Hannah projects');
-        }
+          projectSplit = manualProjects;        }
       }
       
       if (projectSplit.length > 1) {
-        paragraphs = projectSplit.filter(p => p.trim().length > 20);
-        console.log('🚀 Split concatenated text into', paragraphs.length, 'project blocks');
-      }
-    }
-    
-    console.log('🚀 Parsing projects from paragraphs, found', paragraphs.length, 'blocks');
-    
-    for (let i = 0; i < paragraphs.length; i++) {
+        paragraphs = projectSplit.filter(p => p.trim().length > 20);      }
+    }    for (let i = 0; i < paragraphs.length; i++) {
       const paragraph = paragraphs[i].trim();
       const lines = paragraph.split('\n').filter(l => l.trim().length > 0);
       
       if (lines.length === 0) continue;
       
-      const firstLine = lines[0].trim();
-      console.log(`🚀 Paragraph ${i + 1} first line: "${firstLine}"`);
-      
-      // Extract project name and technologies from first line
+      const firstLine = lines[0].trim();      // Extract project name and technologies from first line
       let projectName = '';
       let technologies = '';
       
@@ -856,12 +754,7 @@ class ProjectsParser extends BaseParser {
           startDate: '',
           endDate: '',
           url: ''
-        });
-        
-        console.log('🚀 ✅ Added paragraph project:', projectName);
-      } else {
-        console.log(`🚀 ⏭️ Skipping paragraph ${i + 1}: invalid name "${projectName}" (length: ${projectName.length})`);
-      }
+        });      } else {      }
     }
     
     return projects;

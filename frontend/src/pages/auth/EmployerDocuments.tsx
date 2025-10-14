@@ -206,20 +206,14 @@ const EmployerDocuments: React.FC = () => {
       let result
       try {
         result = await response.json()
-      } catch (jsonError) {
-        console.error('Failed to parse response as JSON:', jsonError)
-        throw new Error(`Server error: ${response.status} ${response.statusText}`)
+      } catch (jsonError) {        throw new Error(`Server error: ${response.status} ${response.statusText}`)
       }
 
-      if (!response.ok) {
-        console.error('Upload failed with response:', result)
-        throw new Error(result.message || result.error || 'Failed to upload documents')
+      if (!response.ok) {        throw new Error(result.message || result.error || 'Failed to upload documents')
       }
 
       setShowVerificationPending(true)
-    } catch (error) {
-      console.error("Document upload failed:", error)
-      setErrors(prev => ({ 
+    } catch (error) {      setErrors(prev => ({ 
         ...prev, 
         general: error instanceof Error ? error.message : "Failed to upload documents. Please try again." 
       }))

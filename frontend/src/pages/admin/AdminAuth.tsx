@@ -80,9 +80,7 @@ const AdminAuth: React.FC<AdminAuthProps> = () => {
       } else {
         setError(data.message || 'Access denied. Admin privileges required.');
       }
-    } catch (error: any) {
-      console.error('Admin login error:', error);
-      if (error.code === 'auth/user-not-found') {
+    } catch (error: any) {      if (error.code === 'auth/user-not-found') {
         setError('Admin account not found.');
       } else if (error.code === 'auth/wrong-password') {
         setError('Invalid password.');

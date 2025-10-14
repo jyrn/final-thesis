@@ -168,15 +168,11 @@ const EmployerDashboard: React.FC = () => {
               navigate('/auth/verification-pending');
               return;
             }
-          } else {
-            console.error('Failed to fetch employer account status');
-            // If we can't verify status, redirect to auth
+          } else {            // If we can't verify status, redirect to auth
             navigate('/auth');
             return;
           }
-        } catch (error) {
-          console.error('Error checking employer account status:', error);
-          navigate('/auth');
+        } catch (error) {          navigate('/auth');
           return;
         }
       } else {
@@ -238,20 +234,13 @@ const EmployerDashboard: React.FC = () => {
 
         if (userResponse.ok) {
           const userData = await userResponse.json();
-          console.log('Dashboard user profile data:', userData); // Debug log
-          console.log('Dashboard profilePicture from userData:', userData.user?.profilePicture);
-          
-          // Set user profile for welcome header
+          console.log('Dashboard user profile data:', userData); // Debug log          // Set user profile for welcome header
           const newUserProfile = {
             companyName: companyName,
             profilePicture: userData.user.profilePicture || ''
-          };
-          console.log('Dashboard - Setting userProfile:', newUserProfile);
-          setUserProfile(newUserProfile);
+          };          setUserProfile(newUserProfile);
         }
-      } catch (error) {
-        console.error('Error loading company profile:', error);
-      }
+      } catch (error) {      }
     };
 
     loadCompanyProfile();
@@ -259,15 +248,11 @@ const EmployerDashboard: React.FC = () => {
 
   // Listen for profile picture updates
   useEffect(() => {
-    const handleProfilePictureUpdate = (event: CustomEvent) => {
-      console.log('Dashboard - Profile picture update event:', event.detail);
-      setUserProfile(prev => {
+    const handleProfilePictureUpdate = (event: CustomEvent) => {      setUserProfile(prev => {
         const updated = prev ? {
           ...prev,
           profilePicture: event.detail.profilePicture
-        } : null;
-        console.log('Dashboard - Updated userProfile after event:', updated);
-        return updated;
+        } : null;        return updated;
       });
     };
 
@@ -279,9 +264,7 @@ const EmployerDashboard: React.FC = () => {
   }, []);
 
   // Add a useEffect to debug userProfile state changes
-  useEffect(() => {
-    console.log('Dashboard - userProfile state changed:', userProfile);
-  }, [userProfile]);
+  useEffect(() => {  }, [userProfile]);
 
   // Load jobs from backend when auth is ready and user is verified
   useEffect(() => {
@@ -300,6 +283,7 @@ const EmployerDashboard: React.FC = () => {
           _id: job._id,
           title: job.title,
           company: job.company || 'Your Company',
+          companyLogo: job.companyLogo || userProfile?.profilePicture || '',
           location: job.location,
           description: job.description,
           salary: job.salary || (job.salaryMin && job.salaryMax ? `₱${job.salaryMin?.toLocaleString()} - ₱${job.salaryMax?.toLocaleString()}` : undefined),
@@ -330,9 +314,7 @@ const EmployerDashboard: React.FC = () => {
         }));
         
         setJobPostings(convertedJobs);
-      } catch (error) {
-        console.error('❌ Error loading jobs:', error);
-        // Set empty array instead of mock data
+      } catch (error) {        // Set empty array instead of mock data
         setJobPostings([]);
       } finally {
         setIsLoadingJobs(false);
@@ -340,7 +322,7 @@ const EmployerDashboard: React.FC = () => {
     };
 
     loadJobs();
-  }, [isAuthReady, currentUser, isCheckingVerification, userVerificationStatus]);
+  }, [isAuthReady, currentUser, isCheckingVerification, userVerificationStatus, userProfile]);
 
   // Handle saving company profile
   const handleSaveCompanyProfile = async (profileData: CompanyProfileData) => {
@@ -378,9 +360,7 @@ const EmployerDashboard: React.FC = () => {
       } else {
         throw new Error('Failed to update company profile');
       }
-    } catch (error) {
-      console.error('Error updating company profile:', error);
-      alert('Error updating company profile. Please try again.');
+    } catch (error) {      alert('Error updating company profile. Please try again.');
     }
   };
 
@@ -410,10 +390,7 @@ const EmployerDashboard: React.FC = () => {
 
 
         if (response.ok) {
-          const data = await response.json();
-          console.log('Applications API response:', data);
-          
-          const applicationsArray = data.data || [];
+          const data = await response.json();          const applicationsArray = data.data || [];
           
           // If no applications, show empty state instead of mock data
           if (!data.data || data.data.length === 0) {
@@ -452,16 +429,10 @@ const EmployerDashboard: React.FC = () => {
           });
           
           setApplications(convertedApplications);
-        } else {
-          console.error('Failed to load applications:', response.status, response.statusText);
-          const errorText = await response.text();
-          console.error('Error response body:', errorText);
-          // Show empty state - no mock data fallback
+        } else {          const errorText = await response.text();          // Show empty state - no mock data fallback
           setApplications([]);
         }
-      } catch (error) {
-        console.error('Error loading applications:', error);
-        // Show empty state - no mock data fallback
+      } catch (error) {        // Show empty state - no mock data fallback
         setApplications([]);
       } finally {
         setIsLoadingApplications(false);
@@ -633,9 +604,7 @@ const EmployerDashboard: React.FC = () => {
       } else {
         throw new Error('Failed to update application status');
       }
-    } catch (error) {
-      console.error('Error updating application status:', error);
-      alert('Failed to update applicant status. Please try again.');
+    } catch (error) {      alert('Failed to update applicant status. Please try again.');
     }
   };
 
@@ -672,9 +641,7 @@ const EmployerDashboard: React.FC = () => {
       } else {
         throw new Error('Failed to update application status');
       }
-    } catch (error) {
-      console.error('Error updating application status:', error);
-      alert('Failed to update applicant status. Please try again.');
+    } catch (error) {      alert('Failed to update applicant status. Please try again.');
     }
   };
 
@@ -713,9 +680,7 @@ const EmployerDashboard: React.FC = () => {
         const errorData = await response.json();
         alert(errorData.error || 'Resume not available for this applicant.');
       }
-    } catch (error) {
-      console.error('Error viewing resume:', error);
-      alert('Failed to load resume. Please try again.');
+    } catch (error) {      alert('Failed to load resume. Please try again.');
     }
   };
 
@@ -769,9 +734,7 @@ const EmployerDashboard: React.FC = () => {
         const errorData = await response.json();
         alert(errorData.error || 'Resume not available for download.');
       }
-    } catch (error) {
-      console.error('Error downloading resume:', error);
-      alert('Failed to download resume. Please try again.');
+    } catch (error) {      alert('Failed to download resume. Please try again.');
     }
   };
 
@@ -865,9 +828,7 @@ const EmployerDashboard: React.FC = () => {
       };
 
       setJobPostings(prev => [...prev, newJob]);
-    } catch (error) {
-      console.error('Error creating job:', error);
-      alert('Failed to create job. Please try again.');
+    } catch (error) {      alert('Failed to create job. Please try again.');
     } finally {
       setIsLoadingJobs(false);
     }
@@ -937,9 +898,7 @@ const EmployerDashboard: React.FC = () => {
         }
         return job;
       }));
-    } catch (error) {
-      console.error('Error updating job:', error);
-      alert('Failed to update job. Please try again.');
+    } catch (error) {      alert('Failed to update job. Please try again.');
     } finally {
       setIsLoadingJobs(false);
     }
@@ -994,9 +953,7 @@ const EmployerDashboard: React.FC = () => {
       }
       
       // In a real app, you would also update applicant statuses based on hiredApplicantIds
-    } catch (error) {
-      console.error('Error deleting job:', error);
-      alert('Failed to delete job. Please try again.');
+    } catch (error) {      alert('Failed to delete job. Please try again.');
     } finally {
       setIsLoadingJobs(false);
     }
@@ -1013,11 +970,7 @@ const EmployerDashboard: React.FC = () => {
     setIsJobDetailsModalOpen(true);
   };
 
-  const handleViewJobDetails = (job: Job) => {
-    console.log('Dashboard - handleViewJobDetails - userProfile:', userProfile);
-    console.log('Dashboard - handleViewJobDetails - profilePicture:', userProfile?.profilePicture);
-    console.log('Dashboard - userProfile state when modal opens:', JSON.stringify(userProfile, null, 2));
-    setSelectedJob(job);
+  const handleViewJobDetails = (job: Job) => {    setSelectedJob(job);
     setIsJobDetailsModalOpen(true);
   };
 
@@ -1160,6 +1113,7 @@ const EmployerDashboard: React.FC = () => {
           userInitial={companyProfileData?.companyName?.charAt(0) || 'E'}
           profilePicture={userProfile?.profilePicture}
           onMenuClick={() => setSidebarOpen(!sidebarOpen)}
+          onProfileClick={() => setActiveTab('settings')}
           notifications={1}
         />
       </div>
@@ -1190,9 +1144,10 @@ const EmployerDashboard: React.FC = () => {
                 </span>
               )}
             </button>
-            <div 
+            <button 
               className={layoutStyles.userAvatar}
-              aria-label="User profile"
+              onClick={() => setActiveTab('settings')}
+              aria-label="Go to settings"
             >
               {userProfile?.profilePicture ? (
                 <img 
@@ -1203,7 +1158,7 @@ const EmployerDashboard: React.FC = () => {
               ) : (
                 companyProfileData?.companyName?.charAt(0) || 'E'
               )}
-            </div>
+            </button>
           </div>
         </header>
 

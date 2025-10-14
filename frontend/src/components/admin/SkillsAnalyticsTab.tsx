@@ -136,9 +136,7 @@ const SkillsAnalyticsTab: React.FC = () => {
 
       setSkillsData(mockSkillsData);
       setSkillTrends(mockSkillTrends);
-    } catch (error) {
-      console.error('Error fetching skills analytics:', error);
-    } finally {
+    } catch (error) {    } finally {
       setLoading(false);
     }
   };

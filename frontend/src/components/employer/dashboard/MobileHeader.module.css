@@ -70,6 +70,15 @@
   font-weight: 600;
   font-size: 0.875rem;
   overflow: hidden;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.userAvatar:hover {
+  transform: scale(1.05);
+  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
 }
 
 .avatarImage {

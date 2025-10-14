@@ -93,9 +93,7 @@ const ComplianceTab: React.FC = () => {
         }
       ];
       setComplianceItems(mockComplianceItems);
-    } catch (error) {
-      console.error('Error fetching compliance data:', error);
-    } finally {
+    } catch (error) {    } finally {
       setLoading(false);
     }
   };

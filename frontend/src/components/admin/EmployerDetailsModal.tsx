@@ -46,16 +46,7 @@ const EmployerDetailsModal: React.FC<EmployerDetailsModalProps> = ({
   };
 
   const getCompanyLogo = () => {
-    const profilePicture = employer.profilePicture || employer.userId.profilePicture;
-    
-    console.log('🏢 EmployerDetailsModal - Company logo data:', {
-      employerProfilePicture: employer.profilePicture,
-      userIdProfilePicture: employer.userId?.profilePicture,
-      finalProfilePicture: profilePicture,
-      companyName: employer.companyDetails?.companyName || employer.userId?.companyName
-    });
-    
-    if (profilePicture) {
+    const profilePicture = employer.profilePicture || employer.userId.profilePicture;    if (profilePicture) {
       return (
         <div 
           className="company-icon"
@@ -83,10 +74,7 @@ const EmployerDetailsModal: React.FC<EmployerDetailsModalProps> = ({
           />
         </div>
       );
-    }
-    
-    console.log('🏢 EmployerDetailsModal - No profile picture found, showing fallback icon');
-    return (
+    }    return (
       <div className="company-icon">
         <HiOutlineOfficeBuilding />
       </div>

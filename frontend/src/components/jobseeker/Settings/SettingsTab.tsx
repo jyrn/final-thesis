@@ -117,14 +117,8 @@ const SettingsTab: React.FC<SettingsTabProps> = ({ onNavigate }) => {
 
   const checkUserAuthMethods = async () => {
     try {
-      setCheckingAuthMethods(true);
-      console.log('SettingsTab: Checking user auth methods...');
-      const methods = await firebaseAuthService.checkUserAuthMethods();
-      console.log('SettingsTab: Auth methods result:', methods);
-      setUserAuthMethods(methods);
-    } catch (error) {
-      console.error('SettingsTab: Error checking user auth methods:', error);
-      // Default to showing password form if there's an error
+      setCheckingAuthMethods(true);      const methods = await firebaseAuthService.checkUserAuthMethods();      setUserAuthMethods(methods);
+    } catch (error) {      // Default to showing password form if there's an error
       setUserAuthMethods({ hasPassword: true, providers: [] });
     } finally {
       setCheckingAuthMethods(false);
@@ -135,9 +129,7 @@ const SettingsTab: React.FC<SettingsTabProps> = ({ onNavigate }) => {
     try {
       await firebaseAuthService.signOut();
       navigate('/auth/jobseeker');
-    } catch (error) {
-      console.error('Logout error:', error);
-      setError('Failed to logout. Please try again.');
+    } catch (error) {      setError('Failed to logout. Please try again.');
     }
   };
 
@@ -164,11 +156,7 @@ const SettingsTab: React.FC<SettingsTabProps> = ({ onNavigate }) => {
         let profileData = jobseekerResponse.data;
         
         // Merge user data (including profilePicture) with jobseeker data
-        if (userResponse.success && userResponse.data) {
-          console.log('User response data:', userResponse.data);
-          const userData = userResponse.data.user || userResponse.data;
-          console.log('Profile picture from user data:', userData.profilePicture);
-          profileData = {
+        if (userResponse.success && userResponse.data) {          const userData = userResponse.data.user || userResponse.data;          profileData = {
             ...profileData,
             profilePicture: userData.profilePicture
           };
@@ -230,9 +218,7 @@ const SettingsTab: React.FC<SettingsTabProps> = ({ onNavigate }) => {
         }
         setError(jobseekerResponse.error || 'Failed to load profile');
       }
-    } catch (err: any) {
-      console.error('Profile fetch error:', err);
-      setError(err.message || 'Failed to load profile');
+    } catch (err: any) {      setError(err.message || 'Failed to load profile');
     } finally {
       setLoading(false);
     }
@@ -261,11 +247,7 @@ const SettingsTab: React.FC<SettingsTabProps> = ({ onNavigate }) => {
 
       const response = await apiService.uploadProfilePicture(file);
       
-      if (response.success && response.data) {
-        console.log('Upload response:', response.data);
-        const cloudUrl = response.data.cloudUrl || response.data.profilePicture;
-        console.log('New profile picture cloud URL:', cloudUrl);
-        setProfile(prev => prev ? { ...prev, profilePicture: cloudUrl } : null);
+      if (response.success && response.data) {        const cloudUrl = response.data.cloudUrl || response.data.profilePicture;        setProfile(prev => prev ? { ...prev, profilePicture: cloudUrl } : null);
         
         // Trigger a custom event to notify other components of the profile update
         window.dispatchEvent(new CustomEvent('profilePictureUpdated', {
@@ -411,9 +393,7 @@ const SettingsTab: React.FC<SettingsTabProps> = ({ onNavigate }) => {
       } else {
         setError(result.error || 'Failed to update password');
       }
-    } catch (error: any) {
-      console.error('Password update error:', error);
-      setError(error.message || 'Failed to update password');
+    } catch (error: any) {      setError(error.message || 'Failed to update password');
     } finally {
       setUpdatingPassword(false);
     }
@@ -441,9 +421,7 @@ const SettingsTab: React.FC<SettingsTabProps> = ({ onNavigate }) => {
       } else {
         throw new Error(response.error || 'Failed to save resume data');
       }
-    } catch (error: any) {
-      console.error('Failed to save resume data:', error);
-      setError(error.message || 'Failed to save resume data. Please try again.');
+    } catch (error: any) {      setError(error.message || 'Failed to save resume data. Please try again.');
     }
   };
 
@@ -485,9 +463,7 @@ const SettingsTab: React.FC<SettingsTabProps> = ({ onNavigate }) => {
         }
         setActiveResumeType('uploaded');
       }
-    } catch (error) {
-      console.error('Error switching resume:', error);
-    }
+    } catch (error) {    }
   };
 
   const handleOriginalResumeVisibilityToggle = async (showToEmployers: boolean) => {
@@ -1072,9 +1048,7 @@ const SettingsTab: React.FC<SettingsTabProps> = ({ onNavigate }) => {
                             const blob = await response.blob();
                             const blobUrl = URL.createObjectURL(new Blob([blob], { type: 'application/pdf' }));
                             window.open(blobUrl, '_blank');
-                          } catch (error) {
-                            console.error('Error opening in new tab:', error);
-                            // Fallback to direct URL
+                          } catch (error) {                            // Fallback to direct URL
                             window.open(url, '_blank');
                           }
                         }

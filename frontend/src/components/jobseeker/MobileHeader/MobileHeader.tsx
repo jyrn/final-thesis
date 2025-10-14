@@ -10,6 +10,7 @@ interface MobileHeaderProps {
   userProfilePicture?: string
   onFilterClick?: () => void
   onMenuClick?: () => void
+  onProfileClick?: () => void
   notifications?: number
   showSearch?: boolean
   searchComponent?: React.ReactNode
@@ -22,6 +23,7 @@ const MobileHeader: React.FC<MobileHeaderProps> = ({
   userProfilePicture,
   onFilterClick,
   onMenuClick,
+  onProfileClick,
   notifications = 0,
   showSearch = false,
   searchComponent
@@ -67,7 +69,11 @@ const MobileHeader: React.FC<MobileHeaderProps> = ({
             )}
           </button>
           
-          <div className={styles.userAvatar} aria-label="User profile">
+          <button 
+            className={styles.userAvatar} 
+            onClick={onProfileClick}
+            aria-label="Go to settings"
+          >
             {userProfilePicture ? (
               <img 
                 src={getImageSrc(userProfilePicture)} 
@@ -77,7 +83,7 @@ const MobileHeader: React.FC<MobileHeaderProps> = ({
             ) : (
               userInitial
             )}
-          </div>
+          </button>
         </div>
       </header>
       

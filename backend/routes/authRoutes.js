@@ -93,11 +93,7 @@ router.post('/employer/documents', upload.fields([
   { name: 'philjobnetRegistration', maxCount: 1 },
   { name: 'doleNoPendingCase', maxCount: 1 }
 ]), async (req, res) => {
-  const requestId = Math.random().toString(36).substr(2, 9);
-  console.log(`📄 [${requestId}] Employer document upload request received (registration)`);
-  console.log(`📁 [${requestId}] Files:`, Object.keys(req.files || {}));
-  
-  try {
+  const requestId = Math.random().toString(36).substr(2, 9);  try {
     const { email, companyName } = req.body;
     
     if (!email || !companyName) {
@@ -139,15 +135,9 @@ router.post('/employer/documents', upload.fields([
     }
 
     // Process documents into array format
-    const documentsArray = [];
-    console.log(`📁 [${requestId}] Processing uploaded files:`, Object.keys(uploadedFiles));
-    
-    for (const [docType, files] of Object.entries(uploadedFiles)) {
+    const documentsArray = [];    for (const [docType, files] of Object.entries(uploadedFiles)) {
       if (files && files.length > 0) {
-        const file = files[0];
-        console.log(`📄 [${requestId}] Processing ${docType}:`, file.originalname);
-        
-        documentsArray.push({
+        const file = files[0];        documentsArray.push({
           documentType: docType,
           documentName: file.originalname,
           documentUrl: file.path,
@@ -157,11 +147,7 @@ router.post('/employer/documents', upload.fields([
           isRequired: true
         });
       }
-    }
-    
-    console.log(`📄 [${requestId}] Documents array to save:`, documentsArray.length, 'documents');
-
-    // Save documents to employer record
+    }    // Save documents to employer record
     employer.documents = documentsArray;
     employer.documentVerificationStatus = 'pending';
     employer.documentVerifiedAt = undefined;
@@ -187,10 +173,7 @@ router.post('/employer/documents', upload.fields([
       }
     });
 
-  } catch (error) {
-    console.error(`❌ [${requestId}] Error uploading documents:`, error);
-    
-    // Clean up uploaded files if there was an error
+  } catch (error) {    // Clean up uploaded files if there was an error
     if (req.files) {
       Object.values(req.files).flat().forEach(file => {
         if (fs.existsSync(file.path)) {

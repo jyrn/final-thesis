@@ -85,13 +85,7 @@ const ApplicantsTab: React.FC = () => {
         user.role === 'jobseeker' || user.userType === 'jobseeker' || user.type === 'jobseeker'
       );
       
-      // Use real data from dashboard stats API
-      console.log('Dashboard Stats:', dashboardStats);
-      console.log('Users Response:', usersResponse);
-      console.log('Jobs Response:', jobsResponse);
-      console.log('Applications Response:', allApplications);
-      
-      // Set individual stats using real API data
+      // Use real data from dashboard stats API      // Set individual stats using real API data
       setTotalUsers(dashboardStats.totalJobSeekers || jobSeekerUsers.length || 0);
       setActiveUsers(jobSeekerUsers.filter((user: any) => 
         user.status === 'active' || user.isActive || user.registrationStatus === 'verified'
@@ -116,9 +110,7 @@ const ApplicantsTab: React.FC = () => {
       
       setApplicants(transformedApplicants);
       
-    } catch (error) {
-      console.error('Error fetching applicants data:', error);
-      setApplicants([]);
+    } catch (error) {      setApplicants([]);
       setTotalUsers(0);
       setActiveUsers(0);
       setTotalJobs(0);

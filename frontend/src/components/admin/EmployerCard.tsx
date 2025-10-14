@@ -61,14 +61,7 @@ const EmployerCard: React.FC<EmployerCardProps> = ({
   const getCompanyLogo = () => {
     const profilePicture = employer.profilePicture || employer.userId.profilePicture;
     
-    // Debug logging
-    console.log('EmployerCard - employer data:', employer);
-    console.log('EmployerCard - profilePicture:', profilePicture);
-    console.log('EmployerCard - employer.userId:', employer.userId);
-    
-    if (profilePicture) {
-      console.log('EmployerCard - rendering company logo');
-      return (
+    // Debug logging    if (profilePicture) {      return (
         <div 
           className="company-initials"
           style={{ 
@@ -91,10 +84,7 @@ const EmployerCard: React.FC<EmployerCardProps> = ({
           />
         </div>
       );
-    }
-    
-    console.log('EmployerCard - no profile picture, showing initials');
-    return (
+    }    return (
       <div 
         className="company-initials"
         style={{ backgroundColor: getInitialsColor() }}

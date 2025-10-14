@@ -8,7 +8,6 @@ const moment = require('moment');
 class ConsistencyValidator {
   constructor() {
     this.validationRules = this.initializeValidationRules();
-    console.log('✅ Consistency Validator initialized');
   }
 
   /**

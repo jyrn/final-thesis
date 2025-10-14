@@ -92,7 +92,6 @@ class ReviewQueueService {
   constructor() {
     this.confidenceThreshold = 0.75;
     this.fieldConfidenceThreshold = 0.7;
-    console.log('✅ Review Queue Service initialized');
   }
 
   /**
@@ -121,7 +120,6 @@ class ReviewQueueService {
       );
 
       if (!needsReview.required) {
-        console.log(`✅ Resume ${resumeId} does not need review (confidence: ${overallConfidence.toFixed(2)})`);
         return { addedToQueue: false, reason: needsReview.reason };
       }
 
@@ -156,9 +154,6 @@ class ReviewQueueService {
       });
 
       await queueEntry.save();
-
-      console.log(`📋 Added resume ${resumeId} to review queue (priority: ${priority}, confidence: ${overallConfidence.toFixed(2)})`);
-
       return {
         addedToQueue: true,
         queueId: queueEntry._id,
@@ -167,7 +162,6 @@ class ReviewQueueService {
       };
 
     } catch (error) {
-      console.error('Error adding to review queue:', error);
       throw error;
     }
   }
@@ -292,7 +286,6 @@ class ReviewQueueService {
         hasMore: total > skip + limit
       };
     } catch (error) {
-      console.error('Error fetching pending reviews:', error);
       throw error;
     }
   }
@@ -307,7 +300,6 @@ class ReviewQueueService {
         .populate('reviewedBy', 'firstName lastName email')
         .lean();
     } catch (error) {
-      console.error('Error fetching review:', error);
       throw error;
     }
   }
@@ -339,12 +331,8 @@ class ReviewQueueService {
 
       // Store corrections for training data
       await this.storeTrainingData(review);
-
-      console.log(`✅ Review ${reviewId} completed with corrections`);
-
       return review;
     } catch (error) {
-      console.error('Error submitting corrections:', error);
       throw error;
     }
   }
@@ -367,12 +355,8 @@ class ReviewQueueService {
       review.updatedAt = new Date();
 
       await review.save();
-
-      console.log(`✅ Review ${reviewId} approved`);
-
       return review;
     } catch (error) {
-      console.error('Error approving review:', error);
       throw error;
     }
   }
@@ -395,12 +379,8 @@ class ReviewQueueService {
       review.updatedAt = new Date();
 
       await review.save();
-
-      console.log(`❌ Review ${reviewId} rejected`);
-
       return review;
     } catch (error) {
-      console.error('Error rejecting review:', error);
       throw error;
     }
   }
@@ -429,10 +409,7 @@ class ReviewQueueService {
       });
 
       await trainingData.save();
-
-      console.log('📚 Training data stored for model improvement');
     } catch (error) {
-      console.error('Error storing training data:', error);
       // Don't throw - this is non-critical
     }
   }
@@ -469,7 +446,6 @@ class ReviewQueueService {
         avgReviewTime
       };
     } catch (error) {
-      console.error('Error fetching statistics:', error);
       throw error;
     }
   }
@@ -495,7 +471,6 @@ class ReviewQueueService {
 
       return totalTime / completedReviews.length / 1000 / 60; // Convert to minutes
     } catch (error) {
-      console.error('Error calculating average review time:', error);
       return 0;
     }
   }
@@ -516,7 +491,6 @@ class ReviewQueueService {
         .limit(limit)
         .lean();
     } catch (error) {
-      console.error('Error fetching training data:', error);
       throw error;
     }
   }
@@ -540,7 +514,6 @@ class ReviewQueueService {
 
       return review;
     } catch (error) {
-      console.error('Error marking review in progress:', error);
       throw error;
     }
   }

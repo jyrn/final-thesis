@@ -52,7 +52,7 @@ router.post('/', verifyToken, async (req, res) => {
 
 
 
-    console.log(`🎓 Education processing for user ${uid}:`, {
+    console.log(`� Education processing for user ${uid}:`, {
       originalEducation: resumeData.education,
       isArray: Array.isArray(resumeData.education)
     });
@@ -75,13 +75,13 @@ router.post('/', verifyToken, async (req, res) => {
     let resumeFileInfo = null;
     let actualResumeData = null;
     
-    console.log(`🔍 Looking for Resume data for user ${uid}, currentResumeId: ${jobSeekerProfile?.currentResumeId}`);
+    console.log(` Looking for Resume data for user ${uid}, currentResumeId: ${jobSeekerProfile?.currentResumeId}`);
     
     if (jobSeekerProfile?.currentResumeId) {
       const resume = await Resume.findById(jobSeekerProfile.currentResumeId);
-      console.log(`📄 Found resume by currentResumeId:`, !!resume);
+      console.log(` Found resume by currentResumeId:`, !!resume);
       if (resume) {
-        console.log(`📚 Resume education data:`, resume.education);
+        console.log(`� Resume education data:`, resume.education);
         // Get file info
         if (resume.fileUrl) {
           resumeFileInfo = {
@@ -92,7 +92,7 @@ router.post('/', verifyToken, async (req, res) => {
         }
         // Get actual resume content (skills, experience, etc.)
         const resumeEducation = resume.education || [];
-        console.log(`🎓 Processed education:`, { resumeEducation });
+        console.log(`� Processed education:`, { resumeEducation });
         
         actualResumeData = {
           personalInfo: resume.personalInfo,
@@ -108,9 +108,9 @@ router.post('/', verifyToken, async (req, res) => {
         isActive: true
       }).sort({ uploadedAt: -1 });
       
-      console.log(`📄 Found recent resume by uid search:`, !!recentResume);
+      console.log(` Found recent resume by uid search:`, !!recentResume);
       if (recentResume) {
-        console.log(`📚 Recent resume education data:`, recentResume.education);
+        console.log(`� Recent resume education data:`, recentResume.education);
         // Get file info
         if (recentResume.fileUrl) {
           resumeFileInfo = {
@@ -121,7 +121,7 @@ router.post('/', verifyToken, async (req, res) => {
         }
         // Get actual resume content (skills, experience, etc.)
         const recentResumeEducation = recentResume.education || [];
-        console.log(`🎓 Processed recent education:`, { recentResumeEducation });
+        console.log(`� Processed recent education:`, { recentResumeEducation });
         
         actualResumeData = {
           personalInfo: recentResume.personalInfo,
@@ -156,7 +156,7 @@ router.post('/', verifyToken, async (req, res) => {
       finalResumeData.education = [];
     }
 
-    console.log(`📋 Final resume data for application:`, {
+    console.log(` Final resume data for application:`, {
       hasEducation: !!finalResumeData.education,
       educationData: finalResumeData.education
     });

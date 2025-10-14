@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { createPortal } from 'react-dom';
-import { Job } from '@/types/Job';
+import { Job } from '../../../types/Job';
 import { FiX, FiMapPin, FiClock, FiUsers, FiBriefcase, FiTag, FiEdit3, FiTrash2 } from 'react-icons/fi';
+import { getImageSrc } from '../../../utils/imageUtils';
 import styles from './JobDetailsModal.module.css';
 
 interface JobDetailsModalProps {
@@ -29,9 +30,7 @@ export const JobDetailsModal: React.FC<JobDetailsModalProps> = (props) => {
 
   // Debug logging for profilePicture prop
   React.useEffect(() => {
-    if (isOpen) {
-      console.log('JobDetailsModal opened - profilePicture prop:', profilePicture);
-    }
+    if (isOpen) {    }
   }, [isOpen, profilePicture]);
   
   // Create a stable reference to the onViewApplicants function
@@ -65,7 +64,7 @@ export const JobDetailsModal: React.FC<JobDetailsModalProps> = (props) => {
       const diffTime = Math.abs(now.getTime() - date.getTime());
       const diffMinutes = Math.floor(diffTime / (1000 * 60));
       const diffHours = Math.floor(diffTime / (1000 * 60 * 60));
-      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
       
       // Format full date
       const fullDate = date.toLocaleDateString('en-US', {
@@ -82,14 +81,26 @@ export const JobDetailsModal: React.FC<JobDetailsModalProps> = (props) => {
         timeAgo = diffMinutes === 1 ? '1 minute ago' : `${diffMinutes} minutes ago`;
       } else if (diffHours < 24) {
         timeAgo = diffHours === 1 ? '1 hour ago' : `${diffHours} hours ago`;
+      } else if (diffDays === 0) {
+        timeAgo = 'Today';
       } else if (diffDays === 1) {
-        timeAgo = '1 day ago';
+        timeAgo = 'Yesterday';
       } else if (diffDays < 7) {
         timeAgo = `${diffDays} days ago`;
+      } else if (diffDays === 7) {
+        timeAgo = '1 week ago';
+      } else if (diffDays < 14) {
+        timeAgo = `${diffDays} days ago`;
+      } else if (diffDays === 14) {
+        timeAgo = '2 weeks ago';
       } else if (diffDays < 30) {
-        timeAgo = `${Math.ceil(diffDays / 7)} weeks ago`;
+        timeAgo = `${Math.floor(diffDays / 7)} weeks ago`;
+      } else if (diffDays < 60) {
+        timeAgo = '1 month ago';
+      } else if (diffDays < 365) {
+        timeAgo = `${Math.floor(diffDays / 30)} months ago`;
       } else {
-        timeAgo = `${Math.ceil(diffDays / 30)} months ago`;
+        timeAgo = `${Math.floor(diffDays / 365)} years ago`;
       }
       
       return `${fullDate} — ${timeAgo}`;
@@ -111,20 +122,16 @@ export const JobDetailsModal: React.FC<JobDetailsModalProps> = (props) => {
   };
 
   const getCompanyLogo = (company: string) => {
-    console.log('JobDetailsModal - profilePicture:', profilePicture);
-    if (profilePicture) {
-      console.log('JobDetailsModal - rendering image with URL:', `http://localhost:3001/${profilePicture}`);
+    // Use job's company logo first, then fallback to profilePicture prop
+    const logoUrl = job?.companyLogo || profilePicture;
+    
+    if (logoUrl) {
       return (
         <div className={styles.companyLogo}>
           <img 
-            src={profilePicture.startsWith('data:') 
-              ? profilePicture 
-              : `http://localhost:3001/${profilePicture}`
-            } 
+            src={getImageSrc(logoUrl)} 
             alt={`${company} logo`} 
             className={styles.companyLogoImage}
-            onLoad={() => console.log('JobDetailsModal - Image loaded successfully')}
-            onError={(e) => console.error('JobDetailsModal - Image failed to load:', e)}
           />
         </div>
       );
@@ -301,13 +308,22 @@ export const JobDetailsModal: React.FC<JobDetailsModalProps> = (props) => {
             <FiTrash2 />
             Delete Job
           </button>
-          <button 
-            className={styles.editButton}
-            onClick={() => onEdit(job)}
-          >
-            <FiEdit3 />
-            Edit Job
-          </button>
+          <div className={styles.actionGroup}>
+            <button 
+              className={styles.editButton}
+              onClick={() => onEdit(job)}
+            >
+              <FiEdit3 />
+              Edit Job
+            </button>
+            <button 
+              className={styles.viewApplicantsButton}
+              onClick={() => onViewApplicants?.(job)}
+            >
+              <FiUsers />
+              View Applicants ({job.applicants || job.applicantCount || 0})
+            </button>
+          </div>
         </div>
       </div>
     </div>

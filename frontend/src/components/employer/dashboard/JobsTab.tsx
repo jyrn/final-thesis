@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
-import { JobCard } from './JobCard';
 import { JobDetailsModal } from './JobDetailsModal';
 import { DeleteJobModal } from './DeleteJobModal';
 import { JobFormModal } from './JobFormModal';
-import { FiPlus, FiBriefcase } from 'react-icons/fi';
-import { Job } from '@/types/Job';
-import { Applicant } from '@/types/dashboard';
+import { FiPlus, FiBriefcase, FiMapPin, FiClock, FiTrendingUp, FiUsers, FiEdit3, FiTrash2, FiEye, FiDollarSign } from 'react-icons/fi';
+import { Job } from '../../../types/Job';
+import { Applicant } from '../../../types/dashboard';
+import { getImageSrc } from '../../../utils/imageUtils';
 import styles from './JobsTab.module.css';
 
 interface JobsTabProps {
@@ -115,6 +115,75 @@ export const JobsTab: React.FC<JobsTabProps> = ({
     setJobToEdit(null);
   };
 
+  const getCompanyInitials = (company: string) => {
+    return company
+      .split(' ')
+      .map((n) => n[0])
+      .join('')
+      .toUpperCase();
+  };
+
+  const formatPostedDate = (dateString: string | undefined) => {
+    if (!dateString) return 'Not specified';
+    
+    try {
+      const date = new Date(dateString);
+      if (isNaN(date.getTime())) return 'Not specified';
+      
+      const now = new Date();
+      const diffTime = Math.abs(now.getTime() - date.getTime());
+      const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+      
+      // Format full date
+      const fullDate = date.toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      });
+      
+      // Format relative time
+      let timeAgo;
+      if (diffDays === 0) {
+        timeAgo = 'Today';
+      } else if (diffDays === 1) {
+        timeAgo = 'Yesterday';
+      } else if (diffDays < 7) {
+        timeAgo = `${diffDays} days ago`;
+      } else if (diffDays === 7) {
+        timeAgo = '1 week ago';
+      } else if (diffDays < 14) {
+        timeAgo = `${diffDays} days ago`;
+      } else if (diffDays === 14) {
+        timeAgo = '2 weeks ago';
+      } else if (diffDays < 30) {
+        timeAgo = `${Math.floor(diffDays / 7)} weeks ago`;
+      } else if (diffDays < 60) {
+        timeAgo = '1 month ago';
+      } else if (diffDays < 365) {
+        timeAgo = `${Math.floor(diffDays / 30)} months ago`;
+      } else {
+        timeAgo = `${Math.floor(diffDays / 365)} years ago`;
+      }
+      
+      return `${fullDate} — ${timeAgo}`;
+    } catch (error) {
+      return 'Not specified';
+    }
+  };
+
+  const getCompanyAvatar = (job: Job) => {
+    if (job.companyLogo) {
+      return (
+        <img 
+          src={getImageSrc(job.companyLogo)} 
+          alt={`${job.company} logo`} 
+          className={styles.companyLogoImage}
+        />
+      );
+    }
+    return <span>{getCompanyInitials(job.company)}</span>;
+  };
+
   const renderEmptyState = () => (
     <div className={styles.emptyState}>
       <FiBriefcase className={styles.emptyStateIcon} />
@@ -164,92 +233,92 @@ export const JobsTab: React.FC<JobsTabProps> = ({
             onChange={(e) => onFilterChange('department', e.target.value)}
           >
             <option value="all">All Departments</option>
-            <option value="Engineering">Engineering</option>
-            <option value="Software Development">Software Development</option>
-            <option value="Data Science">Data Science</option>
-            <option value="DevOps">DevOps</option>
-            <option value="Quality Assurance">Quality Assurance</option>
-            <option value="Marketing">Marketing</option>
-            <option value="Digital Marketing">Digital Marketing</option>
-            <option value="Content Marketing">Content Marketing</option>
-            <option value="Sales">Sales</option>
-            <option value="Business Development">Business Development</option>
             <option value="Account Management">Account Management</option>
-            <option value="HR">Human Resources</option>
-            <option value="Talent Acquisition">Talent Acquisition</option>
-            <option value="Finance">Finance</option>
             <option value="Accounting">Accounting</option>
-            <option value="Operations">Operations</option>
-            <option value="Supply Chain">Supply Chain</option>
-            <option value="Project Management">Project Management</option>
-            <option value="Design">Design</option>
-            <option value="UX/UI Design">UX/UI Design</option>
-            <option value="Graphic Design">Graphic Design</option>
-            <option value="Product">Product</option>
-            <option value="Product Management">Product Management</option>
-            <option value="Customer Success">Customer Success</option>
-            <option value="Customer Support">Customer Support</option>
-            <option value="Legal">Legal</option>
-            <option value="Compliance">Compliance</option>
-            <option value="Research & Development">Research & Development</option>
-            <option value="Information Technology">Information Technology</option>
-            <option value="Security">Security</option>
             <option value="Administration">Administration</option>
-            <option value="Executive">Executive</option>
-            <option value="Consulting">Consulting</option>
-            <option value="Healthcare">Healthcare</option>
-            <option value="Medical">Medical</option>
-            <option value="Nursing">Nursing</option>
-            <option value="Pharmacy">Pharmacy</option>
-            <option value="Education">Education</option>
-            <option value="Teaching">Teaching</option>
-            <option value="Training & Development">Training & Development</option>
-            <option value="Manufacturing">Manufacturing</option>
-            <option value="Production">Production</option>
-            <option value="Quality Control">Quality Control</option>
-            <option value="Logistics">Logistics</option>
-            <option value="Transportation">Transportation</option>
-            <option value="Warehouse">Warehouse</option>
-            <option value="Real Estate">Real Estate</option>
-            <option value="Property Management">Property Management</option>
-            <option value="Construction">Construction</option>
-            <option value="Architecture">Architecture</option>
-            <option value="Media & Communications">Media & Communications</option>
-            <option value="Public Relations">Public Relations</option>
-            <option value="Journalism">Journalism</option>
-            <option value="Broadcasting">Broadcasting</option>
-            <option value="Hospitality">Hospitality</option>
-            <option value="Food & Beverage">Food & Beverage</option>
-            <option value="Tourism">Tourism</option>
-            <option value="Retail">Retail</option>
-            <option value="E-commerce">E-commerce</option>
-            <option value="Banking">Banking</option>
-            <option value="Insurance">Insurance</option>
-            <option value="Investment">Investment</option>
-            <option value="Government">Government</option>
-            <option value="Non-Profit">Non-Profit</option>
-            <option value="Energy">Energy</option>
-            <option value="Oil & Gas">Oil & Gas</option>
-            <option value="Renewable Energy">Renewable Energy</option>
-            <option value="Telecommunications">Telecommunications</option>
-            <option value="Automotive">Automotive</option>
             <option value="Aerospace">Aerospace</option>
             <option value="Agriculture">Agriculture</option>
-            <option value="Environmental">Environmental</option>
-            <option value="Sports & Recreation">Sports & Recreation</option>
-            <option value="Entertainment">Entertainment</option>
-            <option value="Fashion">Fashion</option>
+            <option value="Architecture">Architecture</option>
+            <option value="Artificial Intelligence">Artificial Intelligence</option>
+            <option value="Automotive">Automotive</option>
+            <option value="Banking">Banking</option>
             <option value="Beauty & Cosmetics">Beauty & Cosmetics</option>
             <option value="Biotechnology">Biotechnology</option>
-            <option value="Pharmaceuticals">Pharmaceuticals</option>
-            <option value="Mining">Mining</option>
-            <option value="Chemical">Chemical</option>
-            <option value="Textiles">Textiles</option>
-            <option value="Publishing">Publishing</option>
-            <option value="Gaming">Gaming</option>
-            <option value="Cybersecurity">Cybersecurity</option>
-            <option value="Artificial Intelligence">Artificial Intelligence</option>
             <option value="Blockchain">Blockchain</option>
+            <option value="Broadcasting">Broadcasting</option>
+            <option value="Business Development">Business Development</option>
+            <option value="Chemical">Chemical</option>
+            <option value="Compliance">Compliance</option>
+            <option value="Construction">Construction</option>
+            <option value="Consulting">Consulting</option>
+            <option value="Content Marketing">Content Marketing</option>
+            <option value="Customer Success">Customer Success</option>
+            <option value="Customer Support">Customer Support</option>
+            <option value="Cybersecurity">Cybersecurity</option>
+            <option value="Data Science">Data Science</option>
+            <option value="Design">Design</option>
+            <option value="DevOps">DevOps</option>
+            <option value="Digital Marketing">Digital Marketing</option>
+            <option value="E-commerce">E-commerce</option>
+            <option value="Education">Education</option>
+            <option value="Energy">Energy</option>
+            <option value="Engineering">Engineering</option>
+            <option value="Entertainment">Entertainment</option>
+            <option value="Environmental">Environmental</option>
+            <option value="Executive">Executive</option>
+            <option value="Fashion">Fashion</option>
+            <option value="Finance">Finance</option>
+            <option value="Food & Beverage">Food & Beverage</option>
+            <option value="Gaming">Gaming</option>
+            <option value="Government">Government</option>
+            <option value="Graphic Design">Graphic Design</option>
+            <option value="Healthcare">Healthcare</option>
+            <option value="Hospitality">Hospitality</option>
+            <option value="HR">Human Resources</option>
+            <option value="Information Technology">Information Technology</option>
+            <option value="Insurance">Insurance</option>
+            <option value="Investment">Investment</option>
+            <option value="Journalism">Journalism</option>
+            <option value="Legal">Legal</option>
+            <option value="Logistics">Logistics</option>
+            <option value="Manufacturing">Manufacturing</option>
+            <option value="Marketing">Marketing</option>
+            <option value="Media & Communications">Media & Communications</option>
+            <option value="Medical">Medical</option>
+            <option value="Mining">Mining</option>
+            <option value="Non-Profit">Non-Profit</option>
+            <option value="Nursing">Nursing</option>
+            <option value="Oil & Gas">Oil & Gas</option>
+            <option value="Operations">Operations</option>
+            <option value="Pharmaceuticals">Pharmaceuticals</option>
+            <option value="Pharmacy">Pharmacy</option>
+            <option value="Product">Product</option>
+            <option value="Product Management">Product Management</option>
+            <option value="Production">Production</option>
+            <option value="Project Management">Project Management</option>
+            <option value="Property Management">Property Management</option>
+            <option value="Public Relations">Public Relations</option>
+            <option value="Publishing">Publishing</option>
+            <option value="Quality Assurance">Quality Assurance</option>
+            <option value="Quality Control">Quality Control</option>
+            <option value="Real Estate">Real Estate</option>
+            <option value="Renewable Energy">Renewable Energy</option>
+            <option value="Research & Development">Research & Development</option>
+            <option value="Retail">Retail</option>
+            <option value="Sales">Sales</option>
+            <option value="Security">Security</option>
+            <option value="Software Development">Software Development</option>
+            <option value="Sports & Recreation">Sports & Recreation</option>
+            <option value="Supply Chain">Supply Chain</option>
+            <option value="Talent Acquisition">Talent Acquisition</option>
+            <option value="Teaching">Teaching</option>
+            <option value="Telecommunications">Telecommunications</option>
+            <option value="Textiles">Textiles</option>
+            <option value="Tourism">Tourism</option>
+            <option value="Training & Development">Training & Development</option>
+            <option value="Transportation">Transportation</option>
+            <option value="UX/UI Design">UX/UI Design</option>
+            <option value="Warehouse">Warehouse</option>
           </select>
           <button 
             className={styles.createButton}
@@ -264,20 +333,128 @@ export const JobsTab: React.FC<JobsTabProps> = ({
       {isLoading ? (
         renderLoadingState()
       ) : filteredJobs.length > 0 ? (
-        <div className={styles.jobsGrid}>
+        <div className={styles.jobsList}>
           {filteredJobs.map((job) => (
-            <JobCard
+            <div 
               key={job.id}
-              job={job}
-              onClick={handleJobCardClick}
-              onView={handleJobCardClick}
-              onEdit={handleEditJob}
-              onViewApplicants={onViewJob}
-              onDelete={(jobId) => {
-                const job = jobs.find(j => j.id === jobId);
-                if (job) handleDeleteJob(job);
-              }}
-            />
+              className={styles.jobCard}
+              onClick={() => handleJobCardClick(job)}
+            >
+              <div className={styles.jobCardHeader}>
+                <div className={styles.jobTitleRow}>
+                  <div className={styles.companyLogo}>
+                    {getCompanyAvatar(job)}
+                  </div>
+                  <div className={styles.jobInfo}>
+                    <h4 className={styles.jobTitle}>{job.title}</h4>
+                    <p className={styles.companyName}>{job.company}</p>
+                  </div>
+                  <div className={`${styles.statusBadge} ${styles[`status${job.status.charAt(0).toUpperCase() + job.status.slice(1)}`]}`}>
+                    {job.status}
+                  </div>
+                </div>
+                
+                <div className={styles.jobDetails}>
+                  <div className={styles.detailItem}>
+                    <FiMapPin className={styles.detailIcon} />
+                    <span>{job.location}</span>
+                  </div>
+                  <div className={styles.detailItem}>
+                    <FiClock className={styles.detailIcon} />
+                    <span>{job.type}</span>
+                  </div>
+                  {job.level && (
+                    <div className={styles.detailItem}>
+                      <FiTrendingUp className={styles.detailIcon} />
+                      <span>{job.level}</span>
+                    </div>
+                  )}
+                  {job.department && (
+                    <div className={styles.detailItem}>
+                      <FiBriefcase className={styles.detailIcon} />
+                      <span>{job.department}</span>
+                    </div>
+                  )}
+                  <div className={styles.detailItem}>
+                    <FiDollarSign className={styles.detailIcon} />
+                    <span>
+                      {job.salaryMin > 0 && job.salaryMax > 0 ? (
+                        `₱${job.salaryMin.toLocaleString()} - ₱${job.salaryMax.toLocaleString()}`
+                      ) : job.salaryMin > 0 ? (
+                        `From ₱${job.salaryMin.toLocaleString()}`
+                      ) : job.salaryMax > 0 ? (
+                        `Up to ₱${job.salaryMax.toLocaleString()}`
+                      ) : 'Salary not specified'}
+                    </span>
+                  </div>
+                  {job.workplaceType && (
+                    <div className={styles.detailItem}>
+                      <span>{job.workplaceType}</span>
+                    </div>
+                  )}
+                </div>
+                
+                <div className={styles.jobDescription}>
+                  <p className={styles.descriptionText}>
+                    {job.description && job.description.length > 180 ? 
+                      `${job.description.substring(0, 180)}...` : 
+                      job.description || 'No description available'
+                    }
+                  </p>
+                </div>
+                
+                <div className={styles.jobFooter}>
+                  <div className={styles.footerLeft}>
+                    <span className={styles.postedDate}>{formatPostedDate(job.postedDate || job.posted)}</span>
+                    <div className={styles.applicantCount}>
+                      <FiUsers className={styles.applicantIcon} />
+                      <span>{job.applicants || job.applicantCount || 0} {(job.applicants || job.applicantCount || 0) === 1 ? 'applicant' : 'applicants'}</span>
+                    </div>
+                  </div>
+                  <div className={styles.jobActions}>
+                    <button 
+                      className={styles.actionButton}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDeleteJob(job);
+                      }}
+                      title="Delete job"
+                    >
+                      <FiTrash2 className={styles.actionIcon} />
+                    </button>
+                    <button 
+                      className={styles.actionButton}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleEditJob(job);
+                      }}
+                      title="Edit job"
+                    >
+                      <FiEdit3 className={styles.actionIcon} />
+                    </button>
+                    <button 
+                      className={styles.actionButton}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleJobCardClick(job);
+                      }}
+                      title="View details"
+                    >
+                      <FiEye className={styles.actionIcon} />
+                    </button>
+                    <button 
+                      className={styles.viewApplicantsButton}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleViewJobApplicants(job);
+                      }}
+                    >
+                      View Applicants ({job.applicants || job.applicantCount || 0})
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
           ))}
         </div>
       ) : (

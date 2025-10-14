@@ -91,9 +91,7 @@ const EmailVerificationPage: React.FC = () => {
           }, 2000);
         }
       }
-    } catch (error) {
-      console.error('Error checking verification status:', error);
-    }
+    } catch (error) {    }
   };
 
   const verifyEmailToken = async (token: string) => {
@@ -115,9 +113,7 @@ const EmailVerificationPage: React.FC = () => {
       } else {
         setError(response.error || 'Failed to verify email. The link may be invalid or expired.');
       }
-    } catch (err) {
-      console.error('Verification error:', err);
-      setError('An error occurred while verifying your email. Please try again.');
+    } catch (err) {      setError('An error occurred while verifying your email. Please try again.');
     } finally {
       setIsLoading(false);
     }
@@ -138,9 +134,7 @@ const EmailVerificationPage: React.FC = () => {
       } else {
         setError(response.error || 'Failed to resend verification email.');
       }
-    } catch (err) {
-      console.error('Resend error:', err);
-      setError('An error occurred while resending the verification email.');
+    } catch (err) {      setError('An error occurred while resending the verification email.');
     } finally {
       setResendLoading(false);
     }

@@ -61,12 +61,9 @@ class MLServiceManager {
    * Start all ML services
    */
   async startAll() {
-    console.log('Starting ML services...');
-
     // Check if Python is available
     const pythonAvailable = await this.checkPython();
     if (!pythonAvailable) {
-      console.warn('Python not found. ML services disabled.');
       return false;
     }
 
@@ -81,8 +78,6 @@ class MLServiceManager {
 
     // Start health check monitoring
     this.startHealthCheckMonitoring();
-
-    console.log('ML services ready');
     return true;
   }
 
@@ -120,7 +115,6 @@ class MLServiceManager {
         const error = data.toString().trim();
         // Only log actual errors, not INFO/DEBUG messages
         if (error && !error.includes('INFO:') && !error.includes('WARNING:') && error.includes('ERROR')) {
-          console.error(`[${service.name}] ${error}`);
         }
       });
 
@@ -138,13 +132,11 @@ class MLServiceManager {
 
       // Handle errors
       childProcess.on('error', (err) => {
-        console.error(`   [${service.name}] Failed to start: ${err.message}`);
         service.ready = false;
       });
 
 
     } catch (error) {
-      console.error(`Failed to start ${service.name}: ${error.message}`);
       service.ready = false;
     }
   }

@@ -75,65 +75,285 @@
   min-width: 200px;
 }
 
-.jobsGrid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 400px), 1fr));
-  gap: clamp(1rem, 2vw, 1.5rem);
-  width: 100%;
-  container-type: inline-size;
-}
-
-/* Container queries for better zoom handling */
-@container (max-width: 800px) {
-  .jobsGrid {
-    grid-template-columns: repeat(auto-fit, minmax(min(100%, 350px), 1fr));
-  }
-}
-
-@container (max-width: 600px) {
-  .jobsGrid {
-    grid-template-columns: 1fr;
-  }
-}
-
-/* Fallback media queries for browsers without container query support */
-@media (max-width: 1400px) {
-  .jobsGrid {
-    grid-template-columns: repeat(auto-fit, minmax(min(100%, 380px), 1fr));
-  }
-}
-
-@media (max-width: 1200px) {
-  .jobsGrid {
-    grid-template-columns: repeat(auto-fit, minmax(min(100%, 350px), 1fr));
-  }
-}
-
-@media (max-width: 900px) {
-  .jobsGrid {
-    grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr));
-  }
-}
-
-@media (max-width: 700px) {
-  .jobsGrid {
-    grid-template-columns: 1fr;
-  }
+.jobsList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  align-items: stretch;
 }
 
 .jobCard {
-  background: white;
+  background: #ffffff;
   border-radius: 12px;
-  border: 1px solid #e2e8f0;
-  padding: 1.5rem;
+  padding: 1rem;
+  margin-bottom: 0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  border: 1px solid #edf2f7;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all 0.2s ease;
+  overflow: hidden;
+  min-height: 100px;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
 }
 
 .jobCard:hover {
-  border-color: #3b82f6;
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.15);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
+  border-color: #cbd5e1;
+}
+
+.jobCardHeader {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  flex: 1;
+}
+
+.jobTitleRow {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  width: 100%;
+}
+
+.companyLogo {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 1rem;
+  color: white;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  flex-shrink: 0;
+  overflow: hidden;
+}
+
+.companyLogoImage {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 10px;
+}
+
+.jobInfo {
+  flex: 1;
+  min-width: 0;
+}
+
+.jobTitle {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #1a202c;
+  margin: 0;
+  line-height: 1.3;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+.companyName {
+  font-size: 0.875rem;
+  color: #374151;
+  margin: 0.125rem 0 0 0;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-weight: 500;
+}
+
+.statusBadge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.5rem 0.75rem;
+  border-radius: 8px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.025em;
+  min-width: auto;
+  height: auto;
+  border: none;
+  cursor: default;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+  flex-shrink: 0;
+  text-transform: capitalize;
+}
+
+.statusActive {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.statusPaused {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.statusClosed {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.jobDetails {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 0.5rem;
+  font-size: 0.875rem;
+  color: #4a5568;
+  align-items: center;
+}
+
+.detailItem {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  background: #f1f5f9;
+  padding: 4px 8px;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  color: #1e293b;
+  white-space: nowrap;
+  border: 1px solid #cbd5e1;
+  height: 26px;
+  flex-shrink: 0;
+  font-weight: 500;
+}
+
+.detailIcon {
+  color: #475569;
+  flex-shrink: 0;
+  font-size: 0.8em;
+  width: 14px;
+  height: 14px;
+}
+
+.jobDescription {
+  margin: 0.5rem 0 0 0;
+  display: flex;
+  align-items: flex-start;
+  flex: 1;
+  min-height: 0;
+}
+
+.descriptionText {
+  color: #374151;
+  font-size: 0.875rem;
+  line-height: 1.4;
+  margin: 0;
+  padding: 12px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  font-weight: 400;
+  width: 100%;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  word-break: break-word;
+  hyphens: auto;
+  height: 3em;
+}
+
+.jobFooter {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 0.5rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid #f3f4f6;
+  gap: 1rem;
+}
+
+.footerLeft {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex: 1;
+}
+
+.postedDate {
+  font-size: 0.8rem;
+  color: #4b5563;
+  font-weight: 500;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+.applicantCount {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.8rem;
+  color: #4b5563;
+  font-weight: 500;
+}
+
+.applicantIcon {
+  width: 14px;
+  height: 14px;
+  color: #6b7280;
+}
+
+.jobActions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.actionButton {
+  width: 32px;
+  height: 32px;
+  border: none;
+  background: #f8fafc;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  color: #64748b;
+  padding: 0;
+  flex-shrink: 0;
+}
+
+.actionButton:hover {
+  background: #f1f5f9;
+  color: #475569;
+}
+
+.actionIcon {
+  width: 16px;
+  height: 16px;
+}
+
+.viewApplicantsButton {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 0.5rem 1rem;
+  font-weight: 600;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 120px;
+  height: 32px;
+  white-space: nowrap;
+}
+
+.viewApplicantsButton:hover {
+  background: linear-gradient(135deg, #5a67d8 0%, #6b46c1 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
 }
 
 .emptyState {

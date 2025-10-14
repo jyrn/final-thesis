@@ -49,9 +49,7 @@ export const generateResumePDF = (resumeData: any, filename?: string, returnBlob
       // Position photo on the top left - 2x2 ID picture format
       doc.addImage(personalInfo.photo, 'JPEG', margin, yPosition, photoWidth, photoHeight);
       hasPhoto = true;
-    } catch (error) {
-      console.error('Error adding photo to PDF:', error);
-    }
+    } catch (error) {    }
   }
   
   // Name - positioned next to photo, large and bold in blue
@@ -298,10 +296,7 @@ export const generateResumePDF = (resumeData: any, filename?: string, returnBlob
     return undefined;
   }
   
-  } catch (error) {
-    console.error('Error generating PDF:', error);
-    
-    // Return a simple test PDF if there's an error
+  } catch (error) {    // Return a simple test PDF if there's an error
     if (returnBlob) {
       const doc = new jsPDF();
       doc.setFontSize(16);

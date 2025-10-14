@@ -737,6 +737,15 @@ body {
   font-weight: 600;
   font-size: 1rem;
   box-shadow: var(--shadow);
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.userAvatar:hover {
+  transform: scale(1.05);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
 }
 
 /* Search Bar in Header */

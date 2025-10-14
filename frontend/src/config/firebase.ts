@@ -18,9 +18,7 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 
 // Set persistence to SESSION - users will be logged out when browser is closed
-setPersistence(auth, browserSessionPersistence).catch((error) => {
-  console.error('Failed to set auth persistence:', error);
-});
+setPersistence(auth, browserSessionPersistence).catch((error) => {});
 
 export { auth };
 export default app;

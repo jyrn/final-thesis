@@ -42,17 +42,12 @@ const ForgotPasswordPage: React.FC = () => {
       if (response.success) {
         setIsSubmitted(true);
         toast.success('Password reset link has been sent to your email. Please check your inbox.');
-      } else {
-        console.error('Password reset failed:', response.error);
-        const errorMsg = response.error || 'Failed to send password reset email. Please try again later.';
+      } else {        const errorMsg = response.error || 'Failed to send password reset email. Please try again later.';
         setError(errorMsg);
         toast.error(errorMsg);
       }
     } catch (err) {
-      const error = err as Error;
-      console.error('Forgot password error:', error);
-      
-      // Handle specific API errors
+      const error = err as Error;      // Handle specific API errors
       let errorMsg = 'An unexpected error occurred. Please try again.';
       if (error.message.includes('Failed to fetch')) {
         errorMsg = 'Unable to connect to server. Please check if the backend is running.';

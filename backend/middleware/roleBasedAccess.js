@@ -33,9 +33,7 @@ const hasPermission = (requiredPermission) => {
       // Add user data to request for downstream use
       req.userData = user;
       next();
-    } catch (error) {
-      console.error('Permission check error:', error);
-      res.status(500).json({
+    } catch (error) {      res.status(500).json({
         success: false,
         error: 'Failed to verify permissions'
       });
@@ -57,9 +55,7 @@ const ensureOwnership = async (req, res, next) => {
     }
     
     next();
-  } catch (error) {
-    console.error('Ownership check error:', error);
-    res.status(500).json({
+  } catch (error) {    res.status(500).json({
       success: false,
       error: 'Failed to verify ownership'
     });
@@ -89,11 +85,7 @@ const requireRole = (allowedRoles) => {
 
       req.userData = user;
       next();
-    } catch (error) {
-      console.error('Role check error:', error);
-      console.error('User UID:', req.user?.uid);
-      console.error('Error details:', error.message);
-      res.status(500).json({
+    } catch (error) {      res.status(500).json({
         success: false,
         error: 'Failed to verify role'
       });
@@ -123,9 +115,7 @@ const requireJobSeeker = async (req, res, next) => {
 
     req.jobseekerData = jobseeker;
     next();
-  } catch (error) {
-    console.error('JobSeeker access check error:', error);
-    res.status(500).json({
+  } catch (error) {    res.status(500).json({
       success: false,
       error: 'Failed to verify JobSeeker access'
     });
@@ -154,9 +144,7 @@ const requireEmployer = async (req, res, next) => {
 
     req.employerData = employer;
     next();
-  } catch (error) {
-    console.error('Employer access check error:', error);
-    res.status(500).json({
+  } catch (error) {    res.status(500).json({
       success: false,
       error: 'Failed to verify Employer access'
     });
@@ -192,9 +180,7 @@ const requireVerifiedEmployer = async (req, res, next) => {
 
     req.employerData = employer;
     next();
-  } catch (error) {
-    console.error('Verified employer check error:', error);
-    res.status(500).json({
+  } catch (error) {    res.status(500).json({
       success: false,
       error: 'Failed to verify employer status'
     });
@@ -238,9 +224,7 @@ const canPerformAction = (action) => {
       req.userData = user;
       req.roleProfile = roleProfile;
       next();
-    } catch (error) {
-      console.error('Action permission check error:', error);
-      res.status(500).json({
+    } catch (error) {      res.status(500).json({
         success: false,
         error: 'Failed to verify action permissions'
       });

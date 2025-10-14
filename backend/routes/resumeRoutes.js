@@ -509,16 +509,16 @@ router.post('/create', verifyToken, async (req, res) => {
     const pdfFilename = `${fullName}_Resume_${Date.now()}.pdf`;
     
     try {
-      console.log('📤 Uploading resume PDF to cloud storage...');
+      console.log(' Uploading resume PDF to cloud storage...');
       cloudResult = await cloudStorageService.uploadBuffer(
         pdfBuffer,
         pdfFilename,
         `users/${uid}/resumes`,
         'application/pdf'
       );
-      console.log('✅ Resume PDF uploaded to cloud:', cloudResult.publicId);
+      console.log(' Resume PDF uploaded to cloud:', cloudResult.publicId);
     } catch (cloudError) {
-      console.error('❌ Cloud upload failed:', cloudError);
+      console.error(' Cloud upload failed:', cloudError);
       // Continue with local storage as fallback
       cloudResult = null;
     }
@@ -573,7 +573,7 @@ router.post('/create', verifyToken, async (req, res) => {
       };
       
       // Debug: Log what's being stored
-      console.log('🔍 BACKEND BARANGAY DEBUG:');
+      console.log(' BACKEND BARANGAY DEBUG:');
       console.log('  - Received barangay PSGC:', resumeData.personalInfo.barangay, '(type:', typeof resumeData.personalInfo.barangay, ')');
       console.log('  - Received barangay name:', resumeData.personalInfo.barangayName, '(type:', typeof resumeData.personalInfo.barangayName, ')');
       console.log('Storing location data:', {
@@ -615,8 +615,8 @@ router.post('/create', verifyToken, async (req, res) => {
       }
       existingResume.showUploadedToEmployers = resumeData.showUploadedToEmployers || false;
       
-      console.log('💾 Saving optional sections (UPDATE):', existingResume.optionalSections.length, 'sections');
-      console.log('💾 Section types:', existingResume.optionalSections.map(s => s.type));
+      console.log(' Saving optional sections (UPDATE):', existingResume.optionalSections.length, 'sections');
+      console.log(' Section types:', existingResume.optionalSections.map(s => s.type));
       
       await existingResume.save();
       var resume = existingResume;
@@ -694,8 +694,8 @@ router.post('/create', verifyToken, async (req, res) => {
         }
       });
       
-      console.log('💾 Saving optional sections (NEW):', newResume.optionalSections.length, 'sections');
-      console.log('💾 Section types:', newResume.optionalSections.map(s => s.type));
+      console.log(' Saving optional sections (NEW):', newResume.optionalSections.length, 'sections');
+      console.log(' Section types:', newResume.optionalSections.map(s => s.type));
 
       await newResume.save();
       var resume = newResume;
@@ -804,7 +804,7 @@ router.get('/view/:applicationId', verifyToken, async (req, res) => {
       const resume = await Resume.findById(jobSeeker.currentResumeId);
       if (resume) {
         resumeData = resume;
-        console.log('✅ Found resume data via JobSeeker.currentResumeId');
+        console.log(' Found resume data via JobSeeker.currentResumeId');
       }
     }
     
@@ -817,7 +817,7 @@ router.get('/view/:applicationId', verifyToken, async (req, res) => {
         workExperience: application.resumeData.experience,
         education: application.resumeData.education
       };
-      console.log('✅ Using resume data from application');
+      console.log(' Using resume data from application');
     }
     
     // Fallback: Find any resume for this job seeker
@@ -829,12 +829,12 @@ router.get('/view/:applicationId', verifyToken, async (req, res) => {
       
       if (anyResume) {
         resumeData = anyResume;
-        console.log('✅ Found resume data via any active resume');
+        console.log(' Found resume data via any active resume');
       }
     }
 
     if (!resumeData) {
-      console.log('❌ No resume data found for application:', {
+      console.log(' No resume data found for application:', {
         applicationId,
         jobSeekerUid: application.jobSeekerUid,
         hasJobSeeker: !!jobSeeker,
@@ -884,7 +884,7 @@ router.get('/view/:applicationId', verifyToken, async (req, res) => {
     // Return resume data as JSON for frontend PDF generation
     const applicantName = resumeData.personalInfo?.fullName || resumeData.personalInfo?.name || 'Applicant';
     
-    console.log('✅ Returning resume data for PDF generation:', {
+    console.log(' Returning resume data for PDF generation:', {
       applicantName,
       hasPersonalInfo: !!jobseekerFormat.personalInfo,
       hasExperience: !!jobseekerFormat.experience?.length,
@@ -941,7 +941,7 @@ router.get('/download/:applicationId', verifyToken, async (req, res) => {
       const resume = await Resume.findById(jobSeeker.currentResumeId);
       if (resume) {
         resumeData = resume;
-        console.log('✅ Found resume data for download via JobSeeker.currentResumeId');
+        console.log(' Found resume data for download via JobSeeker.currentResumeId');
       }
     }
     
@@ -954,7 +954,7 @@ router.get('/download/:applicationId', verifyToken, async (req, res) => {
         workExperience: application.resumeData.experience,
         education: application.resumeData.education
       };
-      console.log('✅ Using resume data from application for download');
+      console.log(' Using resume data from application for download');
     }
     
     // Fallback: Find any resume for this job seeker
@@ -966,12 +966,12 @@ router.get('/download/:applicationId', verifyToken, async (req, res) => {
       
       if (anyResume) {
         resumeData = anyResume;
-        console.log('✅ Found resume data for download via any active resume');
+        console.log(' Found resume data for download via any active resume');
       }
     }
 
     if (!resumeData) {
-      console.log('❌ No resume data found for download for application:', {
+      console.log(' No resume data found for download for application:', {
         applicationId,
         jobSeekerUid: application.jobSeekerUid,
         hasJobSeeker: !!jobSeeker,
@@ -998,7 +998,7 @@ router.get('/download/:applicationId', verifyToken, async (req, res) => {
     const hasUploadedResume = resumeData.showUploadedToEmployers && !!resumeData.uploadedResumeUrl;
     
     if (hasGeneratedResume || hasUploadedResume) {
-      console.log('✅ Returning cloud-stored resume URLs for download:', {
+      console.log(' Returning cloud-stored resume URLs for download:', {
         generated: resumeData.pdfCloudUrl,
         uploaded: hasUploadedResume ? resumeData.uploadedResumeUrl : null
       });
@@ -1026,7 +1026,7 @@ router.get('/download/:applicationId', verifyToken, async (req, res) => {
     // Return resume data as JSON for frontend PDF generation and download
     const applicantName = resumeData.personalInfo?.fullName || resumeData.personalInfo?.name || 'Applicant';
     
-    console.log('✅ Returning resume data for PDF download:', {
+    console.log(' Returning resume data for PDF download:', {
       applicantName,
       hasPersonalInfo: !!jobseekerFormat.personalInfo,
       hasExperience: !!jobseekerFormat.experience?.length,
@@ -1057,7 +1057,7 @@ router.post('/parse', verifyToken, async (req, res) => {
     const resumeParsingService = require('../services/resumeParsingService');
     const EnhancedResumeParser = require('../services/enhancedResumeParser');
     const enhancedResumeParser = new EnhancedResumeParser();
-    console.log('🔄 Routes loaded with enhanced parser v2.0.1');
+    console.log(' Routes loaded with enhanced parser v2.0.1');
     
     // Configure multer for memory storage
     const upload = multer({
@@ -1097,16 +1097,16 @@ router.post('/parse', verifyToken, async (req, res) => {
         // Try enhanced parsing first, fallback to original if needed
         let parseResult;
         try {
-          console.log('🚀 Attempting enhanced parsing...');
+          console.log(' Attempting enhanced parsing...');
           parseResult = await enhancedResumeParser.parseResume(req.file.buffer);
-          console.log('✅ Enhanced parsing successful');
+          console.log(' Enhanced parsing successful');
         } catch (enhancedError) {
-          console.log('⚠️ Enhanced parsing failed, using fallback:', enhancedError.message);
+          console.log(' Enhanced parsing failed, using fallback:', enhancedError.message);
           parseResult = await resumeParsingService.parseResume(req.file.buffer);
         }
         
         if (parseResult.success) {
-          console.log('📤 Sending parsed data to frontend:', {
+          console.log(' Sending parsed data to frontend:', {
             dataKeys: Object.keys(parseResult.data),
             personalInfo: parseResult.data.personalInfo,
             educationCount: parseResult.data.education?.length || 0,
@@ -1120,7 +1120,7 @@ router.post('/parse', verifyToken, async (req, res) => {
             optionalSectionTypes: parseResult.data.optionalSections?.map(s => s.type) || []
           });
           
-          console.log('🔍 DEBUG: Optional Sections Details:', parseResult.data.optionalSections);
+          console.log(' DEBUG: Optional Sections Details:', parseResult.data.optionalSections);
           
           res.json({
             success: true,

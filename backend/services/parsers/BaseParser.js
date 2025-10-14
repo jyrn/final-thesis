@@ -60,7 +60,7 @@ class BaseParser {
     // Strategy 1: Look for section headers with colons (cleaned text should have proper spacing)
     for (const sectionName of sectionNames) {
       const colonPattern = new RegExp(
-        `^\\s*[★☆✨🎓💡🚀🎨🛠️]*\\s*(${sectionName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})\\s*[★☆✨🎓💡🚀🎨🛠️]*\\s*:\\s*$`,
+        `^\\s*[★☆✨����]*\\s*(${sectionName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})\\s*[★☆✨����]*\\s*:\\s*$`,
         'im'
       );
       const colonMatch = text.match(colonPattern);
@@ -72,7 +72,7 @@ class BaseParser {
     // Strategy 2: Look for section headers on their own lines (with emojis and decorations)
     for (const sectionName of sectionNames) {
       const headerPattern = new RegExp(
-        `^\\s*[★☆✨🎓💡🚀🎨🛠️]*\\s*(${sectionName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})\\s*[★☆✨🎓💡🚀🎨🛠️&]*\\s*$`,
+        `^\\s*[★☆✨����]*\\s*(${sectionName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})\\s*[★☆✨����&]*\\s*$`,
         'im'
       );
       const headerMatch = text.match(headerPattern);
