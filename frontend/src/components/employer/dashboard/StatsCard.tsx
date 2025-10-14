@@ -37,13 +37,8 @@ const StatsCard: React.FC<StatsCardProps> = ({
         {icon}
       </div>
       <div className={styles.statsContent}>
-        <h3 className={styles.statsTitle}>{title}</h3>
         <p className={styles.statsValue}>{value}</p>
-        {change !== undefined && (
-          <div className={`${styles.statsChange} ${trendClass}`}>
-            {trendIcon} {Math.abs(change)}% from last month
-          </div>
-        )}
+        <h3 className={styles.statsTitle}>{title}</h3>
       </div>
     </div>
   );

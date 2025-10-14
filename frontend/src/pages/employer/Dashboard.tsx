@@ -1189,7 +1189,7 @@ const EmployerDashboard: React.FC = () => {
                 />
 
                 {/* Enhanced Stats Grid */}
-                <StatsGrid stats={realTimeStats} />
+                <StatsGrid stats={realTimeStats} onNavigate={(tab) => setActiveTab(tab as TabType)} />
 
                 {/* Quick Actions Section */}
                 <QuickActions 
