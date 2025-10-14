@@ -20,6 +20,7 @@ import { parseResume } from '../../utils/resumeParser'
 import { Job } from '../../types/Job'
 import { JobService } from '../../services/jobService'
 import { apiService } from '../../services/apiService'
+import { useAutoRefresh, useTimeSinceRefresh } from '../../hooks/useAutoRefresh'
 
 // Types
 interface PersonalInfo {
@@ -212,14 +213,130 @@ const Dashboard: React.FC = () => {
     setShowFilterModal(false);
   };
 
+  // Extract loadJobs function for reusability
+  const loadJobs = async () => {
+    try {
+      // Load jobs from backend API (public endpoint, no auth needed)
+      const jobService = JobService.getInstance();
+      const backendJobs = await jobService.getRecommendedJobs();
+      setJobs(backendJobs);
+    } catch (err) {
+      setError('Failed to load jobs. Please try again later.');
+    }
+  };
+
+  // Extract loadAuthData function for reusability
+  const loadAuthData = async () => {
+    try {
+      // Wait for Firebase auth to be ready
+      const { auth } = await import('../../config/firebase');
+      
+      return new Promise((resolve) => {
+        const unsubscribe = auth.onAuthStateChanged(async (user) => {
+          unsubscribe(); // Clean up listener
+          
+          if (!user) {
+            resolve(null);
+            return;
+          }
+          
+          try {
+            // Load user's saved jobs
+            const savedJobsResponse = await apiService.getSavedJobs();
+            if (savedJobsResponse.success && savedJobsResponse.data) {
+              const userSavedJobs = savedJobsResponse.data.savedJobs || [];
+              setSavedJobs(new Set(userSavedJobs));
+            }
+            
+            // Load user's applications to mark applied jobs
+            const applicationsResponse = await apiService.getUserApplications();
+            if (applicationsResponse.success && applicationsResponse.data) {
+              const userApplications = applicationsResponse.data;
+              setApplications(userApplications);
+              
+              // Mark jobs as applied based on user's applications
+              const appliedJobIds = new Set<string | number>();
+              
+              userApplications.forEach((app: any) => {
+                const jobId = app.jobId;
+                
+                // Handle MongoDB ObjectId format
+                if (typeof jobId === 'string') {
+                  appliedJobIds.add(jobId);
+                } else if (typeof jobId === 'object' && jobId) {
+                  // MongoDB ObjectId object - convert to string
+                  const objectIdString = jobId.toString();
+                  appliedJobIds.add(objectIdString);
+                  
+                  // Also try extracting the hex string if it's a proper ObjectId
+                  if (jobId.$oid) {
+                    appliedJobIds.add(jobId.$oid);
+                  }
+                } else if (typeof jobId === 'number') {
+                  appliedJobIds.add(jobId);
+                  appliedJobIds.add(jobId.toString());
+                }
+              });
+              
+              setAppliedJobs(appliedJobIds);
+              
+              // Update existing jobs with applied state
+              setJobs(prev => prev.map(job => {
+                const jobIdStr = job.id?.toString() || job._id?.toString() || '';
+                return {
+                  ...job,
+                  applied: appliedJobIds.has(job.id) || appliedJobIds.has(job._id) || appliedJobIds.has(jobIdStr)
+                };
+              }));
+            }
+            
+            // Load user profile
+            const profileResponse = await apiService.getUserProfile();
+            if (profileResponse.success && profileResponse.user) {
+              setUserProfile(profileResponse.user);
+            }
+            
+            // Load current resume
+            const resumeResponse = await apiService.getCurrentResume();
+            if (resumeResponse.success && resumeResponse.data) {
+              setCurrentResume(resumeResponse.data);
+            }
+            
+            resolve(user);
+          } catch (error) {
+            resolve(null);
+          }
+        });
+      });
+    } catch (error) {
+      // Silent fail for auth errors
+    }
+  };
+
+  // Combined refresh function
+  const refreshAllData = async () => {
+    await Promise.all([loadJobs(), loadAuthData()]);
+  };
+
+  // Auto-refresh hook - refreshes every 30 seconds
+  const { refresh: manualRefresh, isRefreshing, lastRefreshTime } = useAutoRefresh(
+    refreshAllData,
+    {
+      interval: 30000, // 30 seconds
+      enabled: true,
+      refreshOnMount: false,
+      refreshOnFocus: true
+    }
+  );
+
+  // Get formatted time since last refresh
+  const timeSinceRefresh = useTimeSinceRefresh(lastRefreshTime);
+
   // Load data on component mount
   useEffect(() => {
     const loadData = async () => {
       try {
-        // Load jobs from backend API (public endpoint, no auth needed)
-        const jobService = JobService.getInstance();
-        const backendJobs = await jobService.getRecommendedJobs();
-        setJobs(backendJobs);
+        await loadJobs();
 
         // Check if user has visited before
         const hasVisited = localStorage.getItem('hasVisitedDashboard')
@@ -256,116 +373,6 @@ const Dashboard: React.FC = () => {
 
   // Separate effect for auth-dependent data loading
   useEffect(() => {
-    const loadAuthData = async () => {
-      try {
-        // Wait for Firebase auth to be ready
-        const { auth } = await import('../../config/firebase');
-        
-        return new Promise((resolve) => {
-          const unsubscribe = auth.onAuthStateChanged(async (user) => {
-            unsubscribe(); // Clean up listener
-            
-            if (!user) {
-              resolve(null);
-              return;
-            }
-            
-            try {
-              // Load user's saved jobs
-              const savedJobsResponse = await apiService.getSavedJobs();
-              if (savedJobsResponse.success && savedJobsResponse.data) {
-                const userSavedJobs = savedJobsResponse.data.savedJobs || [];
-                setSavedJobs(new Set(userSavedJobs));
-              }
-              
-              // Load user's applications to mark applied jobs
-              const applicationsResponse = await apiService.getUserApplications();
-              if (applicationsResponse.success && applicationsResponse.data) {
-                const userApplications = applicationsResponse.data;
-                setApplications(userApplications);
-                
-                // Mark jobs as applied based on user's applications
-                const appliedJobIds = new Set<string | number>();
-                
-                userApplications.forEach((app: any) => {
-                  const jobId = app.jobId;
-                  
-                  // Handle MongoDB ObjectId format
-                  if (typeof jobId === 'string') {
-                    appliedJobIds.add(jobId);
-                  } else if (typeof jobId === 'object' && jobId) {
-                    // MongoDB ObjectId object - convert to string
-                    const objectIdString = jobId.toString();
-                    appliedJobIds.add(objectIdString);
-                    
-                    // Also try extracting the hex string if it's a proper ObjectId
-                    if (jobId.$oid) {
-                      appliedJobIds.add(jobId.$oid);
-                    }
-                  } else if (typeof jobId === 'number') {
-                    appliedJobIds.add(jobId);
-                    appliedJobIds.add(jobId.toString());
-                  }
-                });
-                
-                setAppliedJobs(appliedJobIds);
-                
-                // Update existing jobs with applied state
-                setJobs(prev => prev.map(job => {
-                  const jobIdString = job.id?.toString();
-                  const isApplied = appliedJobIds.has(jobIdString) || 
-                                   appliedJobIds.has(job.id) ||
-                                   Array.from(appliedJobIds).some(appId => 
-                                     appId?.toString() === jobIdString
-                                   );
-                  
-                  return {
-                    ...job,
-                    applied: isApplied
-                  };
-                }));
-              }
-              
-              // Load user profile data
-              const userProfileResponse = await apiService.getUserProfile()
-              if (userProfileResponse.success && userProfileResponse.data) {                setUserProfile(userProfileResponse.data.user)
-              }
-              
-              // Load resume data
-              const currentResumeResponse = await apiService.getCurrentResume()
-              if (currentResumeResponse.success && currentResumeResponse.data) {
-                setCurrentResume(currentResumeResponse.data)
-                
-                const dbResume = currentResumeResponse.data
-                const resumeData = {
-                  personalInfo: {
-                    name: dbResume.personalInfo?.fullName || dbResume.personalInfo?.name || '',
-                    email: dbResume.personalInfo?.email || '',
-                    phone: dbResume.personalInfo?.phone || '',
-                    address: dbResume.personalInfo?.fullAddress || dbResume.personalInfo?.address || ''
-                  },
-                  summary: dbResume.summary || '',
-                  skills: dbResume.skills || [],
-                  experience: dbResume.workExperience || [],
-                  education: dbResume.education || [],
-                  certifications: []
-                }
-                
-                setResume(resumeData)
-                const jobService = JobService.getInstance()
-                jobService.setUserResume(resumeData)
-                localStorage.setItem('userResume', JSON.stringify(resumeData))
-              }
-            } catch (err) {
-              // Failed to load user-specific data, continue without it
-            }
-            
-            resolve(user);
-          });
-        });
-      } catch (error) {      }
-    };
-
     loadAuthData();
   }, [])
 

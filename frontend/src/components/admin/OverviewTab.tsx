@@ -4,6 +4,7 @@ import { HiCheckCircle } from 'react-icons/hi';
 import { DashboardStats } from '../../types/admin';
 import StatsCard from './StatsCard';
 import adminService from '../../services/adminService';
+import { useAutoRefresh, useTimeSinceRefresh } from '../../hooks/useAutoRefresh';
 
 interface OverviewTabProps {
   stats: DashboardStats | null;
@@ -21,11 +22,25 @@ const OverviewTab: React.FC<OverviewTabProps> = ({ stats }) => {
     loading: true
   });
 
+  // Auto-refresh hook - refreshes every 30 seconds
+  const { refresh: manualRefresh, isRefreshing, lastRefreshTime } = useAutoRefresh(
+    fetchRealStats,
+    {
+      interval: 30000, // 30 seconds
+      enabled: true,
+      refreshOnMount: false,
+      refreshOnFocus: true
+    }
+  );
+
+  // Get formatted time since last refresh
+  const timeSinceRefresh = useTimeSinceRefresh(lastRefreshTime);
+
   useEffect(() => {
     fetchRealStats();
   }, []);
 
-  const fetchRealStats = async () => {
+  async function fetchRealStats() {
     try {
       // Try to get dashboard stats first (this should work)
       let dashboardStats = null;
