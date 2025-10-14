@@ -2516,7 +2516,7 @@ const CreateResumeTab: React.FC<CreateResumeTabProps> = ({
                   onClick={handleDownloadPDF}
                   className={styles.modalDownloadButton}
                 >
-                  <FiDownload /> Download PDF
+                  <FiDownload /> Download Resume
                 </button>
               </div>
             )}
@@ -2526,22 +2526,15 @@ const CreateResumeTab: React.FC<CreateResumeTabProps> = ({
       
       
       {/* Header Section with Actions */}
-      <div style={{
-        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-        borderRadius: '16px',
-        padding: '32px',
-        marginBottom: '32px',
-        color: 'white',
-        boxShadow: '0 10px 30px rgba(102, 126, 234, 0.3)'
-      }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '20px' }}>
+      <div className={styles.headerBanner}>
+        <div className={styles.headerContent}>
           {/* Left: Title and Description */}
-          <div style={{ flex: '1', minWidth: '300px' }}>
-            <h1 style={{ fontSize: '28px', fontWeight: '700', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <div className={styles.headerLeft}>
+            <h1 className={styles.headerTitle}>
               <FiFileText size={32} />
               Create Your Resume
             </h1>
-            <p style={{ fontSize: '15px', opacity: 0.95, marginBottom: '20px', lineHeight: '1.6' }}>
+            <p className={styles.headerDescription}>
               Build a professional resume in minutes. Upload an existing resume to auto-fill, or start from scratch.
             </p>
             
@@ -2597,7 +2590,7 @@ const CreateResumeTab: React.FC<CreateResumeTabProps> = ({
           </div>
 
           {/* Right: Action Buttons */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', minWidth: '220px' }}>
+          <div className={styles.headerRight}>
             <button 
               onClick={handleSaveResume}
               disabled={isSaving || !isFormValid()}
@@ -2628,8 +2621,8 @@ const CreateResumeTab: React.FC<CreateResumeTabProps> = ({
                 e.currentTarget.style.boxShadow = '0 4px 15px rgba(0, 0, 0, 0.2)';
               }}
             >
-              <FiDownload size={18} />
-              {isSaving ? 'Generating...' : 'Save & Generate'}
+              <FiSave size={18} />
+              {isSaving ? 'Saving...' : 'Save Changes'}
             </button>
             
             <button 
@@ -2660,7 +2653,7 @@ const CreateResumeTab: React.FC<CreateResumeTabProps> = ({
               }}
             >
               <FiDownload size={16} />
-              Download PDF
+              Download Resume
             </button>
             
             <button 
@@ -2690,7 +2683,7 @@ const CreateResumeTab: React.FC<CreateResumeTabProps> = ({
               }}
             >
               <FiTrash2 size={14} />
-              Clear All
+              Clear All Data
             </button>
           </div>
         </div>
@@ -2872,9 +2865,9 @@ const CreateResumeTab: React.FC<CreateResumeTabProps> = ({
                   flexShrink: 0
                 }}>3</span>
                 <div>
-                  <strong style={{ color: '#374151', fontSize: '14px' }}>Save & Generate</strong>
+                  <strong style={{ color: '#374151', fontSize: '14px' }}>Save Changes</strong>
                   <p style={{ fontSize: '13px', color: '#6b7280', marginTop: '2px' }}>
-                    Click "Save & Generate" to create your professional resume and save it to your profile.
+                    Click "Save Changes" to save your resume to your profile.
                   </p>
                 </div>
               </div>
@@ -4461,48 +4454,13 @@ const CreateResumeTab: React.FC<CreateResumeTabProps> = ({
 
       {/* Sticky Buttons - Shows when scrolling */}
       {showStickyButton && (
-        <div style={{
-          position: 'fixed',
-          bottom: '30px',
-          right: '30px',
-          zIndex: 1000,
-          display: 'flex',
-          flexDirection: 'column',
-          gap: '12px',
-          animation: 'slideUp 0.3s ease-out'
-        }}>
+        <div className={styles.stickyButtons}>
           {/* Back to Top Button */}
           <button
             onClick={() => {
               window.scrollTo({ top: 0, behavior: 'smooth' });
             }}
-            style={{
-              padding: '12px',
-              backgroundColor: '#3b82f6',
-              border: 'none',
-              borderRadius: '50%',
-              color: 'white',
-              fontSize: '20px',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              boxShadow: '0 8px 24px rgba(59, 130, 246, 0.4)',
-              transition: 'all 0.3s',
-              width: '48px',
-              height: '48px',
-              alignSelf: 'flex-end'
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.transform = 'translateY(-4px)';
-              e.currentTarget.style.boxShadow = '0 12px 32px rgba(59, 130, 246, 0.5)';
-              e.currentTarget.style.backgroundColor = '#2563eb';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.transform = 'translateY(0)';
-              e.currentTarget.style.boxShadow = '0 8px 24px rgba(59, 130, 246, 0.4)';
-              e.currentTarget.style.backgroundColor = '#3b82f6';
-            }}
+            className={styles.backToTopButton}
             title="Back to top"
           >
             <FiChevronUp size={24} />
@@ -4512,32 +4470,10 @@ const CreateResumeTab: React.FC<CreateResumeTabProps> = ({
           <button
             onClick={handleSaveResume}
             disabled={isSaving || !isFormValid()}
+            className={styles.stickySaveButton}
             style={{
-              padding: '16px 32px',
               backgroundColor: isSaving || !isFormValid() ? '#9ca3af' : '#667eea',
-              border: 'none',
-              borderRadius: '50px',
-              color: 'white',
-              fontSize: '16px',
-              fontWeight: '700',
-              cursor: isSaving || !isFormValid() ? 'not-allowed' : 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '12px',
-              boxShadow: '0 8px 24px rgba(102, 126, 234, 0.4)',
-              transition: 'all 0.3s',
-              minWidth: '200px',
-              justifyContent: 'center'
-            }}
-            onMouseEnter={(e) => {
-              if (!isSaving && isFormValid()) {
-                e.currentTarget.style.transform = 'translateY(-4px)';
-                e.currentTarget.style.boxShadow = '0 12px 32px rgba(102, 126, 234, 0.5)';
-              }
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.transform = 'translateY(0)';
-              e.currentTarget.style.boxShadow = '0 8px 24px rgba(102, 126, 234, 0.4)';
+              cursor: isSaving || !isFormValid() ? 'not-allowed' : 'pointer'
             }}
           >
             {isSaving ? (
@@ -4547,8 +4483,8 @@ const CreateResumeTab: React.FC<CreateResumeTabProps> = ({
               </>
             ) : (
               <>
-                <FiDownload size={20} />
-                <span>Save & Generate</span>
+                <FiSave size={20} />
+                <span>Save Changes</span>
               </>
             )}
           </button>
