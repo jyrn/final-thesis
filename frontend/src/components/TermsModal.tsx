@@ -100,7 +100,7 @@ const TermsModal: React.FC<TermsModalProps> = ({ isOpen, onClose, onAccept, type
                 <>
                   <h3>4. Job Matching Service and Data Processing</h3>
                   <div>
-                    <p>Our AI-powered job matching service uses OCR technology to extract information from your 
+                    <p>Our AI-powered job matching service uses pdf-parse to extract information from your 
                     resume in compliance with the <strong>Data Privacy Act of 2012 (RA 10173)</strong>. By uploading 
                     your resume, you provide explicit consent for automated processing. We ensure compliance with:</p>
                     <ul>

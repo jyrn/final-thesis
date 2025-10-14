@@ -474,12 +474,34 @@ class ApiService {
     return this.handleResponse(response);
   }
 
+  // Account management methods
+  async deactivateAccount(): Promise<ApiResponse> {
+    const headers = await this.getAuthHeaders();
+    const response = await fetch(`${API_BASE_URL}/jobseekers/deactivate-account`, {
+      method: 'PUT',
+      headers
+    });
+    
+    return this.handleResponse(response);
+  }
+
+  async deleteAccount(): Promise<ApiResponse> {
+    const headers = await this.getAuthHeaders();
+    const response = await fetch(`${API_BASE_URL}/jobseekers/delete-account`, {
+      method: 'DELETE',
+      headers
+    });
+    
+    return this.handleResponse(response);
+  }
+
   // Utility methods
   async testConnection(): Promise<boolean> {
     try {
       const response = await fetch(`${API_BASE_URL.replace('/api', '')}/`);
       return response.ok;
-    } catch (error) {      return false;
+    } catch (error) {
+      return false;
     }
   }
 }

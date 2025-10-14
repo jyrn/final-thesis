@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import styles from './Dashboard.module.css'
-import { FiHome, FiBriefcase, FiFileText, FiUser, FiBookmark, FiMapPin, FiDollarSign, FiClock, FiBell, FiMenu, FiX, FiFilter, FiSliders, FiLogOut, FiEdit3 } from 'react-icons/fi'
+import { FiHome, FiBriefcase, FiFileText, FiUser, FiBookmark, FiMapPin, FiDollarSign, FiClock, FiMenu, FiX, FiFilter, FiSliders, FiLogOut, FiEdit3 } from 'react-icons/fi'
 import { getImageSrc } from '../../utils/imageUtils'
 import FilterModal from '../../components/jobseeker/FilterModal/FilterModal'
 import SearchBar from '../../components/jobseeker/SearchBar/SearchBar'
@@ -76,7 +76,6 @@ const Dashboard: React.FC = () => {
   const [applications, setApplications] = useState<Application[]>([])
   const [appliedJobs, setAppliedJobs] = useState<Set<string | number>>(new Set())
   const [savedJobs, setSavedJobs] = useState<Set<string | number>>(new Set())
-  const [notifications, setNotifications] = useState<number>(0)
   const [error, setError] = useState<string | null>(null)
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false)
@@ -370,10 +369,6 @@ const Dashboard: React.FC = () => {
     loadAuthData();
   }, [])
 
-  // Update notifications count based on applications
-  useEffect(() => {
-    setNotifications(applications.length);
-  }, [applications]);
 
   const handleResumeUpload = async (file: File) => {
     try {
@@ -623,7 +618,6 @@ const Dashboard: React.FC = () => {
       onTabChange={setActiveTab}
       isSidebarOpen={isSidebarOpen}
       onToggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
-      notifications={notifications}
       isCollapsed={isSidebarCollapsed}
       onToggleCollapse={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
     />
@@ -690,8 +684,7 @@ const Dashboard: React.FC = () => {
           onMenuClick={() => setIsSidebarOpen(!isSidebarOpen)}
           onProfileClick={() => setActiveTab('profile')}
           onFilterClick={activeTab === 'jobs' ? () => setShowFilterModal(true) : undefined}
-          notifications={notifications}
-          showSearch={activeTab === 'jobs'}
+              showSearch={activeTab === 'jobs'}
           searchComponent={activeTab === 'jobs' ? (
             <SearchBar 
               value={searchQuery}
@@ -735,17 +728,6 @@ const Dashboard: React.FC = () => {
           )}
           
           <div className={styles.headerActions}>
-            <button 
-              className={styles.notificationBtn}
-              aria-label="Notifications"
-            >
-              <FiBell />
-              {notifications > 0 && (
-                <span className={styles.notificationBadge}>
-                  {notifications > 9 ? '9+' : notifications}
-                </span>
-              )}
-            </button>
             <button 
               className={styles.userAvatar}
               onClick={() => setActiveTab('profile')}

@@ -587,14 +587,14 @@ class EmailService {
     };
 
     try {
-      const result = await this.transporter.sendMail(mailOptions);      return { success: true, messageId: result.messageId };
-    } catch (error) {      return { success: false, error: error.message };
+      const result = await this.transporter.sendMail(mailOptions);      return { success: true, messageId: result.messageId };
+    } catch (error) {      return { success: false, error: error.message };
     }
   }
 
   async sendJobseekerCompleteRemovalEmail(jobseekerEmail, jobseekerName, reason) {
     // If email service is not configured, just log the action
-    if (!this.isConfigured) {      return { success: true, message: 'Email service not configured - notification logged to console' };
+    if (!this.isConfigured) {      return { success: true, message: 'Email service not configured - notification logged to console' };
     }
 
     const mailOptions = {
@@ -669,15 +669,164 @@ class EmailService {
     };
 
     try {
-      const result = await this.transporter.sendMail(mailOptions);      return { success: true, messageId: result.messageId };
-    } catch (error) {      return { success: false, error: error.message };
+      const result = await this.transporter.sendMail(mailOptions);
+      return { success: true, messageId: result.messageId };
+    } catch (error) {
+      return { success: false, error: error.message };
+    }
+  }
+
+  async sendAccountDeactivationEmail(userEmail, userName) {
+    // If email service is not configured, just log the action
+    if (!this.isConfigured) {
+      console.log(`Account deactivation email would be sent to: ${userEmail}`);
+      return { success: true, message: 'Email service not configured - notification logged to console' };
+    }
+
+    const mailOptions = {
+      from: process.env.EMAIL_USER || 'noreply@peso.gov.ph',
+      to: userEmail,
+      subject: 'PESO - Account Deactivated',
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <div style="background-color: #f59e0b; color: white; padding: 20px; text-align: center;">
+            <h1>Account Deactivated</h1>
+          </div>
+          
+          <div style="padding: 30px; background-color: #f9f9f9;">
+            <h2>Dear ${userName || 'User'},</h2>
+            
+            <p>Your PESO jobseeker account has been temporarily deactivated as requested.</p>
+            
+            <div style="background-color: #fef3c7; border-left: 4px solid #f59e0b; padding: 15px; margin: 20px 0;">
+              <h3 style="color: #d97706; margin-top: 0;">What This Means:</h3>
+              <ul style="margin-bottom: 0;">
+                <li>Your profile is temporarily hidden from employers</li>
+                <li>You won't receive job match notifications</li>
+                <li>Your applications remain active but you can't apply to new jobs</li>
+                <li>Your data is safely stored and can be restored anytime</li>
+              </ul>
+            </div>
+            
+            <div style="background-color: #d1ecf1; border-left: 4px solid #17a2b8; padding: 15px; margin: 20px 0;">
+              <h3 style="color: #0c5460; margin-top: 0;">Easy Reactivation</h3>
+              <p style="margin-bottom: 0;">
+                <strong>Simply sign in to your account to reactivate it immediately!</strong><br>
+                All your profile data, saved jobs, and applications will be restored.
+              </p>
+            </div>
+            
+            <div style="text-align: center; margin: 30px 0;">
+              <a href="${process.env.FRONTEND_URL || 'http://localhost:3000'}/auth/jobseeker" 
+                 style="background-color: #10b981; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; display: inline-block;">
+                Reactivate Account
+              </a>
+            </div>
+            
+            <p>We understand that job searching can be seasonal. Your account will be ready whenever you need it.</p>
+            
+            <hr style="margin: 30px 0; border: none; border-top: 1px solid #ddd;">
+            
+            <p style="color: #666; font-size: 14px;">
+              If you have any questions, please contact our support team.<br>
+              This is an automated message, please do not reply to this email.
+            </p>
+          </div>
+        </div>
+      `
+    };
+
+    try {
+      const result = await this.transporter.sendMail(mailOptions);
+      return { success: true, messageId: result.messageId };
+    } catch (error) {
+      return { success: false, error: error.message };
+    }
+  }
+
+  async sendAccountDeletionEmail(userEmail, userName) {
+    // If email service is not configured, just log the action
+    if (!this.isConfigured) {
+      console.log(`Account deletion email would be sent to: ${userEmail}`);
+      return { success: true, message: 'Email service not configured - notification logged to console' };
+    }
+
+    const mailOptions = {
+      from: process.env.EMAIL_USER || 'noreply@peso.gov.ph',
+      to: userEmail,
+      subject: 'PESO - Account Permanently Deleted',
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <div style="background-color: #dc2626; color: white; padding: 20px; text-align: center;">
+            <h1>Account Permanently Deleted</h1>
+          </div>
+          
+          <div style="padding: 30px; background-color: #f9f9f9;">
+            <h2>Dear ${userName || 'User'},</h2>
+            
+            <p>Your PESO jobseeker account has been permanently deleted from our system as requested.</p>
+            
+            <div style="background-color: #fef2f2; border-left: 4px solid #dc2626; padding: 15px; margin: 20px 0;">
+              <h3 style="color: #dc2626; margin-top: 0;">What Has Been Permanently Deleted:</h3>
+              <ul style="margin-bottom: 0;">
+                <li>Your complete user account and login credentials</li>
+                <li>Your jobseeker profile and resume data</li>
+                <li>All job applications and application history</li>
+                <li>All saved jobs and preferences</li>
+                <li>Your authentication data</li>
+              </ul>
+            </div>
+            
+            <div style="background-color: #fef2f2; border-left: 4px solid #dc2626; padding: 15px; margin: 20px 0;">
+              <h3 style="color: #dc2626; margin-top: 0;">⚠️ Important Notice</h3>
+              <p style="margin-bottom: 0;">
+                This deletion is <strong>irreversible</strong>. All your data has been permanently removed from our systems. 
+                You can now register again with the same email address if you choose to do so.
+              </p>
+            </div>
+            
+            <div style="background-color: #f0f9ff; border-left: 4px solid #3b82f6; padding: 15px; margin: 20px 0;">
+              <h3 style="color: #1e40af; margin-top: 0;">Want to Use PESO Again?</h3>
+              <p style="margin-bottom: 0;">
+                Since your account has been completely removed, you can register as a new user with the same email address. 
+                You will need to create a fresh profile and upload your resume again.
+              </p>
+            </div>
+            
+            <div style="text-align: center; margin: 30px 0;">
+              <a href="${process.env.FRONTEND_URL || 'http://localhost:3000'}/auth/jobseeker" 
+                 style="background-color: #3b82f6; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; display: inline-block;">
+                Register New Account
+              </a>
+            </div>
+            
+            <p>Thank you for using PESO. If you have any questions, please contact our support team.</p>
+            
+            <hr style="margin: 30px 0; border: none; border-top: 1px solid #ddd;">
+            
+            <p style="color: #666; font-size: 14px;">
+              For questions or assistance, please contact our support team.<br>
+              This is an automated message, please do not reply to this email.
+            </p>
+          </div>
+        </div>
+      `
+    };
+
+    try {
+      const result = await this.transporter.sendMail(mailOptions);
+      return { success: true, messageId: result.messageId };
+    } catch (error) {
+      return { success: false, error: error.message };
     }
   }
 
   async testConnection() {
     try {
-      await this.transporter.verify();      return true;
-    } catch (error) {      return false;
+      await this.transporter.verify();
+      return true;
+    } catch (error) {
+      return false;
     }
   }
 }

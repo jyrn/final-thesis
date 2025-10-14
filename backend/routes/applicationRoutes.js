@@ -207,9 +207,19 @@ router.get('/employer', verifyToken, async (req, res) => {
 
     const Resume = require('../models/Resume');
     const User = require('../models/User');
+    const JobSeeker = require('../models/JobSeeker');
     
+    // Filter out applications from deactivated jobseekers
+    const activeApplications = [];
+    for (const app of applications) {
+      const jobSeeker = await JobSeeker.findOne({ uid: app.jobSeekerUid });
+      // Only include applications from active jobseekers
+      if (jobSeeker && jobSeeker.isActive) {
+        activeApplications.push(app);
+      }
+    }
     
-    const formattedApplications = await Promise.all(applications.map(async (app) => {
+    const formattedApplications = await Promise.all(activeApplications.map(async (app) => {
       // Try to get fresh resume data from Resume collection
       let currentResumeData = app.resumeData;
       
@@ -402,6 +412,18 @@ router.get('/:applicationId/resume', verifyToken, async (req, res) => {
 
     if (!isEmployer && !isJobSeeker) {
       return res.status(403).json({ message: 'Access denied' });
+    }
+
+    // If employer is trying to access, check if jobseeker account is still active
+    if (isEmployer) {
+      const JobSeeker = require('../models/JobSeeker');
+      const jobSeeker = await JobSeeker.findOne({ uid: application.jobSeekerUid });
+      
+      if (!jobSeeker || !jobSeeker.isActive) {
+        return res.status(404).json({ 
+          message: 'Resume not available - jobseeker account is deactivated' 
+        });
+      }
     }
 
     console.log('Application found:', application._id);
