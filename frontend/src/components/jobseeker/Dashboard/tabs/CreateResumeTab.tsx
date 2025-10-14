@@ -1659,13 +1659,23 @@ const CreateResumeTab: React.FC<CreateResumeTabProps> = ({
             yPosition += nameLines.length * 4 + 2;
             
             // Technologies - italic (only if we have technologies)
-            if (project.technologies && project.technologies.trim()) {
-              doc.setFontSize(9);
-              doc.setFont('helvetica', 'italic');
-              doc.setTextColor(100, 100, 100); // Gray color
-              const techLines = doc.splitTextToSize(`Technologies: ${project.technologies}`, contentWidth);
-              doc.text(techLines, margin, yPosition);
-              yPosition += techLines.length * 4;
+            if (project.technologies) {
+              // Handle both string and array types for technologies
+              let technologiesText = '';
+              if (typeof project.technologies === 'string') {
+                technologiesText = project.technologies.trim();
+              } else if (Array.isArray(project.technologies)) {
+                technologiesText = (project.technologies as string[]).filter(tech => tech && typeof tech === 'string' && tech.trim()).join(', ');
+              }
+              
+              if (technologiesText) {
+                doc.setFontSize(9);
+                doc.setFont('helvetica', 'italic');
+                doc.setTextColor(100, 100, 100); // Gray color
+                const techLines = doc.splitTextToSize(`Technologies: ${technologiesText}`, contentWidth);
+                doc.text(techLines, margin, yPosition);
+                yPosition += techLines.length * 4;
+              }
             }
             
             // URL (only if we have a URL)
@@ -1817,17 +1827,30 @@ const CreateResumeTab: React.FC<CreateResumeTabProps> = ({
       const fullName = `${personalInfo.firstName || ''}_${personalInfo.lastName || ''}`.replace(/\s+/g, '_') || 'Resume';
       const defaultFileName = `${fullName}_Resume.pdf`;
       const fileName = filename || defaultFileName;
+      console.log('📄 [GENERATE PDF] Saving PDF to file:', fileName);
       doc.save(fileName);
       return undefined;
     }
   };
 
   const handleSaveResume = async () => {
+    console.log('🔄 [SAVE RESUME] Starting save process...');
+    console.log('📊 [SAVE RESUME] Current state:', {
+      isSaving,
+      hasUnsavedChanges,
+      hasExistingResume,
+      isPDFReady,
+      showToEmployers,
+      uploadedResumeUrl,
+      showUploadedToEmployers
+    });
+    
     setIsSaving(true);
     setShowGeneratingModal(true);
     setGenerationStep('generating');
     
     try {
+      console.log('🧹 [SAVE RESUME] Cleaning resume data...');
       const cleanedData: ResumeData = {
         ...resumeData,
         experience: resumeData.experience.filter(exp => exp.company || exp.position),
@@ -1835,27 +1858,55 @@ const CreateResumeTab: React.FC<CreateResumeTabProps> = ({
         certifications: resumeData.certifications.filter(cert => cert.trim() !== '')
       };
       
+      console.log('📝 [SAVE RESUME] Cleaned data summary:', {
+        personalInfoComplete: !!(cleanedData.personalInfo.firstName && cleanedData.personalInfo.lastName && cleanedData.personalInfo.email),
+        summaryLength: cleanedData.summary.length,
+        experienceCount: cleanedData.experience.length,
+        educationCount: cleanedData.education.length,
+        skillsCount: cleanedData.skills.length,
+        certificationsCount: cleanedData.certifications.length,
+        optionalSectionsCount: cleanedData.optionalSections.length
+      });
+      
       // Update parent state
       if (onResumeDataChange) {
+        console.log('⬆️ [SAVE RESUME] Updating parent component with cleaned data');
         onResumeDataChange(cleanedData);
+      } else {
+        console.log('⚠️ [SAVE RESUME] No parent component callback available');
       }
       
       // Simulate processing time for better UX
+      console.log('⏳ [SAVE RESUME] Simulating processing delay...');
       await new Promise(resolve => setTimeout(resolve, 1500));
       
       // Generate PDF blob for database storage (without downloading)
+      console.log('📄 [SAVE RESUME] Generating PDF blob...');
       const pdfBlob = generatePDF(undefined, true) as Blob;
+      console.log('📄 [SAVE RESUME] PDF blob generated:', {
+        size: pdfBlob.size,
+        type: pdfBlob.type
+      });
       
       // Convert blob to base64 for API transmission
+      console.log('🔄 [SAVE RESUME] Converting PDF to base64...');
       const pdfBase64 = await blobToBase64(pdfBlob);
+      console.log('✅ [SAVE RESUME] PDF converted to base64:', {
+        base64Length: pdfBase64.length,
+        sizeInKB: Math.round(pdfBase64.length * 0.75 / 1024) // Approximate size in KB
+      });
       
       // Use the already uploaded resume URL (uploaded when user consented)
       const uploadedResumeCloudUrl = uploadedResumeUrl;
+      console.log('☁️ [SAVE RESUME] Uploaded resume URL:', uploadedResumeCloudUrl || 'None');
       
       // Save to database via API
-      await saveResumeToDatabase(cleanedData, pdfBase64, uploadedResumeCloudUrl);
+      console.log('💾 [SAVE RESUME] Calling saveResumeToDatabase...');
+      const saveResult = await saveResumeToDatabase(cleanedData, pdfBase64, uploadedResumeCloudUrl);
+      console.log('✅ [SAVE RESUME] Database save successful:', saveResult);
       
       // Show success message
+      console.log('🎉 [SAVE RESUME] Setting success state...');
       setGenerationStep('success');
       
       // Set PDF ready state immediately after success
@@ -1863,9 +1914,20 @@ const CreateResumeTab: React.FC<CreateResumeTabProps> = ({
       setHasUnsavedChanges(false);
       setHasExistingResume(true);
       
-    } catch (error) {      setShowGeneratingModal(false);
+      console.log('✅ [SAVE RESUME] Save process completed successfully!');
+      
+    } catch (error) {
+      console.error('❌ [SAVE RESUME] Error during save process:', error);
+      console.error('❌ [SAVE RESUME] Error details:', {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined,
+        timestamp: new Date().toISOString()
+      });
+      
+      setShowGeneratingModal(false);
       alert('Error saving resume. Please try again.');
     } finally {
+      console.log('🏁 [SAVE RESUME] Cleaning up save state...');
       setIsSaving(false);
     }
   };
@@ -1934,16 +1996,19 @@ const CreateResumeTab: React.FC<CreateResumeTabProps> = ({
     
     setIsUploadingConsent(true);
     
-    try {      const uploadResult = await uploadOriginalResumeToCloud(pendingUploadFile);
+    try {  
+      const uploadResult = await uploadOriginalResumeToCloud(pendingUploadFile);
       
       if (uploadResult.success && uploadResult.data) {
         setUploadedResumeFile(pendingUploadFile);
         setUploadedResumeUrl(uploadResult.data.cloudUrl);
-        setShowUploadedToEmployers(true);        alert('Your original resume has been saved and will be shown to employers!');
+        setShowUploadedToEmployers(true);  
+        alert('Your original resume has been saved and will be shown to employers!');
       } else {
         throw new Error(uploadResult.message || 'Upload failed');
       }
-    } catch (error) {      alert('Failed to upload your resume to cloud. You can still use the generated resume.');
+    } catch (error) {  
+      alert('Failed to upload your resume to cloud. You can still use the generated resume.');
     } finally {
       setIsUploadingConsent(false);
       setShowUploadConsentModal(false);
@@ -1951,7 +2016,8 @@ const CreateResumeTab: React.FC<CreateResumeTabProps> = ({
     }
   };
 
-  const handleUploadConsentNo = () => {    setShowUploadConsentModal(false);
+  const handleUploadConsentNo = () => {  
+    setShowUploadConsentModal(false);
     setPendingUploadFile(null);
     setShowUploadedToEmployers(false);
   };
@@ -1980,7 +2046,8 @@ const CreateResumeTab: React.FC<CreateResumeTabProps> = ({
         let errorMessage = `HTTP ${response.status}`;
         try {
           const errorData = await response.json();
-          errorMessage = errorData.message || errorData.error || errorMessage;        } catch (parseError) {
+          errorMessage = errorData.message || errorData.error || errorMessage;  
+        } catch (parseError) {
           const errorText = await response.text();
           errorMessage = errorText || errorMessage;
         }
@@ -1989,7 +2056,8 @@ const CreateResumeTab: React.FC<CreateResumeTabProps> = ({
 
       const result = await response.json();
       return result;
-    } catch (error) {      return {
+    } catch (error) {  
+      return {
         success: false,
         message: error instanceof Error ? error.message : 'Failed to upload original resume'
       };
@@ -1998,20 +2066,36 @@ const CreateResumeTab: React.FC<CreateResumeTabProps> = ({
 
   // Function to save resume to database
   const saveResumeToDatabase = async (resumeData: ResumeData, pdfBase64: string, uploadedResumeUrl: string | null = null) => {
+    console.log('💾 [DATABASE SAVE] Starting database save operation...');
+    
     try {
-      // Get Firebase ID token instead of localStorage      if (!auth.currentUser) {
+      // Get Firebase ID token instead of localStorage
+      console.log('🔐 [DATABASE SAVE] Checking authentication...');
+      if (!auth.currentUser) {
+        console.error('❌ [DATABASE SAVE] No authenticated user found');
         throw new Error('You must be logged in to save a resume. Please sign in first.');
       }
       
-      const token = await auth.currentUser.getIdToken();      if (!token) {
+      console.log('🔐 [DATABASE SAVE] Getting ID token for user:', auth.currentUser.uid);
+      const token = await auth.currentUser.getIdToken();
+      if (!token) {
+        console.error('❌ [DATABASE SAVE] Failed to get authentication token');
         throw new Error('No authentication token found. Please log in again.');
       }
+      console.log('✅ [DATABASE SAVE] Authentication token obtained');
 
       // Get location display names for the database
+      console.log('🌍 [DATABASE SAVE] Getting location display names...');
       const { regionName, provinceName, cityName, barangayName } = getLocationDisplayNames();
-      
+      console.log('🌍 [DATABASE SAVE] Location names:', {
+        regionName,
+        provinceName,
+        cityName,
+        barangayName
+      });
       
       // Create enhanced resume data with readable location names and consent
+      console.log('📊 [DATABASE SAVE] Creating enhanced resume data...');
       const enhancedResumeData = {
         ...resumeData,
         personalInfo: {
@@ -2026,25 +2110,73 @@ const CreateResumeTab: React.FC<CreateResumeTabProps> = ({
         uploadedResumeUrl, // Add uploaded resume URL if available
         showUploadedToEmployers // Add consent for showing uploaded resume
       };
+      
+      console.log('📊 [DATABASE SAVE] Enhanced data summary:', {
+        hasPersonalInfo: !!enhancedResumeData.personalInfo,
+        showToEmployers,
+        hasUploadedResume: !!uploadedResumeUrl,
+        showUploadedToEmployers,
+        pdfDataSize: pdfBase64.length
+      });
 
+      console.log('🌐 [DATABASE SAVE] Making API request to save resume...');
+      const requestPayload = {
+        resumeData: enhancedResumeData,
+        pdfData: pdfBase64
+      };
+      
+      console.log('📤 [DATABASE SAVE] Request payload size:', {
+        totalSize: JSON.stringify(requestPayload).length,
+        pdfDataSize: pdfBase64.length,
+        resumeDataSize: JSON.stringify(enhancedResumeData).length
+      });
+      
       const response = await fetch('http://localhost:3001/api/resumes/create', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
-        body: JSON.stringify({
-          resumeData: enhancedResumeData,
-          pdfData: pdfBase64
-        })
+        body: JSON.stringify(requestPayload)
+      });
+
+      console.log('📥 [DATABASE SAVE] API response received:', {
+        status: response.status,
+        statusText: response.statusText,
+        ok: response.ok,
+        headers: Object.fromEntries(response.headers.entries())
       });
 
       if (!response.ok) {
-        const errorData = await response.json();        throw new Error(errorData.error || 'Failed to save resume');
+        console.error('❌ [DATABASE SAVE] API request failed with status:', response.status);
+        let errorData;
+        try {
+          errorData = await response.json();
+          console.error('❌ [DATABASE SAVE] Error response data:', errorData);
+        } catch (parseError) {
+          console.error('❌ [DATABASE SAVE] Failed to parse error response:', parseError);
+          errorData = { error: `HTTP ${response.status}: ${response.statusText}` };
+        }
+        throw new Error(errorData.error || 'Failed to save resume');
       }
 
-      const result = await response.json();      return result;
-    } catch (error) {      throw error;
+      console.log('✅ [DATABASE SAVE] Parsing successful response...');
+      const result = await response.json();
+      console.log('✅ [DATABASE SAVE] Database save completed successfully:', {
+        success: result.success,
+        message: result.message,
+        hasData: !!result.data
+      });
+      
+      return result;
+    } catch (error) {
+      console.error('❌ [DATABASE SAVE] Database save failed:', error);
+      console.error('❌ [DATABASE SAVE] Error details:', {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined,
+        timestamp: new Date().toISOString()
+      });
+      throw error;
     }
   };
 
