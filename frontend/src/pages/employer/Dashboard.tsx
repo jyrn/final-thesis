@@ -9,7 +9,6 @@ import {
   FiBriefcase,
   FiSettings,
   FiSearch,
-  FiBell,
   FiMenu,
   FiX,
   FiPlus,
@@ -52,7 +51,6 @@ import { ApplicantDetailsModal } from '../../components/employer/dashboard/Appli
 import { JobDetailsModal } from '../../components/employer/dashboard/JobDetailsModal';
 import { JobFormModal } from '../../components/employer/dashboard/JobFormModal';
 import { CompanyProfileModal } from '../../components/employer/dashboard/CompanyProfileModal';
-import { NotificationPreferencesModal } from '../../components/employer/dashboard/NotificationPreferencesModal';
 import { TeamManagementModal } from '../../components/employer/dashboard/TeamManagementModal';
 import { DocumentsModal } from '../../components/employer/dashboard/DocumentsModal';
 
@@ -113,6 +111,8 @@ const EmployerDashboard: React.FC = () => {
   const [activeTab, setActiveTab] = useState<TabType>('overview');
   const [searchQuery, setSearchQuery] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
+  const [dateFromFilter, setDateFromFilter] = useState('');
+  const [dateToFilter, setDateToFilter] = useState('');
   const [jobPostings, setJobPostings] = useState<Job[]>([]);
   const [isLoadingJobs, setIsLoadingJobs] = useState(true);
   const [applicantFilters, setApplicantFilters] = useState<{ status: string; sortBy: string; jobId: string }>({ status: '', sortBy: 'newest', jobId: '' });
@@ -125,7 +125,6 @@ const EmployerDashboard: React.FC = () => {
   
   // Settings modal states
   const [isCompanyProfileModalOpen, setIsCompanyProfileModalOpen] = useState(false);
-  const [isNotificationPreferencesModalOpen, setIsNotificationPreferencesModalOpen] = useState(false);
   const [isTeamManagementModalOpen, setIsTeamManagementModalOpen] = useState(false);
   const [isDocumentsModalOpen, setIsDocumentsModalOpen] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -543,6 +542,10 @@ const EmployerDashboard: React.FC = () => {
   const handleFilterChange = (filterType: string, value: string) => {
     if (filterType === 'status') {
       setFilterStatus(value);
+    } else if (filterType === 'dateFrom') {
+      setDateFromFilter(value);
+    } else if (filterType === 'dateTo') {
+      setDateToFilter(value);
     } else if (filterType === 'search') {
       setSearchQuery(value);
     }
@@ -1135,17 +1138,6 @@ const EmployerDashboard: React.FC = () => {
           
           <div className={layoutStyles.headerActions}>
             <button 
-              className={layoutStyles.notificationBtn}
-              aria-label="Notifications"
-            >
-              <FiBell />
-              {1 > 0 && (
-                <span className={layoutStyles.notificationBadge}>
-                  {1 > 9 ? '9+' : 1}
-                </span>
-              )}
-            </button>
-            <button 
               className={layoutStyles.userAvatar}
               onClick={() => setActiveTab('settings')}
               aria-label="Go to settings"
@@ -1234,7 +1226,9 @@ const EmployerDashboard: React.FC = () => {
               filters={{
                 status: filterStatus,
                 department: '',
-                location: ''
+                location: '',
+                dateFrom: dateFromFilter,
+                dateTo: dateToFilter
               }}
               onSearchChange={setSearchQuery}
               onFilterChange={handleFilterChange}
@@ -1251,7 +1245,6 @@ const EmployerDashboard: React.FC = () => {
           {activeTab === 'settings' && (
             <SettingsTab 
               onOpenCompanyProfile={() => setIsCompanyProfileModalOpen(true)}
-              onOpenNotifications={() => setIsNotificationPreferencesModalOpen(true)}
               onOpenTeamManagement={() => setIsTeamManagementModalOpen(true)}
               onOpenDocuments={() => setIsDocumentsModalOpen(true)}
               onLogout={() => {
@@ -1310,13 +1303,6 @@ const EmployerDashboard: React.FC = () => {
         initialData={companyProfileData || undefined}
       />
 
-      <NotificationPreferencesModal
-        isOpen={isNotificationPreferencesModalOpen}
-        onClose={() => setIsNotificationPreferencesModalOpen(false)}
-        onSave={(preferences: NotificationPreferences) => {
-          // Handle save notification preferences
-        }}
-      />
 
       <TeamManagementModal
         isOpen={isTeamManagementModalOpen}

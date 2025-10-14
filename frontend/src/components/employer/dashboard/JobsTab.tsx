@@ -16,6 +16,8 @@ interface JobsTabProps {
     status: string;
     department: string;
     location: string;
+    dateFrom: string;
+    dateTo: string;
   };
   onSearchChange: (term: string) => void;
   onFilterChange: (filterType: string, value: string) => void;
@@ -54,7 +56,26 @@ export const JobsTab: React.FC<JobsTabProps> = ({
       const matchesSearch = job.title.toLowerCase().includes(searchTerm.toLowerCase());
       const matchesStatus = !filters.status || filters.status === 'all' || job.status === filters.status;
       const matchesDepartment = !filters.department || filters.department === 'all' || job.department === filters.department;
-      return matchesSearch && matchesStatus && matchesDepartment;
+      
+      // Date range filter logic
+      let matchesDate = true;
+      if (filters.dateFrom || filters.dateTo) {
+        const jobDate = new Date(job.postedDate || job.posted);
+        
+        if (filters.dateFrom) {
+          const fromDate = new Date(filters.dateFrom);
+          matchesDate = matchesDate && jobDate >= fromDate;
+        }
+        
+        if (filters.dateTo) {
+          const toDate = new Date(filters.dateTo);
+          // Set to end of day for inclusive comparison
+          toDate.setHours(23, 59, 59, 999);
+          matchesDate = matchesDate && jobDate <= toDate;
+        }
+      }
+      
+      return matchesSearch && matchesStatus && matchesDepartment && matchesDate;
     })
     .sort((a, b) => {
       // Sort by posted date, latest first
@@ -225,8 +246,26 @@ export const JobsTab: React.FC<JobsTabProps> = ({
             <option value="all">All Jobs</option>
             <option value="active">Active</option>
             <option value="paused">Paused</option>
-            <option value="closed">Closed</option>
+            <option value="removed">Removed</option>
           </select>
+          <div className={styles.dateRangeContainer}>
+            <label className={styles.dateLabel}>From:</label>
+            <input
+              type="date"
+              className={styles.dateInput}
+              value={filters.dateFrom}
+              onChange={(e) => onFilterChange('dateFrom', e.target.value)}
+              placeholder="From date"
+            />
+            <label className={styles.dateLabel}>To:</label>
+            <input
+              type="date"
+              className={styles.dateInput}
+              value={filters.dateTo}
+              onChange={(e) => onFilterChange('dateTo', e.target.value)}
+              placeholder="To date"
+            />
+          </div>
           <select 
             className={styles.filterSelect}
             value={filters.department}

@@ -456,6 +456,43 @@
   font-size: clamp(0.75rem, 1.4vw, 0.875rem);
 }
 
+.dateRangeContainer {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  background: white;
+  min-width: clamp(200px, 25vw, 300px);
+}
+
+.dateLabel {
+  font-size: 0.875rem;
+  color: #374151;
+  font-weight: 500;
+  margin: 0;
+  white-space: nowrap;
+}
+
+.dateInput {
+  padding: 0.375rem 0.5rem;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  background: white;
+  font-size: 0.875rem;
+  color: #374151;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  min-width: 120px;
+}
+
+.dateInput:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
 .createButton {
   padding: clamp(0.6rem, 1.2vw, 0.75rem) clamp(1.2rem, 2vw, 1.5rem);
   font-size: clamp(0.75rem, 1.4vw, 0.875rem);

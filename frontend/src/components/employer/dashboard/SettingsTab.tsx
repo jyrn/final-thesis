@@ -1,10 +1,9 @@
 import React from 'react';
-import { FiSettings, FiHome, FiBell, FiUsers, FiLogOut, FiFileText } from 'react-icons/fi';
+import { FiSettings, FiHome, FiUsers, FiLogOut, FiFileText } from 'react-icons/fi';
 import styles from './SettingsTab.module.css';
 
 interface SettingsTabProps {
   onOpenCompanyProfile: () => void;
-  onOpenNotifications: () => void;
   onOpenTeamManagement: () => void;
   onOpenDocuments?: () => void;
   onLogout?: () => void;
@@ -12,7 +11,6 @@ interface SettingsTabProps {
 
 export const SettingsTab: React.FC<SettingsTabProps> = ({
   onOpenCompanyProfile,
-  onOpenNotifications,
   onOpenTeamManagement,
   onOpenDocuments,
   onLogout,
@@ -25,14 +23,6 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({
       icon: FiHome,
       action: onOpenCompanyProfile,
       buttonText: 'Edit Profile'
-    },
-    {
-      id: 'notifications',
-      title: 'Notification Preferences',
-      description: 'Manage how you receive updates about applications',
-      icon: FiBell,
-      action: onOpenNotifications,
-      buttonText: 'Configure'
     },
     {
       id: 'team-management',
