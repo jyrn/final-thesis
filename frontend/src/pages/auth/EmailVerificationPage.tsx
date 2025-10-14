@@ -148,9 +148,9 @@ const EmailVerificationPage: React.FC = () => {
             <div className={styles.visualContent}>
               <div className={styles.logoContainer}>
                 <img 
-                  src="/peso-logo.png" 
-                  alt="PESO Logo" 
-                  className={styles.pesoLogo}
+                  src="/skillsync.png" 
+                  alt="SkillSync Logo" 
+                  className={styles.skillsyncLogo}
                 />
               </div>
               <div className={styles.journeyText}>
@@ -185,9 +185,9 @@ const EmailVerificationPage: React.FC = () => {
           <div className={styles.visualContent}>
             <div className={styles.logoContainer}>
               <img 
-                src="/peso-logo.png" 
-                alt="PESO Logo" 
-                className={styles.pesoLogo}
+                src="/skillsync.JPG" 
+                alt="SkillSync Logo" 
+                className={styles.skillsyncLogo}
               />
             </div>
             <div className={styles.journeyText}>

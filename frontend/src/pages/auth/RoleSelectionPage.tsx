@@ -20,15 +20,15 @@ const RoleSelectionPage: React.FC = () => {
             {/* PESO Logo */}
             <div className={styles.logoContainer}>
               <img 
-                src="/peso-logo.png" 
-                alt="Public Employment Service Office Logo" 
-                className={styles.pesoLogo}
+                src="/skillsync.png" 
+                alt="SkillSync Logo" 
+                className={styles.skillsyncLogo}
               />
             </div>
 
             {/* Welcome Text */}
             <div className={styles.welcomeText}>
-              <h2>Welcome to PESO</h2>
+              <h2>Welcome to SkillSync</h2>
               <p>Choose your role to get started with our employment services</p>
             </div>
 
@@ -94,7 +94,7 @@ const RoleSelectionPage: React.FC = () => {
 
             {/* Footer Text */}
             <div className={styles.footerText}>
-              <p>Public Employment Service Office</p>
+              <p>SkillSync Job Portal</p>
               <p>Connecting talent with opportunities</p>
             </div>
           </div>

@@ -218,7 +218,7 @@
 /* Left panel */
 .leftPanel {
   flex: 0 0 40%;
-  background: linear-gradient(135deg, #1e40af 0%, #dc2626 50%, #fbbf24 100%);
+  background: linear-gradient(135deg, #a4b9ff 0%, #d7ceff 50%, #bbffdf 100%);
   position: relative;
   overflow: hidden;
   display: flex;
@@ -251,7 +251,7 @@
   justify-content: center;
 }
 
-.pesoLogo {
+.skillsyncLogo {
   width: 200px;
   height: 200px;
   object-fit: contain;
@@ -259,7 +259,7 @@
   transition: transform 0.3s ease;
 }
 
-.pesoLogo:hover {
+.skillsyncLogo:hover {
   transform: scale(1.05);
 }
 

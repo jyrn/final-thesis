@@ -161,7 +161,7 @@ const Sidebar: React.FC<SidebarProps> = ({
       >
         <div className={styles.sidebarHeader}>
           {(!isCollapsed || isMobile) && (
-            <h2 className={styles.logo}>JobPortal</h2>
+            <h2 className={styles.logo}>SkillSync</h2>
           )}
           
           {/* Desktop collapse toggle */}

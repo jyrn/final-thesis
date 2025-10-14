@@ -68,9 +68,9 @@ const ResetPasswordPage: React.FC = () => {
             <div className={styles.visualContent}>
               <div className={styles.logoContainer}>
                 <img 
-                  src="/peso-logo.png" 
-                  alt="Public Employment Service Office Logo" 
-                  className={styles.pesoLogo}
+                  src="/skillsync.png" 
+                  alt="SkillSync Logo" 
+                  className={styles.skillsyncLogo}
                 />
               </div>
 
@@ -108,9 +108,9 @@ const ResetPasswordPage: React.FC = () => {
           <div className={styles.visualContent}>
             <div className={styles.logoContainer}>
               <img 
-                src="/peso-logo.png" 
-                alt="Public Employment Service Office Logo" 
-                className={styles.pesoLogo}
+                src="/skillsync.JPG" 
+                alt="SkillSync Logo" 
+                className={styles.skillsyncLogo}
               />
             </div>
 

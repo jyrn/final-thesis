@@ -33,9 +33,9 @@ class EmailService {
 
   async sendEmployerApprovalEmail(employerEmail, companyName) {
     const mailOptions = {
-      from: process.env.EMAIL_USER || 'noreply@peso.gov.ph',
+      from: process.env.EMAIL_USER || 'noreply@skillsync.com',
       to: employerEmail,
-      subject: 'PESO - Employer Account Approved',
+      subject: 'SkillSync - Employer Account Approved',
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
           <div style="background-color: #10b981; color: white; padding: 20px; text-align: center;">
@@ -45,7 +45,7 @@ class EmailService {
           <div style="padding: 30px; background-color: #f9f9f9;">
             <h2>Congratulations ${companyName ? companyName : ''}!</h2>
             
-            <p>We're pleased to inform you that your employer account has been <strong>approved</strong> by our PESO administrators.</p>
+            <p>We're pleased to inform you that your employer account has been <strong>approved</strong> by our SkillSync administrators.</p>
             
             <div style="background-color: white; padding: 20px; border-radius: 8px; margin: 20px 0;">
               <h3>What's Next?</h3>
@@ -64,7 +64,7 @@ class EmailService {
               </a>
             </div>
             
-            <p>Thank you for choosing PESO for your recruitment needs. We look forward to helping you find the best talent!</p>
+            <p>Thank you for choosing SkillSync for your recruitment needs. We look forward to helping you find the best talent!</p>
             
             <hr style="margin: 30px 0; border: none; border-top: 1px solid #ddd;">
             
@@ -85,9 +85,9 @@ class EmailService {
 
   async sendEmployerRejectionEmail(employerEmail, companyName, reason) {
     const mailOptions = {
-      from: process.env.EMAIL_USER || 'noreply@peso.gov.ph',
+      from: process.env.EMAIL_USER || 'noreply@skillsync.com',
       to: employerEmail,
-      subject: 'PESO - Employer Account Application Update',
+      subject: 'SkillSync - Employer Account Application Update',
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
           <div style="background-color: #ef4444; color: white; padding: 20px; text-align: center;">
@@ -97,7 +97,7 @@ class EmailService {
           <div style="padding: 30px; background-color: #f9f9f9;">
             <h2>Dear ${companyName ? companyName : 'Applicant'},</h2>
             
-            <p>Thank you for your interest in registering as an employer with PESO. After careful review of your application, we regret to inform you that your employer account application has not been approved at this time.</p>
+            <p>Thank you for your interest in registering as an employer with SkillSync. After careful review of your application, we regret to inform you that your employer account application has not been approved at this time.</p>
             
             ${reason ? `
               <div style="background-color: #fef2f2; border-left: 4px solid #ef4444; padding: 15px; margin: 20px 0;">
@@ -148,9 +148,9 @@ class EmailService {
     }
 
     const mailOptions = {
-      from: process.env.EMAIL_USER || 'noreply@peso.gov.ph',
+      from: process.env.EMAIL_USER || 'noreply@skillsync.com',
       to: email,
-      subject: 'PESO - Email Verification Code',
+      subject: 'SkillSync - Email Verification Code',
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
           <div style="background-color: #3b82f6; color: white; padding: 20px; text-align: center;">
@@ -160,7 +160,7 @@ class EmailService {
           <div style="padding: 30px; background-color: #f9f9f9;">
             <h2>Verify Your Email Address</h2>
             
-            <p>Thank you for registering with PESO! To complete your ${userRole} account setup, please verify your email address using the code below:</p>
+            <p>Thank you for registering with SkillSync! To complete your ${userRole} account setup, please verify your email address using the code below:</p>
             
             <div style="background-color: white; padding: 30px; border-radius: 8px; margin: 30px 0; text-align: center; border: 2px solid #3b82f6;">
               <h2 style="color: #3b82f6; font-size: 36px; letter-spacing: 8px; margin: 0; font-family: 'Courier New', monospace;">
@@ -181,7 +181,7 @@ class EmailService {
               <h3>Security Tips:</h3>
               <ul>
                 <li> Never share this code with anyone</li>
-                <li> PESO staff will never ask for your verification code</li>
+                <li> SkillSync staff will never ask for your verification code</li>
                 <li> If you didn't request this code, please ignore this email</li>
               </ul>
             </div>
@@ -191,7 +191,7 @@ class EmailService {
             <hr style="margin: 30px 0; border: none; border-top: 1px solid #ddd;">
             
             <p style="color: #666; font-size: 14px;">
-              This is an automated message from PESO. Please do not reply to this email.<br>
+              This is an automated message from SkillSync. Please do not reply to this email.<br>
               If you need assistance, please contact our support team.
             </p>
           </div>
@@ -211,9 +211,9 @@ class EmailService {
     }
 
     const mailOptions = {
-      from: process.env.EMAIL_USER || 'noreply@peso.gov.ph',
+      from: process.env.EMAIL_USER || 'noreply@skillsync.com',
       to: employerEmail,
-      subject: 'PESO - Job Posting Removed',
+      subject: 'SkillSync - Job Posting Removed',
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
           <div style="background-color: #ef4444; color: white; padding: 20px; text-align: center;">
@@ -223,7 +223,7 @@ class EmailService {
           <div style="padding: 30px; background-color: #f9f9f9;">
             <h2>Dear ${companyName || 'Employer'},</h2>
             
-            <p>We are writing to inform you that your job posting has been removed from the PESO platform by our administrative team.</p>
+            <p>We are writing to inform you that your job posting has been removed from the SkillSync platform by our administrative team.</p>
             
             <div style="background-color: white; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #ef4444;">
               <h3 style="color: #dc2626; margin-top: 0;">Removed Job Posting:</h3>
@@ -290,9 +290,9 @@ class EmailService {
     }
 
     const mailOptions = {
-      from: process.env.EMAIL_USER || 'noreply@peso.gov.ph',
+      from: process.env.EMAIL_USER || 'noreply@skillsync.com',
       to: employerEmail,
-      subject: 'PESO - Job Posting Paused',
+      subject: 'SkillSync - Job Posting Paused',
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
           <div style="background-color: #f59e0b; color: white; padding: 20px; text-align: center;">
@@ -368,9 +368,9 @@ class EmailService {
     }
 
     const mailOptions = {
-      from: process.env.EMAIL_USER || 'noreply@peso.gov.ph',
+      from: process.env.EMAIL_USER || 'noreply@skillsync.com',
       to: employerEmail,
-      subject: 'PESO - Job Posting Flagged for Review',
+      subject: 'SkillSync - Job Posting Flagged for Review',
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
           <div style="background-color: #dc2626; color: white; padding: 20px; text-align: center;">
@@ -446,18 +446,18 @@ class EmailService {
     }
 
     const mailOptions = {
-      from: process.env.EMAIL_USER || 'noreply@peso.gov.ph',
+      from: process.env.EMAIL_USER || 'noreply@skillsync.com',
       to: jobseekerEmail,
       subject: 'Account Suspended Due to Inactivity - Reactivate by Logging In',
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
           <div style="text-align: center; margin-bottom: 30px;">
-            <h1 style="color: #2563eb;">PESO Job Portal</h1>
+            <h1 style="color: #2563eb;">SkillSync Job Portal</h1>
           </div>
           
           <div style="background-color: #fff3cd; border: 1px solid #ffeaa7; border-radius: 8px; padding: 20px; margin-bottom: 20px;">
             <h2 style="color: #856404; margin: 0 0 15px 0;">Account Suspended Due to Inactivity</h2>
-            <p style="color: #856404; margin: 0;">Your PESO job portal account has been suspended due to extended inactivity.</p>
+            <p style="color: #856404; margin: 0;">Your SkillSync job portal account has been suspended due to extended inactivity.</p>
           </div>
           
           <div style="background-color: #f8f9fa; border-radius: 8px; padding: 20px; margin-bottom: 20px;">
@@ -498,7 +498,7 @@ class EmailService {
           
           <div style="text-align: center; padding: 20px; border-top: 1px solid #eee;">
             <p style="color: #999; font-size: 14px; margin: 0;">
-              This is an automated message from the PESO Job Portal System.<br>
+              This is an automated message from the SkillSync Job Portal System.<br>
               If you have questions, contact us at support@peso.com
             </p>
           </div>
@@ -518,9 +518,9 @@ class EmailService {
     }
 
     const mailOptions = {
-      from: process.env.EMAIL_USER || 'noreply@peso.gov.ph',
+      from: process.env.EMAIL_USER || 'noreply@skillsync.com',
       to: jobseekerEmail,
-      subject: 'PESO - Account Removed',
+      subject: 'SkillSync - Account Removed',
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
           <div style="background-color: #ef4444; color: white; padding: 20px; text-align: center;">
@@ -530,7 +530,7 @@ class EmailService {
           <div style="padding: 30px; background-color: #f9f9f9;">
             <h2>Dear ${jobseekerName || 'User'},</h2>
             
-            <p>We are writing to inform you that your PESO jobseeker account has been permanently removed from our system by our administrative team.</p>
+            <p>We are writing to inform you that your SkillSync jobseeker account has been permanently removed from our system by our administrative team.</p>
             
             ${reason ? `
               <div style="background-color: #fef2f2; border-left: 4px solid #ef4444; padding: 15px; margin: 20px 0;">
@@ -560,7 +560,7 @@ class EmailService {
             </div>
             
             <div style="background-color: #f0f9ff; border-left: 4px solid #3b82f6; padding: 15px; margin: 20px 0;">
-              <h3 style="color: #1e40af; margin-top: 0;">Want to Continue Using PESO?</h3>
+              <h3 style="color: #1e40af; margin-top: 0;">Want to Continue Using SkillSync?</h3>
               <p style="margin-bottom: 0;">
                 If you believe this removal was made in error or if you'd like to create a new account, please contact our support team. You may be eligible to register again with updated information.
               </p>
@@ -598,9 +598,9 @@ class EmailService {
     }
 
     const mailOptions = {
-      from: process.env.EMAIL_USER || 'noreply@peso.gov.ph',
+      from: process.env.EMAIL_USER || 'noreply@skillsync.com',
       to: jobseekerEmail,
-      subject: 'PESO - Account Permanently Deleted',
+      subject: 'SkillSync - Account Permanently Deleted',
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
           <div style="background-color: #dc2626; color: white; padding: 20px; text-align: center;">
@@ -610,7 +610,7 @@ class EmailService {
           <div style="padding: 30px; background-color: #f9f9f9;">
             <h2>Dear ${jobseekerName || 'User'},</h2>
             
-            <p>We are writing to inform you that your PESO jobseeker account has been <strong>permanently and completely deleted</strong> from our system, including all associated data from both our database and authentication system.</p>
+            <p>We are writing to inform you that your SkillSync jobseeker account has been <strong>permanently and completely deleted</strong> from our system, including all associated data from both our database and authentication system.</p>
             
             ${reason ? `
               <div style="background-color: #fef2f2; border-left: 4px solid #dc2626; padding: 15px; margin: 20px 0;">
@@ -641,7 +641,7 @@ class EmailService {
             </div>
             
             <div style="background-color: #f0f9ff; border-left: 4px solid #3b82f6; padding: 15px; margin: 20px 0;">
-              <h3 style="color: #1e40af; margin-top: 0;">Want to Use PESO Again?</h3>
+              <h3 style="color: #1e40af; margin-top: 0;">Want to Use SkillSync Again?</h3>
               <p style="margin-bottom: 0;">
                 Since your account has been completely removed, you can now register as a new user with the same email address. 
                 You will need to create a fresh profile and upload your resume again.
@@ -684,9 +684,9 @@ class EmailService {
     }
 
     const mailOptions = {
-      from: process.env.EMAIL_USER || 'noreply@peso.gov.ph',
+      from: process.env.EMAIL_USER || 'noreply@skillsync.com',
       to: userEmail,
-      subject: 'PESO - Account Deactivated',
+      subject: 'SkillSync - Account Deactivated',
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
           <div style="background-color: #f59e0b; color: white; padding: 20px; text-align: center;">
@@ -696,7 +696,7 @@ class EmailService {
           <div style="padding: 30px; background-color: #f9f9f9;">
             <h2>Dear ${userName || 'User'},</h2>
             
-            <p>Your PESO jobseeker account has been temporarily deactivated as requested.</p>
+            <p>Your SkillSync jobseeker account has been temporarily deactivated as requested.</p>
             
             <div style="background-color: #fef3c7; border-left: 4px solid #f59e0b; padding: 15px; margin: 20px 0;">
               <h3 style="color: #d97706; margin-top: 0;">What This Means:</h3>
@@ -752,9 +752,9 @@ class EmailService {
     }
 
     const mailOptions = {
-      from: process.env.EMAIL_USER || 'noreply@peso.gov.ph',
+      from: process.env.EMAIL_USER || 'noreply@skillsync.com',
       to: userEmail,
-      subject: 'PESO - Account Permanently Deleted',
+      subject: 'SkillSync - Account Permanently Deleted',
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
           <div style="background-color: #dc2626; color: white; padding: 20px; text-align: center;">
@@ -764,7 +764,7 @@ class EmailService {
           <div style="padding: 30px; background-color: #f9f9f9;">
             <h2>Dear ${userName || 'User'},</h2>
             
-            <p>Your PESO jobseeker account has been permanently deleted from our system as requested.</p>
+            <p>Your SkillSync jobseeker account has been permanently deleted from our system as requested.</p>
             
             <div style="background-color: #fef2f2; border-left: 4px solid #dc2626; padding: 15px; margin: 20px 0;">
               <h3 style="color: #dc2626; margin-top: 0;">What Has Been Permanently Deleted:</h3>
@@ -786,7 +786,7 @@ class EmailService {
             </div>
             
             <div style="background-color: #f0f9ff; border-left: 4px solid #3b82f6; padding: 15px; margin: 20px 0;">
-              <h3 style="color: #1e40af; margin-top: 0;">Want to Use PESO Again?</h3>
+              <h3 style="color: #1e40af; margin-top: 0;">Want to Use SkillSync Again?</h3>
               <p style="margin-bottom: 0;">
                 Since your account has been completely removed, you can register as a new user with the same email address. 
                 You will need to create a fresh profile and upload your resume again.
@@ -800,7 +800,7 @@ class EmailService {
               </a>
             </div>
             
-            <p>Thank you for using PESO. If you have any questions, please contact our support team.</p>
+            <p>Thank you for using SkillSync. If you have any questions, please contact our support team.</p>
             
             <hr style="margin: 30px 0; border: none; border-top: 1px solid #ddd;">
             

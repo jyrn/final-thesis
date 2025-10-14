@@ -107,7 +107,7 @@ const AdminAuth: React.FC<AdminAuthProps> = () => {
               />
             </div>
             <div className="admin-journey-text">
-              <h2>Admin Portal Access</h2>
+              <h2>PESO Admin Portal</h2>
               <p>Secure administrative control for PESO Job Portal</p>
             </div>
             <div className="admin-decorative-circle1"></div>

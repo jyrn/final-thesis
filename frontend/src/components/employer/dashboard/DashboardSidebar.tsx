@@ -167,7 +167,7 @@ export const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
       >
         <div className={layoutStyles.sidebarHeader}>
           {(!sidebarCollapsed || isMobile) && (
-            <h2 className={layoutStyles.logo}>JobPortal</h2>
+            <h2 className={layoutStyles.logo}>SkillSync</h2>
           )}
           
           {/* Desktop collapse toggle */}

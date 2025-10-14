@@ -34,7 +34,7 @@ function App() {
         {/* Admin routes without layout */}
         <Route path="/admin/auth" element={<AdminAuth />} />
         <Route path="/admin/dashboard" element={<SuperAdminDashboard />} />
-        <Route path="/pesostaff/dashboard" element={<AdminDashboard />} />
+        <Route path="/skillsyncstaff/dashboard" element={<AdminDashboard />} />
 
         {/* Protected routes with layout */}
         <Route path="/" element={<MainLayout />}>

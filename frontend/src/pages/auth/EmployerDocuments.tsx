@@ -270,7 +270,7 @@ const EmployerDocuments: React.FC = () => {
         <div className={styles.leftPanel}>
           <div className={styles.visualContent}>
             <div className={styles.logoContainer}>
-              <img src="/peso-logo.png" alt="PESO Logo" className={styles.pesoLogo} />
+              <img src="/skillsync.png" alt="SkillSync Logo" className={styles.skillsyncLogo} />
             </div>
             <div className={styles.journeyText}>
               <h2>Verify Your Company</h2>
