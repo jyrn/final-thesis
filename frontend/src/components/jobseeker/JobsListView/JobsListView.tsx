@@ -33,16 +33,17 @@ export const JobsListView: React.FC<JobsListViewProps> = ({
     const lowerJobRequirements = job.requirements.map(s => s.toLowerCase());
     const lowerJobseekerSkills = jobseekerSkills.map(s => s.toLowerCase());
     
-    // Skills matching (70% weight)
+    // Skills matching (70% weight) - Improved algorithm
     const matchingSkills = lowerJobseekerSkills.filter(skill => lowerJobRequirements.includes(skill));
-    const skillsTF = matchingSkills.length / jobseekerSkills.length;
-    const skillsIDF = lowerJobseekerSkills.reduce((sum, skill) => {
-      const weight = lowerJobRequirements.includes(skill) ? 2.0 : 0.5;
-      return sum + weight;
-    }, 0) / jobseekerSkills.length;
-    // Normalize the skills score to a 0-1 range before applying weight
-    const normalizedSkillsScore = Math.min(1.0, (skillsTF * skillsIDF) / 2.0);
-    const skillsScore = normalizedSkillsScore * 0.7; // 70% weight for skills
+    
+    // Calculate skill match percentage based on required skills
+    const requiredSkillsMatchRate = matchingSkills.length / lowerJobRequirements.length;
+    
+    // Bonus for additional relevant skills (capped to prevent over-inflation)
+    const additionalSkillsBonus = Math.min(0.1, (jobseekerSkills.length - lowerJobRequirements.length) * 0.005);
+    
+    // Full credit when all required skills match, plus bonus for additional skills
+    const skillsScore = (requiredSkillsMatchRate + (requiredSkillsMatchRate === 1.0 ? additionalSkillsBonus : 0)) * 0.7; // 70% weight for skills
     
     // Education matching (30% weight)
     let educationScore = 0;

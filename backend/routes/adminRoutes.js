@@ -1353,6 +1353,103 @@ router.delete('/users/:userId', verifyToken, superAdminMiddleware, async (req, r
   }
 });
 
+// Complete jobseeker deletion (admin only) - removes from both Firebase and database
+router.delete('/jobseekers/:userId/complete', verifyToken, adminMiddleware, async (req, res) => {
+  try {
+    const { userId } = req.params;
+
+    console.log(`🗑️ Complete jobseeker deletion request - UserID: ${userId}`);
+
+    // Find user in User collection by UID
+    const user = await User.findOne({ uid: userId });
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'Jobseeker not found'
+      });
+    }
+
+    // Verify it's a jobseeker
+    if (user.role !== 'jobseeker') {
+      return res.status(400).json({
+        success: false,
+        message: 'User is not a jobseeker'
+      });
+    }
+
+    console.log(`✅ Found jobseeker: ${user.email} - ${user.firstName} ${user.lastName}`);
+
+    // Store user info for email notification
+    const userEmail = user.email;
+    const userName = `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.email;
+
+    // 1. Delete from Firebase Authentication
+    try {
+      await admin.auth().deleteUser(user.uid);
+      console.log(`🔥 Firebase user deleted: ${user.uid}`);
+    } catch (firebaseError) {
+      console.error('⚠️ Firebase deletion failed:', firebaseError.message);
+      // Continue with database deletion even if Firebase fails
+    }
+
+    // 2. Delete related data from MongoDB collections
+    try {
+      // Delete JobSeeker profile
+      await JobSeeker.deleteMany({ uid: user.uid });
+      console.log(`📋 JobSeeker profile deleted for UID: ${user.uid}`);
+
+      // Delete Resume data
+      await Resume.deleteMany({ jobSeekerUid: user.uid });
+      console.log(`📄 Resume data deleted for UID: ${user.uid}`);
+
+      // Delete Applications
+      const deletedApplications = await Application.deleteMany({ jobSeekerUid: user.uid });
+      console.log(`📝 ${deletedApplications.deletedCount} applications deleted for UID: ${user.uid}`);
+
+      // Delete from User collection
+      await User.findByIdAndDelete(user._id);
+      console.log(`👤 User record deleted: ${user._id}`);
+
+    } catch (dbError) {
+      console.error('❌ Database deletion error:', dbError);
+      return res.status(500).json({
+        success: false,
+        message: 'Error deleting user data from database'
+      });
+    }
+
+    // 3. Send email notification
+    try {
+      const emailService = require('../services/emailService');
+      await emailService.sendJobseekerCompleteRemovalEmail(
+        userEmail,
+        userName,
+        'Your account has been permanently removed from the system by the administrator.'
+      );
+      console.log(`📧 Complete removal notification sent to ${userEmail}`);
+    } catch (emailError) {
+      console.error(`❌ Error sending complete removal email:`, emailError);
+      // Don't fail the request if email fails
+    }
+
+    console.log(`🎉 Complete jobseeker deletion completed successfully`);
+
+    res.json({
+      success: true,
+      message: 'Jobseeker completely removed from system. User has been notified via email.'
+    });
+
+  } catch (error) {
+    console.error('❌ Complete jobseeker deletion error:', error);
+    console.error('Error stack:', error.stack);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Error completely deleting jobseeker',
+      error: error.message
+    });
+  }
+});
+
 // Get system analytics (superadmin only)
 router.get('/analytics/system', verifyToken, superAdminMiddleware, async (req, res) => {
   try {

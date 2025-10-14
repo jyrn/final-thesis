@@ -103,20 +103,26 @@ const JobseekersTab: React.FC = () => {
   const handleRemoveJobseeker = (jobseekerId: string) => {
     setConfirmModal({
       show: true,
-      title: 'Remove Jobseeker Account',
-      message: `This action will permanently remove the jobseeker from the system. This is typically done when:
+      title: 'Completely Remove Jobseeker Account',
+      message: `This action will PERMANENTLY and COMPLETELY delete the jobseeker from the entire system. This includes:
 
+• Complete removal from Firebase Authentication (user cannot sign in)
+• Permanent deletion of all user data from the database
+• Deletion of all job applications and resume data
+• Removal of all associated profile information
+
+This is typically done when:
 • The account has been inactive for an extended period and has not responded to reactivation requests.
 • The account shows clear evidence of fraudulent, misleading, or suspicious activity.
 • The account repeatedly violates platform policies despite prior warnings.
 • The account was identified as a duplicate and merged or removed for consistency.
 
-Once removed, the jobseeker account cannot be recovered and all associated data will be lost. The user will be automatically notified via email about this action.`,
+⚠️ IMPORTANT: This deletion is irreversible and complete. The user will be able to register again with the same email address since their account will no longer exist in our system. The user will be automatically notified via email about this action.`,
       action: async () => {
         try {
-          console.log(`🔧 Removing jobseeker: ${jobseekerId}`);
-          const response = await adminService.updateUser(jobseekerId, { status: 'removed' });
-          console.log('✅ Jobseeker removal response:', response);
+          console.log(`🗑️ Completely removing jobseeker: ${jobseekerId}`);
+          const response = await adminService.completelyDeleteJobseeker(jobseekerId);
+          console.log('✅ Jobseeker complete removal response:', response);
           
           await fetchAllData();
           setConfirmModal(prev => ({ ...prev, show: false }));
@@ -124,17 +130,17 @@ Once removed, the jobseeker account cannot be recovered and all associated data 
           // Show success message
           setSuccessModal({
             show: true,
-            title: 'Jobseeker Removed Successfully',
-            message: 'The jobseeker has been permanently removed from the system. An email notification has been sent to the user.',
+            title: 'Jobseeker Completely Removed',
+            message: 'The jobseeker has been permanently and completely deleted from the entire system including Firebase Authentication and all database records. The user can now register again with the same email if they choose to. An email notification has been sent to the user.',
             icon: '✅'
           });
         } catch (error) {
-          console.error('❌ Error removing jobseeker:', error);
+          console.error('❌ Error completely removing jobseeker:', error);
           setConfirmModal(prev => ({ ...prev, show: false }));
-          alert('❌ Failed to remove jobseeker. Please try again.');
+          alert('❌ Failed to completely remove jobseeker. Please try again.');
         }
       },
-      actionText: 'Remove Permanently',
+      actionText: 'Delete Completely',
       icon: '🗑️'
     });
   };
@@ -691,10 +697,10 @@ This helps maintain database hygiene by managing inactive accounts while giving 
                           <button 
                             onClick={() => handleRemoveJobseeker(jobseeker._id)}
                             className={`action-btn remove-btn ${jobseeker.status === 'removed' ? 'disabled' : ''}`}
-                            title={jobseeker.status === 'removed' ? 'Account already removed' : 'Remove Jobseeker'}
+                            title={jobseeker.status === 'removed' ? 'Account already removed' : 'Completely Delete Jobseeker (removes from Firebase & database)'}
                             disabled={jobseeker.status === 'removed'}
                           >
-                            {jobseeker.status === 'removed' ? 'Removed' : 'Remove'}
+                            {jobseeker.status === 'removed' ? 'Removed' : 'Delete'}
                           </button>
                           
                           <button 

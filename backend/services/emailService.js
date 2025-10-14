@@ -639,6 +639,94 @@ class EmailService {
     }
   }
 
+  async sendJobseekerCompleteRemovalEmail(jobseekerEmail, jobseekerName, reason) {
+    // If email service is not configured, just log the action
+    if (!this.isConfigured) {
+      console.log(`📧 Email service not configured. Jobseeker complete removal notification for ${jobseekerEmail}: Account has been completely removed.`);
+      return { success: true, message: 'Email service not configured - notification logged to console' };
+    }
+
+    const mailOptions = {
+      from: process.env.EMAIL_USER || 'noreply@peso.gov.ph',
+      to: jobseekerEmail,
+      subject: 'PESO - Account Permanently Deleted',
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <div style="background-color: #dc2626; color: white; padding: 20px; text-align: center;">
+            <h1>Account Permanently Deleted</h1>
+          </div>
+          
+          <div style="padding: 30px; background-color: #f9f9f9;">
+            <h2>Dear ${jobseekerName || 'User'},</h2>
+            
+            <p>We are writing to inform you that your PESO jobseeker account has been <strong>permanently and completely deleted</strong> from our system, including all associated data from both our database and authentication system.</p>
+            
+            ${reason ? `
+              <div style="background-color: #fef2f2; border-left: 4px solid #dc2626; padding: 15px; margin: 20px 0;">
+                <h3 style="color: #dc2626; margin-top: 0;">Reason for Complete Deletion:</h3>
+                <p style="margin-bottom: 0;">${reason}</p>
+              </div>
+            ` : ''}
+            
+            <div style="background-color: white; padding: 20px; border-radius: 8px; margin: 20px 0;">
+              <h3>What Has Been Permanently Deleted:</h3>
+              <ul>
+                <li>🗑️ Your user account and login credentials</li>
+                <li>📋 Your complete jobseeker profile and resume data</li>
+                <li>📝 All job applications and application history</li>
+                <li>💾 All saved jobs and preferences</li>
+                <li>🔐 Your authentication data from Firebase</li>
+                <li>📊 All associated analytics and activity data</li>
+              </ul>
+            </div>
+            
+            <div style="background-color: #fef2f2; border-left: 4px solid #dc2626; padding: 15px; margin: 20px 0;">
+              <h3 style="color: #dc2626; margin-top: 0;">⚠️ Important Notice</h3>
+              <p style="margin-bottom: 0;">
+                This deletion is <strong>irreversible</strong>. All your data has been permanently removed from our systems. 
+                You will now be able to register again with the same email address if you choose to do so, 
+                as your previous account no longer exists in our system.
+              </p>
+            </div>
+            
+            <div style="background-color: #f0f9ff; border-left: 4px solid #3b82f6; padding: 15px; margin: 20px 0;">
+              <h3 style="color: #1e40af; margin-top: 0;">Want to Use PESO Again?</h3>
+              <p style="margin-bottom: 0;">
+                Since your account has been completely removed, you can now register as a new user with the same email address. 
+                You will need to create a fresh profile and upload your resume again.
+              </p>
+            </div>
+            
+            <div style="text-align: center; margin: 30px 0;">
+              <a href="${process.env.FRONTEND_URL || 'http://localhost:3000'}/auth/jobseeker" 
+                 style="background-color: #3b82f6; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; display: inline-block;">
+                Register New Account
+              </a>
+            </div>
+            
+            <p>If you have any questions about this complete deletion or need assistance with creating a new account, please contact our support team.</p>
+            
+            <hr style="margin: 30px 0; border: none; border-top: 1px solid #ddd;">
+            
+            <p style="color: #666; font-size: 14px;">
+              For questions or assistance, please contact our support team at support@peso.gov.ph<br>
+              This is an automated message, please do not reply to this email.
+            </p>
+          </div>
+        </div>
+      `
+    };
+
+    try {
+      const result = await this.transporter.sendMail(mailOptions);
+      console.log('✅ Jobseeker complete removal email sent successfully:', result.messageId);
+      return { success: true, messageId: result.messageId };
+    } catch (error) {
+      console.error('❌ Error sending jobseeker complete removal email:', error);
+      return { success: false, error: error.message };
+    }
+  }
+
   async testConnection() {
     try {
       await this.transporter.verify();

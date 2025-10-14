@@ -96,6 +96,21 @@ class AdminService {
     return data;
   }
 
+  async completelyDeleteJobseeker(userId: string): Promise<any> {
+    const response = await fetch(`${this.baseUrl}/jobseekers/${userId}/complete`, {
+      method: 'DELETE',
+      headers: this.getAuthHeaders()
+    });
+    
+    const data = await response.json();
+    
+    if (!data.success) {
+      throw new Error(data.message || 'Failed to completely delete jobseeker');
+    }
+
+    return data;
+  }
+
   async getSystemAnalytics(): Promise<any> {
     const response = await fetch(`${this.baseUrl}/analytics/system`, {
       headers: this.getAuthHeaders()
