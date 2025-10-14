@@ -216,7 +216,23 @@ router.put('/profile', verifyToken, async (req, res) => {
 
     jobseekerFields.forEach(field => {
       if (updateData[field] !== undefined) {
-        jobseekerProfile[field] = updateData[field];
+        // Special handling for address field to avoid schema conflicts
+        if (field === 'address') {
+          if (typeof updateData[field] === 'string') {
+            // If address is sent as string, convert to object format
+            jobseekerProfile[field] = {
+              street: '',
+              city: updateData[field],
+              province: '',
+              zipCode: '',
+              country: 'Philippines'
+            };
+          } else {
+            jobseekerProfile[field] = updateData[field];
+          }
+        } else {
+          jobseekerProfile[field] = updateData[field];
+        }
       }
     });
 
