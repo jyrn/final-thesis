@@ -283,6 +283,7 @@ const EmployerDashboard: React.FC = () => {
           _id: job._id,
           title: job.title,
           company: job.company || 'Your Company',
+          companyLogo: job.companyLogo || userProfile?.profilePicture || '',
           location: job.location,
           description: job.description,
           salary: job.salary || (job.salaryMin && job.salaryMax ? `₱${job.salaryMin?.toLocaleString()} - ₱${job.salaryMax?.toLocaleString()}` : undefined),
@@ -321,7 +322,7 @@ const EmployerDashboard: React.FC = () => {
     };
 
     loadJobs();
-  }, [isAuthReady, currentUser, isCheckingVerification, userVerificationStatus]);
+  }, [isAuthReady, currentUser, isCheckingVerification, userVerificationStatus, userProfile]);
 
   // Handle saving company profile
   const handleSaveCompanyProfile = async (profileData: CompanyProfileData) => {

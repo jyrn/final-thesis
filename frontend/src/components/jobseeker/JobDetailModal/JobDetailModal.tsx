@@ -85,7 +85,7 @@ const JobDetailModal: React.FC<JobDetailModalProps> = ({ job, isOpen, onClose, o
       const diffTime = Math.abs(now.getTime() - date.getTime());
       const diffMinutes = Math.floor(diffTime / (1000 * 60));
       const diffHours = Math.floor(diffTime / (1000 * 60 * 60));
-      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
       
       // Format full date
       const fullDate = date.toLocaleDateString('en-US', {
@@ -102,14 +102,26 @@ const JobDetailModal: React.FC<JobDetailModalProps> = ({ job, isOpen, onClose, o
         timeAgo = diffMinutes === 1 ? '1 minute ago' : `${diffMinutes} minutes ago`;
       } else if (diffHours < 24) {
         timeAgo = diffHours === 1 ? '1 hour ago' : `${diffHours} hours ago`;
+      } else if (diffDays === 0) {
+        timeAgo = 'Today';
       } else if (diffDays === 1) {
-        timeAgo = '1 day ago';
+        timeAgo = 'Yesterday';
       } else if (diffDays < 7) {
         timeAgo = `${diffDays} days ago`;
+      } else if (diffDays === 7) {
+        timeAgo = '1 week ago';
+      } else if (diffDays < 14) {
+        timeAgo = `${diffDays} days ago`;
+      } else if (diffDays === 14) {
+        timeAgo = '2 weeks ago';
       } else if (diffDays < 30) {
-        timeAgo = `${Math.ceil(diffDays / 7)} weeks ago`;
+        timeAgo = `${Math.floor(diffDays / 7)} weeks ago`;
+      } else if (diffDays < 60) {
+        timeAgo = '1 month ago';
+      } else if (diffDays < 365) {
+        timeAgo = `${Math.floor(diffDays / 30)} months ago`;
       } else {
-        timeAgo = `${Math.ceil(diffDays / 30)} months ago`;
+        timeAgo = `${Math.floor(diffDays / 365)} years ago`;
       }
       
       return `${fullDate} — ${timeAgo}`;
