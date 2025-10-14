@@ -76,6 +76,7 @@ interface DashboardSidebarProps {
   sidebarOpen: boolean;
   sidebarCollapsed: boolean;
   onToggleCollapse: (collapsed: boolean) => void;
+  onCloseSidebar?: () => void;
   pendingReviews: number;
   openPositions: number;
 }
@@ -86,6 +87,7 @@ export const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
   sidebarOpen,
   sidebarCollapsed,
   onToggleCollapse,
+  onCloseSidebar,
   pendingReviews,
   openPositions
 }) => {
@@ -139,7 +141,10 @@ export const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
 
   const handleItemClick = (itemId: TabType) => {
     onTabChange(itemId);
-    // Close sidebar on mobile after selection would be handled by parent
+    // Close sidebar on mobile after selection
+    if (isMobile && onCloseSidebar) {
+      onCloseSidebar();
+    }
   };
 
   const shouldShowTooltip = (itemId: string) => {
@@ -181,6 +186,7 @@ export const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
           {isMobile && (
             <button 
               className={layoutStyles.closeSidebar}
+              onClick={onCloseSidebar}
               aria-label="Close sidebar"
             >
               ×

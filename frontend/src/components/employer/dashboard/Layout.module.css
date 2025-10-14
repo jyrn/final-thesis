@@ -338,7 +338,7 @@ body {
 .pageTitle {
   font-size: 1.25rem;
   font-weight: 600;
-  color: var(--gray-900);
+  color: #4169E1;
   margin: 0;
 }
 
@@ -608,18 +608,16 @@ body {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  padding: 1.5rem 2rem 2rem;
+  padding: 0.5rem 1.5rem;
   background: white;
-  border-bottom: none;
-  position: relative;
+  border-bottom: 1px solid var(--gray-100);
+  position: sticky;
   top: 0;
   z-index: 10;
   width: 100%;
-  max-width: 100%;
-  margin: 0 auto;
   box-sizing: border-box;
   gap: 1rem;
-  min-height: auto;
+  min-height: 64px;
 }
 
 .headerLeft {
@@ -641,10 +639,13 @@ body {
   font-size: 2rem;
   font-weight: 700;
   color: var(--gray-900);
-  margin: 0 0 0.5rem 0;
+  margin: 0;
   line-height: 1.2;
   letter-spacing: -0.025em;
-  white-space: nowrap;
+  background: var(--primary-gradient);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
 
 .menuToggle {

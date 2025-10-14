@@ -1097,6 +1097,7 @@ const EmployerDashboard: React.FC = () => {
         sidebarOpen={sidebarOpen}
         sidebarCollapsed={sidebarCollapsed}
         onToggleCollapse={setSidebarCollapsed}
+        onCloseSidebar={() => setSidebarOpen(false)}
         pendingReviews={realTimeStats.pendingReviews}
         openPositions={realTimeStats.openPositions}
       />

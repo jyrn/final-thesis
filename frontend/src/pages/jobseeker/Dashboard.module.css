@@ -585,11 +585,16 @@ body {
 }
 
 .pageTitle {
-  font-size: 1.25rem;
-  font-weight: 600;
+  font-size: 2rem;
+  font-weight: 700;
   color: var(--gray-900);
   margin: 0;
-  white-space: nowrap;
+  line-height: 1.2;
+  letter-spacing: -0.025em;
+  background: var(--primary-gradient);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
 
 .menuToggle {
@@ -634,36 +639,6 @@ body {
   .desktopHeader {
     padding: 0.5rem 1rem;
   }
-}
-
-.menuToggle {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 40px;
-  height: 40px;
-  border: none;
-  background: transparent;
-  border-radius: var(--radius);
-  cursor: pointer;
-  transition: var(--transition-fast);
-}
-
-.menuToggle:hover {
-  background: var(--gray-100);
-}
-
-.menuToggle svg {
-  width: 20px;
-  height: 20px;
-  color: var(--gray-600);
-}
-
-.pageTitle {
-  font-size: 1.5rem;
-  font-weight: 600;
-  color: var(--gray-900);
-  margin: 0;
 }
 
 .headerActions {
@@ -870,17 +845,6 @@ body {
 .pageHeader {
   margin-bottom: 32px;
   text-align: center;
-}
-
-.pageTitle {
-  font-size: 2.5rem;
-  font-weight: 700;
-  color: var(--gray-900);
-  margin: 0 0 8px 0;
-  background: var(--primary-gradient);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
 }
 
 .pageSubtitle {
@@ -2720,27 +2684,11 @@ body {
   flex-wrap: wrap;
 }
 
-.pageTitle {
-  font-size: 2rem;
-  font-weight: 700;
-  color: var(--gray-900);
-  margin: 0 0 0.5rem 0;
-  line-height: 1.2;
-  letter-spacing: -0.025em;
-}
-
 .pageSubtitle {
   font-size: 1rem;
   color: var(--gray-600);
   margin: 0;
   line-height: 1.5;
-}
-
-.headerActions {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  flex-wrap: wrap;
 }
 
 /* Search Container - Auth Page Style */
@@ -3526,12 +3474,6 @@ body {
   top: 0;
   z-index: 100;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-}
-
-.headerLeft {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
 }
 
 .menuButton {

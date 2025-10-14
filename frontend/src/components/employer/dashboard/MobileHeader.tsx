@@ -78,7 +78,7 @@ const MobileHeader: React.FC<MobileHeaderProps> = ({
               <img 
                 src={getImageSrc(profilePicture)} 
                 alt="Company logo" 
-                className={styles.avatarImage}
+                style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }}
               />
             ) : (
               userInitial
