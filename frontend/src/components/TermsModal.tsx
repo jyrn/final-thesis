@@ -98,11 +98,12 @@ const TermsModal: React.FC<TermsModalProps> = ({ isOpen, onClose, onAccept, type
                 </>
               ) : (
                 <>
-                  <h3>4. Job Matching Service and Data Processing</h3>
+                  <h3>4. AI-Powered Job Matching and Data Processing</h3>
                   <div>
-                    <p>Our AI-powered job matching service uses pdf-parse to extract information from your 
-                    resume in compliance with the <strong>Data Privacy Act of 2012 (RA 10173)</strong>. By uploading 
-                    your resume, you provide explicit consent for automated processing. We ensure compliance with:</p>
+                    <p>Our advanced AI job matching service uses BERT deep learning models, Named Entity Recognition (NER), 
+                    and machine learning algorithms to intelligently extract and analyze information from your resume in 
+                    compliance with the <strong>Data Privacy Act of 2012 (RA 10173)</strong>. By uploading your resume, 
+                    you provide explicit consent for automated AI processing. We ensure compliance with:</p>
                     <ul>
                       <li><strong>DOLE Department Order No. 174-17:</strong> Guidelines on the Use of Information Technology in Employment</li>
                       <li><strong>National Privacy Commission Circular 16-01:</strong> Rules on Data Processing</li>
@@ -194,19 +195,43 @@ const TermsModal: React.FC<TermsModalProps> = ({ isOpen, onClose, onAccept, type
               <div>
                 <p>In compliance with the <strong>Data Privacy Act of 2012 (RA 10173)</strong>, we collect the following categories of personal data:</p>
                 <ul>
-                  <li><strong>Basic Personal Information:</strong> Name, email, phone number, address</li>
+                  <li><strong>Basic Personal Information:</strong> Name, email, address (phone number optional)</li>
                   <li><strong>Employment Data:</strong> Work history, skills, educational background</li>
-                  <li><strong>Sensitive Personal Information:</strong> Government IDs (with explicit consent)</li>
+                  <li><strong>Resume Files:</strong> PDF documents processed through AI/ML systems</li>
+                  <li><strong>Profile Pictures:</strong> Stored securely via Cloudinary cloud storage</li>
+                  <li><strong>Application Data:</strong> Job applications and employer interactions</li>
+                  <li><strong>Authentication Data:</strong> Email verification codes and login timestamps</li>
                   <li><strong>Technical Data:</strong> IP address, browser type, device information</li>
                   <li><strong>Biometric Data:</strong> None collected (in compliance with NPC guidelines)</li>
                 </ul>
                 <p>All data collection follows the principles of transparency, legitimate purpose, and proportionality as required by Philippine law.</p>
               </div>
 
-              <h3>Resume Processing and AI Technology</h3>
+              <h3>Email Verification and Authentication</h3>
               <div>
-                <p>When you upload your resume, we use OCR (Optical Character Recognition) technology to 
-                extract text and information for job matching purposes. This automated processing complies with:</p>
+                <p>To ensure account security and verify your identity, we may use email verification processes:</p>
+                <ul>
+                  <li><strong>Email Verification:</strong> Temporary verification codes sent to your registered email address</li>
+                  <li><strong>Account Security:</strong> One-time passwords (OTP) for secure login and account recovery</li>
+                  <li><strong>Code Expiration:</strong> Verification codes expire automatically for security purposes</li>
+                  <li><strong>Firebase Authentication:</strong> Secure token-based authentication system</li>
+                  <li><strong>No Storage:</strong> Verification codes are not permanently stored in our database</li>
+                </ul>
+                <p>Email verification helps protect your account from unauthorized access and ensures communication reaches the legitimate account holder.</p>
+              </div>
+
+              <h3>AI-Powered Resume Processing Technology</h3>
+              <div>
+                <p>When you upload your resume, we use artificial intelligence to automatically extract and organize your information:</p>
+                <ul>
+                  <li><strong>Smart Text Recognition:</strong> AI models that can read and understand the content in your resume</li>
+                  <li><strong>PDF Processing:</strong> Technology that converts your PDF resume into readable text</li>
+                  <li><strong>Language Understanding:</strong> AI that recognizes names, dates, companies, and skills from your resume text</li>
+                  <li><strong>Text Enhancement:</strong> Tools that can read text from image-based or scanned PDF resumes</li>
+                  <li><strong>Automated Organization:</strong> AI services that sort your information into proper categories like education, experience, and skills</li>
+                  <li><strong>Quality Checking:</strong> Systems that verify the accuracy of extracted information</li>
+                </ul>
+                <p>Our AI processes your resume through multiple steps to ensure accurate information extraction. This automated processing complies with:</p>
                 <ul>
                   <li><strong>NPC Circular 16-01:</strong> Rules on Automated Decision-Making</li>
                   <li><strong>DOLE guidelines</strong> on digital recruitment practices</li>
@@ -245,12 +270,12 @@ const TermsModal: React.FC<TermsModalProps> = ({ isOpen, onClose, onAccept, type
                 
                 <h4>Technical Safeguards:</h4>
                 <ul>
-                  <li><strong>Encryption:</strong> AES-256 encryption for data at rest, TLS 1.3 for data in transit</li>
-                  <li><strong>Database Security:</strong> Encrypted databases with field-level encryption for sensitive data</li>
-                  <li><strong>Access Controls:</strong> Zero-trust architecture with role-based access control (RBAC)</li>
-                  <li><strong>Multi-Factor Authentication:</strong> Required for all administrative access</li>
-                  <li><strong>Network Security:</strong> Firewall protection, intrusion detection systems (IDS)</li>
-                  <li><strong>Secure File Storage:</strong> Cloud storage with end-to-end encryption</li>
+                  <li><strong>Authentication:</strong> Firebase Authentication with secure token management</li>
+                  <li><strong>Database Security:</strong> MongoDB with secure connection strings and access controls</li>
+                  <li><strong>File Storage:</strong> Cloudinary cloud storage for resumes and profile pictures</li>
+                  <li><strong>API Security:</strong> JWT token validation and role-based access control</li>
+                  <li><strong>ML Services:</strong> Secure microservices architecture for AI processing</li>
+                  <li><strong>Network Security:</strong> HTTPS encryption for all data transmission</li>
                 </ul>
 
                 <h4>Administrative Safeguards:</h4>
@@ -298,13 +323,15 @@ const TermsModal: React.FC<TermsModalProps> = ({ isOpen, onClose, onAccept, type
               <div>
                 <p>In compliance with <strong>NPC Circular 16-03</strong> on Data Retention, we retain personal data according to:</p>
                 <ul>
-                  <li><strong>Active Job Seekers:</strong> Data retained for 2 years after last login</li>
-                  <li><strong>Inactive Accounts:</strong> Automatic deletion after 3 years of inactivity</li>
-                  <li><strong>Employment Records:</strong> 5 years as required by DOLE regulations</li>
+                  <li><strong>Active Job Seekers:</strong> Data retained while account is active</li>
+                  <li><strong>Inactive Accounts:</strong> Data retained until user requests deletion</li>
+                  <li><strong>Resume Files:</strong> Stored in Cloudinary cloud storage with secure access controls</li>
+                  <li><strong>Profile Pictures:</strong> Stored until user removes or updates them</li>
+                  <li><strong>Application Records:</strong> Maintained for employment tracking purposes</li>
                   <li><strong>Legal Requirements:</strong> Extended retention when required by court orders</li>
                   <li><strong>Audit Logs:</strong> Security logs retained for 1 year minimum</li>
                 </ul>
-                <p>You may request earlier deletion of your data unless retention is required by law.</p>
+                <p>You may request complete deletion of your data through the admin portal's user management system.</p>
               </div>
 
               <h3>International Data Transfers</h3>
