@@ -108,7 +108,8 @@ const EmployerAuth: React.FC = () => {
             // Delete the newly created Google provider account from Firebase
             try {
               await response.user.delete()
-            } catch (deleteError) {              // If we can't delete, at least sign out
+            } catch (deleteError) {
+              // If we can't delete, at least sign out
               await firebaseAuthService.signOut()
             }
             
@@ -242,7 +243,8 @@ const EmployerAuth: React.FC = () => {
               navigate('/auth/verification-pending')
               return
             }
-          } catch (error: any) {            // Check if it's a 404 error (no employer profile found)
+          } catch (error: any) {
+            // Check if it's a 404 error (no employer profile found)
             if (error.response && error.response.status === 404) {
               navigate('/auth/employer/documents')
               return
@@ -258,7 +260,8 @@ const EmployerAuth: React.FC = () => {
           showError(tempResponse)
         }
       }
-    } catch (error: any) {      showError(error)
+    } catch (error: any) {
+      showError(error)
     } finally {
       setIsUploading(false)
     }
@@ -462,7 +465,8 @@ const EmployerAuth: React.FC = () => {
             navigate('/auth/verification-pending')
             return
           }
-        } catch (error) {          navigate('/auth/verification-pending')
+        } catch (error) {
+          navigate('/auth/verification-pending')
           return
         }
         
@@ -562,7 +566,8 @@ const EmployerAuth: React.FC = () => {
       // Redirect to OTP verification page
       navigate(`/auth/verify-otp?email=${encodeURIComponent(formData.email)}&role=employer`)
 
-    } catch (error: any) {      showError(error);
+    } catch (error: any) {
+      showError(error);
     } finally {
       setIsUploading(false);
     }
@@ -629,7 +634,8 @@ const EmployerAuth: React.FC = () => {
         
         // Show verification pending modal instead of success message
         setShowVerificationPendingModal(true)
-      } catch (error) {        setErrors({
+      } catch (error) {
+        setErrors({
           ...errors,
           form: error instanceof Error ? error.message : 'Failed to upload documents. Please try again.'
         })
@@ -1188,7 +1194,7 @@ const EmployerAuth: React.FC = () => {
       <SuccessModal
         isOpen={showSuccessModal}
         title={isLogin ? "Login Successful!" : "Account Created Successfully!"}
-        message={isLogin ? "Welcome back to PESO Job Portal! Redirecting to your dashboard..." : "Welcome to PESO Job Portal! Please upload your required company documents to complete your registration and access your dashboard."}
+        message={isLogin ? "Welcome back to SkillSync Job Portal! Redirecting to your dashboard..." : "Welcome to SkillSync Job Portal! Please upload your required company documents to complete your registration and access your dashboard."}
         onClose={isLogin ? handleLoginSuccessModalClose : handleSuccessModalClose}
         buttonText={isLogin ? "Go to Dashboard" : "Go to Dashboard"}
       />
