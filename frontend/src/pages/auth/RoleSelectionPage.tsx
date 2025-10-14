@@ -28,8 +28,8 @@ const RoleSelectionPage: React.FC = () => {
 
             {/* Welcome Text */}
             <div className={styles.welcomeText}>
-              <h2>Welcome to SkillSync</h2>
-              <p>Choose your role to get started with our employment services</p>
+              <p>Bridging job seekers and employers through smart, skills-based matching.</p>
+              <p>Choose your role to get started.</p>
             </div>
 
             {/* Decorative Elements */}
@@ -55,7 +55,7 @@ const RoleSelectionPage: React.FC = () => {
                 className={styles.roleButton}
                 onClick={() => handleRoleSelection('jobseeker')}
               >
-                <div className={styles.iconContainer}>
+                <div className={`${styles.iconContainer} ${styles.jobseekerIcon}`}>
                   <svg className={styles.icon} fill="currentColor" viewBox="0 0 24 24">
                     <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
                   </svg>
@@ -75,7 +75,7 @@ const RoleSelectionPage: React.FC = () => {
                 className={styles.roleButton}
                 onClick={() => handleRoleSelection('employer')}
               >
-                <div className={styles.iconContainer}>
+                <div className={`${styles.iconContainer} ${styles.employerIcon}`}>
                   <svg className={styles.icon} fill="currentColor" viewBox="0 0 24 24">
                     <path d="M20 6h-4V4c0-1.11-.89-2-2-2h-4c-1.11 0-2 .89-2 2v2H4c-1.11 0-1.99.89-1.99 2L2 19c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V8c0-1.11-.89-2-2-2zm-6 0h-4V4h4v2z"/>
                   </svg>

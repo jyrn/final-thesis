@@ -69,7 +69,8 @@ const JobseekerAuth: React.FC = () => {
             // Delete the newly created Google provider account from Firebase
             try {
               await response.user.delete()
-            } catch (deleteError) {              // If we can't delete, at least sign out
+            } catch (deleteError) {
+              // If we can't delete, at least sign out
               await firebaseAuthService.signOut()
             }
             
@@ -179,7 +180,8 @@ const JobseekerAuth: React.FC = () => {
           }))
         }
       }
-    } catch (error: any) {      setErrors(prev => ({ ...prev, general: error.message || "Google authentication failed. Please try again." }))
+    } catch (error: any) {
+      setErrors(prev => ({ ...prev, general: error.message || "Google authentication failed. Please try again." }))
     } finally {
       setIsUploading(false)
     }
@@ -405,7 +407,8 @@ const JobseekerAuth: React.FC = () => {
           general: response.error || "Login failed. Please try again." 
         }))
       }
-    } catch (error: any) {      setErrors(prev => ({ 
+    } catch (error: any) {
+      setErrors(prev => ({ 
         ...prev, 
         general: error.message || "Login failed. Please try again." 
       }))
@@ -482,7 +485,8 @@ const JobseekerAuth: React.FC = () => {
       // Redirect to OTP verification page
       navigate(`/auth/verify-otp?email=${encodeURIComponent(formData.email)}&role=jobseeker`)
       
-    } catch (error: any) {      // If Firebase throws "email already in use" error, show a more helpful message
+    } catch (error: any) {
+      // If Firebase throws "email already in use" error, show a more helpful message
       let errorMessage = error.message || 'Registration failed. Please try again.'
       if (error.code === 'auth/email-already-in-use') {
         errorMessage = 'An account with this email already exists. Please login instead or use a different email address.'
@@ -506,7 +510,7 @@ const JobseekerAuth: React.FC = () => {
               <img src="/skillsync.png" alt="SkillSync Logo" className={styles.skillsyncLogo} />
             </div>
             <div className={styles.journeyText}>
-              <h2>Start Your Journey with Us</h2>
+              <p>Take the first step toward your next opportunity and start your journey with us.</p>
             </div>
             <div className={styles.decorativeCircle1}></div>
             <div className={styles.decorativeCircle2}></div>
@@ -545,7 +549,7 @@ const JobseekerAuth: React.FC = () => {
 
             <div className={styles.roleIndicator}>
               <div className={styles.roleInfo}>
-                <div className={styles.roleIcon}>
+                <div className={`${styles.roleIcon} ${styles.jobseeker}`}>
                   <svg viewBox="0 0 24 24" fill="currentColor">
                     <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
                   </svg>
