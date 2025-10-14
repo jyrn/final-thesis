@@ -32,14 +32,8 @@ interface ApplicationJobModalProps {
   onWithdrawApplication?: (applicationId: string) => void
 }
 
-const getCompanyLogo = (company: string, companyLogo?: string) => {
-  console.log('ApplicationJobModal - company:', company);
-  console.log('ApplicationJobModal - companyLogo:', companyLogo);
-  
-  if (companyLogo) {
-    const imageSrc = getImageSrc(companyLogo);
-    console.log('ApplicationJobModal - rendering company logo');
-    return (
+const getCompanyLogo = (company: string, companyLogo?: string) => {  if (companyLogo) {
+    const imageSrc = getImageSrc(companyLogo);    return (
       <div className={styles.companyLogo}>
         <img 
           src={imageSrc} 
@@ -223,9 +217,7 @@ const ApplicationJobModal: React.FC<ApplicationJobModalProps> = ({
     try {
       await onWithdrawApplication(application.id);
       onClose(); // Close modal after successful withdrawal
-    } catch (error) {
-      console.error('Error withdrawing application:', error);
-      // Handle error (could show a toast notification)
+    } catch (error) {      // Handle error (could show a toast notification)
     } finally {
       setIsWithdrawing(false);
       setShowWithdrawConfirm(false);

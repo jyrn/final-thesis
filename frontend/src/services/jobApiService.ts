@@ -70,9 +70,7 @@ class JobApiService {
       // Backend returns { success: true, data: { jobs: [...], pagination: {...} } }
       // We need to return the data object which contains jobs and pagination
       return response.data;
-    } catch (error) {
-      console.error('Error fetching jobs:', error);
-      throw error;
+    } catch (error) {      throw error;
     }
   }
 
@@ -85,9 +83,7 @@ class JobApiService {
       }
 
       return response.data;
-    } catch (error) {
-      console.error('Error fetching job details:', error);
-      throw error;
+    } catch (error) {      throw error;
     }
   }
 
@@ -95,9 +91,7 @@ class JobApiService {
     try {
       const searchFilters = { ...filters, search: query };
       return await this.getJobs(searchFilters);
-    } catch (error) {
-      console.error('Error searching jobs:', error);
-      throw error;
+    } catch (error) {      throw error;
     }
   }
 
@@ -111,9 +105,7 @@ class JobApiService {
       }
 
       return response.data;
-    } catch (error) {
-      console.error('Error creating job:', error);
-      throw error;
+    } catch (error) {      throw error;
     }
   }
 
@@ -126,9 +118,7 @@ class JobApiService {
       }
 
       return response.data;
-    } catch (error) {
-      console.error('Error updating job:', error);
-      throw error;
+    } catch (error) {      throw error;
     }
   }
 
@@ -139,9 +129,7 @@ class JobApiService {
       if (!response.success) {
         throw new Error(response.error || 'Failed to delete job posting');
       }
-    } catch (error) {
-      console.error('Error deleting job:', error);
-      throw error;
+    } catch (error) {      throw error;
     }
   }
 
@@ -158,9 +146,7 @@ class JobApiService {
       }
 
       return response.data;
-    } catch (error) {
-      console.error('Error fetching employer jobs:', error);
-      throw error;
+    } catch (error) {      throw error;
     }
   }
 
@@ -178,9 +164,7 @@ class JobApiService {
       }
 
       return response.data;
-    } catch (error) {
-      console.error('Error fetching job stats:', error);
-      throw error;
+    } catch (error) {      throw error;
     }
   }
 

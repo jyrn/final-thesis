@@ -29,9 +29,7 @@ export const JobDetailsModal: React.FC<JobDetailsModalProps> = (props) => {
 
   // Debug logging for profilePicture prop
   React.useEffect(() => {
-    if (isOpen) {
-      console.log('JobDetailsModal opened - profilePicture prop:', profilePicture);
-    }
+    if (isOpen) {    }
   }, [isOpen, profilePicture]);
   
   // Create a stable reference to the onViewApplicants function
@@ -110,11 +108,7 @@ export const JobDetailsModal: React.FC<JobDetailsModalProps> = (props) => {
     }
   };
 
-  const getCompanyLogo = (company: string) => {
-    console.log('JobDetailsModal - profilePicture:', profilePicture);
-    if (profilePicture) {
-      console.log('JobDetailsModal - rendering image with URL:', `http://localhost:3001/${profilePicture}`);
-      return (
+  const getCompanyLogo = (company: string) => {    if (profilePicture) {      return (
         <div className={styles.companyLogo}>
           <img 
             src={profilePicture.startsWith('data:') 

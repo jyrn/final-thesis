@@ -64,75 +64,50 @@ const SuperAdminDashboard: React.FC = () => {
       setPendingEmployers(employersData);
       setJobs(jobsData.jobs || []);
       setAdminUsers(usersResponse || []);
-    } catch (error) {
-      console.error('Error fetching dashboard data:', error);
-    } finally {
+    } catch (error) {    } finally {
       setLoading(false);
     }
   };
 
   const handleEmployerAction = async (employerId: string, action: 'approve' | 'reject', reason?: string) => {
-    try {
-      console.log('🚀 SuperAdmin handleEmployerAction called:', { employerId, action, reason });
-      setLoading(true);
-      await adminService.verifyEmployer(employerId, action, reason);
-      console.log('✅ Employer verification successful, refreshing data...');
-      await fetchDashboardData();
-      console.log('✅ Dashboard data refreshed');
-    } catch (error) {
-      console.error('❌ Error updating employer status:', error);
-    } finally {
+    try {      setLoading(true);
+      await adminService.verifyEmployer(employerId, action, reason);      await fetchDashboardData();    } catch (error) {    } finally {
       setLoading(false);
     }
   };
 
   const handleCreateAdmin = async (adminData: any) => {
-    try {
-      console.log('🔄 Creating admin with data:', adminData);
-      const newAdmin = await adminService.createAdmin(adminData);
-      console.log('✅ Admin created successfully:', newAdmin);
-      
-      // Refresh the dashboard data to show the new admin
+    try {      const newAdmin = await adminService.createAdmin(adminData);      // Refresh the dashboard data to show the new admin
       await fetchDashboardData();
       
       // Show success message
       alert('Admin user created successfully!');
-    } catch (error) {
-      console.error('❌ Error creating admin:', error);
-      alert(`Failed to create admin: ${error.message}`);
+    } catch (error) {      alert(`Failed to create admin: ${error.message}`);
     }
   };
 
   const handleEditAdmin = async (adminId: string, adminData: any) => {
-    try {
-      console.log('🔄 Updating admin:', adminId, adminData);
-      await adminService.updateUser(adminId, adminData);
+    try {      await adminService.updateUser(adminId, adminData);
       
       // Refresh the dashboard data to show the updated admin
       await fetchDashboardData();
       
       // Show success message
       alert('Admin user updated successfully!');
-    } catch (error) {
-      console.error('❌ Error editing admin:', error);
-      alert(`Failed to update admin: ${error.message}`);
+    } catch (error) {      alert(`Failed to update admin: ${error.message}`);
     }
   };
 
   const handleDeleteAdmin = async (adminId: string) => {
     if (window.confirm('Are you sure you want to delete this admin?')) {
-      try {
-        console.log('🔄 Deleting admin:', adminId);
-        await adminService.deleteUser(adminId);
+      try {        await adminService.deleteUser(adminId);
         
         // Refresh the dashboard data to remove the deleted admin
         await fetchDashboardData();
         
         // Show success message
         alert('Admin user deleted successfully!');
-      } catch (error) {
-        console.error('❌ Error deleting admin:', error);
-        alert(`Failed to delete admin: ${error.message}`);
+      } catch (error) {        alert(`Failed to delete admin: ${error.message}`);
       }
     }
   };
@@ -232,9 +207,7 @@ const SuperAdminDashboard: React.FC = () => {
         URL.revokeObjectURL(url);
       } else {
         // Handle JSON fallback
-        const data = await response.json();
-        console.warn('PDF generation failed, downloading JSON:', data.pdfError);
-        const blob = new Blob([JSON.stringify(data.report, null, 2)], { type: 'application/json' });
+        const data = await response.json();        const blob = new Blob([JSON.stringify(data.report, null, 2)], { type: 'application/json' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
@@ -242,9 +215,7 @@ const SuperAdminDashboard: React.FC = () => {
         a.click();
         URL.revokeObjectURL(url);
       }
-    } catch (error) {
-      console.error('Error generating report:', error);
-      alert('Failed to generate report. Please try again.');
+    } catch (error) {      alert('Failed to generate report. Please try again.');
     }
   };
 
@@ -295,9 +266,7 @@ const SuperAdminDashboard: React.FC = () => {
 
         {activeTab === 'job-postings' && (
           <SuperAdminJobsTab 
-            onJobStatusChange={(jobId, status) => {
-              console.log('Job status changed:', jobId, status);
-              // Refresh dashboard data if needed
+            onJobStatusChange={(jobId, status) => {              // Refresh dashboard data if needed
               fetchDashboardData();
             }}
           />

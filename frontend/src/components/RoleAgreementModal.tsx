@@ -153,9 +153,7 @@ const RoleAgreementModal: React.FC<RoleAgreementModalProps> = ({
       // Add a small delay to show loading state
       await new Promise(resolve => setTimeout(resolve, 500))
       onAccept()
-    } catch (error) {
-      console.error("Error processing agreement:", error)
-    } finally {
+    } catch (error) {    } finally {
       setIsProcessing(false)
     }
   }
@@ -203,10 +201,7 @@ const RoleAgreementModal: React.FC<RoleAgreementModalProps> = ({
   const terms = getSimplifiedTerms(role)
   const roleColor = getRoleColor()
 
-  // Debug log
-  console.log("RoleAgreementModal rendering:", { open, role, agreed })
-
-  return (
+  // Debug log  return (
     <div
       className={`${styles.modalOverlay} fixed inset-0 flex items-center justify-center p-4 z-[9999]`}
       onClick={handleBackdropClick}

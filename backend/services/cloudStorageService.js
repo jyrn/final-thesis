@@ -11,7 +11,6 @@ cloudinary.config({
 
 // Verify configuration (silent)
 if (!process.env.CLOUDINARY_CLOUD_NAME || !process.env.CLOUDINARY_API_KEY || !process.env.CLOUDINARY_API_SECRET) {
-  console.warn('Warning: Cloudinary configuration incomplete');
 }
 
 // Configure Cloudinary storage for multer
@@ -76,14 +75,11 @@ class CloudStorageService {
         height: result.height,
       };
     } catch (error) {
-      console.error('Cloudinary upload error:', error);
       throw new Error('Failed to upload file to cloud storage');
     }
   }
   async uploadBuffer(buffer, filename, folder = 'documents', mimeType = null) {
     try {
-      console.log(`🔧 uploadBuffer called with: filename=${filename}, folder=${folder}, mimeType=${mimeType}`);
-      
       // Validate Cloudinary configuration first
       if (!process.env.CLOUDINARY_CLOUD_NAME || !process.env.CLOUDINARY_API_KEY || !process.env.CLOUDINARY_API_SECRET) {
         throw new Error('Cloudinary configuration is missing. Please check your environment variables.');
@@ -96,10 +92,6 @@ class CloudStorageService {
       
       // Use the folder path as-is (already formatted as users/{uid}/...)
       const cloudFolder = folder;
-      
-      console.log(`🔧 Resource type determined: ${resourceType} (isImage: ${isImage}, isPDF: ${isPDF})`);
-      console.log(`🔧 Upload folder: ${cloudFolder}`);
-      
       return new Promise((resolve, reject) => {
         const uploadOptions = {
           folder: cloudFolder,
@@ -117,17 +109,12 @@ class CloudStorageService {
             { quality: 'auto', fetch_format: 'auto' }
           ];
         }
-        
-        console.log(`🔧 Upload options:`, uploadOptions);
-        
         cloudinary.uploader.upload_stream(
           uploadOptions,
           (error, result) => {
             if (error) {
-              console.error('❌ Cloudinary upload error:', error);
               reject(error);
             } else {
-              console.log('✅ Cloudinary upload success:', result.public_id);
               resolve({
                 url: result.secure_url,
                 publicId: result.public_id,
@@ -141,7 +128,6 @@ class CloudStorageService {
         ).end(buffer);
       });
     } catch (error) {
-      console.error('Cloudinary buffer upload error:', error);
       throw new Error(`Failed to upload buffer to cloud storage: ${error.message}`);
     }
   }
@@ -149,8 +135,6 @@ class CloudStorageService {
   // Upload image buffer to Cloudinary (for profile pictures)
   async uploadImageBuffer(buffer, filename, folder = 'profile-pictures') {
     try {
-      console.log(`📷 uploadImageBuffer called with: filename=${filename}, folder=${folder}`);
-      
       return new Promise((resolve, reject) => {
         cloudinary.uploader.upload_stream(
           {
@@ -167,10 +151,8 @@ class CloudStorageService {
           },
           (error, result) => {
             if (error) {
-              console.error('❌ Image upload error:', error);
               reject(error);
             } else {
-              console.log('✅ Image upload success:', result.public_id);
               resolve({
                 url: result.secure_url,
                 publicId: result.public_id,
@@ -184,7 +166,6 @@ class CloudStorageService {
         ).end(buffer);
       });
     } catch (error) {
-      console.error('Cloudinary image buffer upload error:', error);
       throw new Error('Failed to upload image buffer to cloud storage');
     }
   }
@@ -195,7 +176,6 @@ class CloudStorageService {
       const result = await cloudinary.uploader.destroy(publicId);
       return result;
     } catch (error) {
-      console.error('Cloudinary delete error:', error);
       throw new Error('Failed to delete file from cloud storage');
     }
   }
@@ -212,7 +192,6 @@ class CloudStorageService {
       
       return publicUrl;
     } catch (error) {
-      console.error('Public URL generation error:', error);
       throw new Error('Failed to generate public URL');
     }
   }
@@ -228,7 +207,6 @@ class CloudStorageService {
       
       return signedUrl;
     } catch (error) {
-      console.error('Signed URL generation error:', error);
       throw new Error('Failed to generate signed URL');
     }
   }
@@ -246,7 +224,6 @@ class CloudStorageService {
         height: result.height,
       };
     } catch (error) {
-      console.error('Get file info error:', error);
       throw new Error('Failed to get file information');
     }
   }

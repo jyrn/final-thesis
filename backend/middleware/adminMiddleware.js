@@ -40,9 +40,7 @@ const adminMiddleware = async (req, res, next) => {
     // Attach admin user data to request for use in routes
     req.adminUser = adminUser;
     next();
-  } catch (error) {
-    console.error('Admin middleware error:', error);
-    res.status(500).json({
+  } catch (error) {    res.status(500).json({
       success: false,
       message: 'Server error in admin authorization'
     });
@@ -89,9 +87,7 @@ const superAdminMiddleware = async (req, res, next) => {
     // Attach admin user data to request for use in routes
     req.adminUser = superAdminUser;
     next();
-  } catch (error) {
-    console.error('Admin middleware error:', error);
-    res.status(500).json({
+  } catch (error) {    res.status(500).json({
       success: false,
       message: 'Server error in admin authorization'
     });

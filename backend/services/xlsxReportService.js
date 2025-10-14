@@ -1,9 +1,7 @@
 let XLSX;
 try {
   XLSX = require('xlsx');
-} catch (error) {
-  console.warn('XLSX library not found. Please install it with: npm install xlsx');
-  XLSX = null;
+} catch (error) {  XLSX = null;
 }
 
 class XLSXReportService {

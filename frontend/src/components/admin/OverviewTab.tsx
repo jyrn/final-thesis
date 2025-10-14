@@ -31,9 +31,7 @@ const OverviewTab: React.FC<OverviewTabProps> = ({ stats }) => {
       let dashboardStats = null;
       try {
         dashboardStats = await adminService.getDashboardStats();
-      } catch (error) {
-        console.error('Dashboard stats failed:', error);
-      }
+      } catch (error) {      }
 
       // If dashboard stats worked, use them directly
       if (dashboardStats && (dashboardStats.totalUsers > 0 || dashboardStats.totalJobs > 0)) {
@@ -85,9 +83,7 @@ const OverviewTab: React.FC<OverviewTabProps> = ({ stats }) => {
 
       setRealStats(newStats);
       
-    } catch (error) {
-      console.error('Error fetching stats:', error);
-      // Set some default values so it's not all zeros
+    } catch (error) {      // Set some default values so it's not all zeros
       setRealStats({
         totalUsers: 0,
         totalEmployers: 0,

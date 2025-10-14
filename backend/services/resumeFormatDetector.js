@@ -9,10 +9,7 @@ class ResumeFormatDetector {
    * @param {string} text - Raw text from the resume
    * @returns {string} - Format type: 'pipe-separated', 'standard', 'minimal'
    */
-  static detectFormat(text) {
-    console.log('🔍 Detecting resume format...');
-    
-    const indicators = {
+  static detectFormat(text) {    const indicators = {
       hasPipeSeparator: false,
       hasProjectsSection: false,
       hasBulletPoints: false,
@@ -51,12 +48,7 @@ class ResumeFormatDetector {
     } else {
       format = 'minimal'; // Very basic resume
       indicators.structureType = 'Minimal format';
-    }
-    
-    console.log('🔍 Format indicators:', indicators);
-    console.log('🔍 Detected format:', format);
-    
-    return format;
+    }    return format;
   }
   
   /**

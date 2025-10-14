@@ -85,9 +85,7 @@ router.post('/login', verifyToken, async (req, res) => {
       }
     });
 
-  } catch (error) {
-    console.error('Admin login error:', error);
-    res.status(500).json({ 
+  } catch (error) {    res.status(500).json({ 
       success: false, 
       message: 'Server error during admin login' 
     });
@@ -133,9 +131,7 @@ router.get('/dashboard/stats', verifyToken, adminMiddleware, async (req, res) =>
       }
     });
 
-  } catch (error) {
-    console.error('Dashboard stats error:', error);
-    res.status(500).json({ 
+  } catch (error) {    res.status(500).json({ 
       success: false, 
       message: 'Error fetching dashboard statistics' 
     });
@@ -158,15 +154,7 @@ router.get('/employers', verifyToken, adminMiddleware, async (req, res) => {
 
     // Format employers with full company details and documents
     const employersWithFullDetails = employers.map(employer => {
-      const profilePicture = employer.profilePicture || employer.userId?.profilePicture;
-      console.log(`🏢 Admin API - Employer ${employer._id} profile picture:`, {
-        employerProfilePicture: employer.profilePicture,
-        userIdProfilePicture: employer.userId?.profilePicture,
-        finalProfilePicture: profilePicture,
-        companyName: employer.companyName || employer.userId?.companyName
-      });
-      
-      return {
+      const profilePicture = employer.profilePicture || employer.userId?.profilePicture;      return {
         _id: employer._id,
         userId: employer.userId,
         accountStatus: employer.accountStatus,
@@ -214,9 +202,7 @@ router.get('/employers', verifyToken, adminMiddleware, async (req, res) => {
       employers: employersWithDocs
     });
 
-  } catch (error) {
-    console.error('Employers fetch error:', error);
-    res.status(500).json({ 
+  } catch (error) {    res.status(500).json({ 
       success: false, 
       message: 'Error fetching employers' 
     });
@@ -259,9 +245,7 @@ router.get('/employers/pending', verifyToken, adminMiddleware, async (req, res) 
       employers: employersNeedingReview
     });
 
-  } catch (error) {
-    console.error('Pending employers error:', error);
-    res.status(500).json({ 
+  } catch (error) {    res.status(500).json({ 
       success: false, 
       message: 'Error fetching pending employers' 
     });
@@ -330,9 +314,7 @@ router.put('/employers/:employerId/verify', verifyToken, adminMiddleware, async 
       // Save the employer again with document verification updates
       await employer.save();
       
-    } catch (docUpdateError) {
-      console.error('❌ Error updating document verification:', docUpdateError);
-    }
+    } catch (docUpdateError) {    }
 
     // Update user canLogin status
     const userUpdate = await User.findOneAndUpdate(
@@ -359,9 +341,7 @@ router.put('/employers/:employerId/verify', verifyToken, adminMiddleware, async 
         }
       } else {
       }
-    } catch (emailError) {
-      console.error('❌ Error sending email notification:', emailError);
-      // Don't fail the entire operation if email fails
+    } catch (emailError) {      // Don't fail the entire operation if email fails
     }
 
     
@@ -375,9 +355,7 @@ router.put('/employers/:employerId/verify', verifyToken, adminMiddleware, async 
       }
     });
 
-  } catch (error) {
-    console.error('Employer verification error:', error);
-    res.status(500).json({ 
+  } catch (error) {    res.status(500).json({ 
       success: false, 
       message: 'Error updating employer status' 
     });
@@ -419,9 +397,7 @@ router.get('/jobs', verifyToken, adminMiddleware, async (req, res) => {
       }
     });
 
-  } catch (error) {
-    console.error('Jobs fetch error:', error);
-    res.status(500).json({ 
+  } catch (error) {    res.status(500).json({ 
       success: false, 
       message: 'Error fetching jobs' 
     });
@@ -471,25 +447,13 @@ router.get('/applications', verifyToken, adminMiddleware, async (req, res) => {
 
 // Update job status (activate/deactivate/remove)
 router.put('/jobs/:jobId/status', verifyToken, adminMiddleware, async (req, res) => {
-  try {
-    console.log(`🔧 Admin job status update request - JobID: ${req.params.jobId}, Status: ${req.body.status}`);
-    
-    const { jobId } = req.params;
-    const { status, reason } = req.body;
-
-    console.log(`🔍 Looking for job with ID: ${jobId}`);
-    const job = await Job.findById(jobId);
-    if (!job) {
-      console.log(`❌ Job not found: ${jobId}`);
-      return res.status(404).json({ 
+  try {    const { jobId } = req.params;
+    const { status, reason } = req.body;    const job = await Job.findById(jobId);
+    if (!job) {      return res.status(404).json({ 
         success: false, 
         message: 'Job not found' 
       });
-    }
-    
-    console.log(`✅ Job found: ${job.title} - Current status: ${job.status}`);
-
-    // Store original status to check if we need to send email
+    }    // Store original status to check if we need to send email
     const originalStatus = job.status;
     
     job.status = status;
@@ -497,35 +461,19 @@ router.put('/jobs/:jobId/status', verifyToken, adminMiddleware, async (req, res)
       job.adminNotes = reason;
     }
     job.lastModifiedBy = req.user.uid;
-    job.updatedAt = new Date();
-
-    console.log(`💾 Saving job with new status: ${status}`);
-    await job.save();
-    console.log(`✅ Job saved successfully`);
-
-    // Send email notification based on status change
-    if (originalStatus !== status) {
-      console.log(`📧 Job status changed from ${originalStatus} to ${status}, preparing email notification...`);
-      try {
+    job.updatedAt = new Date();    await job.save();    // Send email notification based on status change
+    if (originalStatus !== status) {      try {
         const emailService = require('../services/emailService');
         
         // Get employer information
         let employerEmail = null;
-        let companyName = job.companyName || 'Unknown Company';
-        
-        console.log(`🔍 Looking for employer info - EmployerUID: ${job.employerUid}, EmployerID: ${job.employerId}`);
-        
-        if (job.employerUid) {
+        let companyName = job.companyName || 'Unknown Company';        if (job.employerUid) {
           // Find employer by UID
           const Employer = require('../models/Employer');
           const employer = await Employer.findOne({ uid: job.employerUid });
           if (employer) {
             employerEmail = employer.email;
-            companyName = employer.companyName || job.companyName || 'Unknown Company';
-            console.log(`✅ Found employer by UID: ${employerEmail}`);
-          } else {
-            console.log(`❌ No employer found with UID: ${job.employerUid}`);
-          }
+            companyName = employer.companyName || job.companyName || 'Unknown Company';          } else {          }
         }
         
         // If still no email, try finding by employerId
@@ -534,61 +482,38 @@ router.put('/jobs/:jobId/status', verifyToken, adminMiddleware, async (req, res)
           const employer = await Employer.findById(job.employerId);
           if (employer) {
             employerEmail = employer.email;
-            companyName = employer.companyName || job.companyName || 'Unknown Company';
-            console.log(`✅ Found employer by ID: ${employerEmail}`);
-          } else {
-            console.log(`❌ No employer found with ID: ${job.employerId}`);
-          }
+            companyName = employer.companyName || job.companyName || 'Unknown Company';          } else {          }
         }
         
-        if (employerEmail) {
-          console.log(`📤 Sending ${status} email to: ${employerEmail}`);
-          
-          // Send appropriate email based on status
+        if (employerEmail) {          // Send appropriate email based on status
           if (status === 'removed') {
             await emailService.sendJobRemovalEmail(
               employerEmail,
               companyName || 'Your Company',
               job.title,
               reason
-            );
-            console.log(`📧 Job removal notification sent to ${employerEmail} for job: ${job.title}`);
-          } else if (status === 'paused') {
+            );          } else if (status === 'paused') {
             await emailService.sendJobPauseEmail(
               employerEmail,
               companyName || 'Your Company',
               job.title,
               reason
-            );
-            console.log(`📧 Job pause notification sent to ${employerEmail} for job: ${job.title}`);
-          } else if (status === 'flagged') {
+            );          } else if (status === 'flagged') {
             await emailService.sendJobFlagEmail(
               employerEmail,
               companyName || 'Your Company',
               job.title,
               reason
-            );
-            console.log(`📧 Job flag notification sent to ${employerEmail} for job: ${job.title}`);
-          }
-        } else {
-          console.log(`⚠️ Could not send job ${status} email - employer email not found for job: ${job.title}`);
-        }
-      } catch (emailError) {
-        console.error(`❌ Error sending job ${status} email:`, emailError);
-        // Don't fail the request if email fails
+            );          }
+        } else {        }
+      } catch (emailError) {        // Don't fail the request if email fails
       }
-    }
-
-    console.log(`🎉 Job status update completed successfully`);
-    res.json({
+    }    res.json({
       success: true,
       message: `Job status updated to ${status}${status === 'removed' ? '. Employer has been notified.' : ''}`
     });
 
-  } catch (error) {
-    console.error('❌ Job status update error:', error);
-    console.error('Error stack:', error.stack);
-    res.status(500).json({ 
+  } catch (error) {    res.status(500).json({ 
       success: false, 
       message: 'Error updating job status',
       error: error.message
@@ -652,9 +577,7 @@ router.get('/analytics/users', verifyToken, adminMiddleware, async (req, res) =>
       }
     });
 
-  } catch (error) {
-    console.error('Analytics error:', error);
-    res.status(500).json({ 
+  } catch (error) {    res.status(500).json({ 
       success: false, 
       message: 'Error fetching analytics data' 
     });
@@ -675,9 +598,7 @@ router.get('/admins', verifyToken, superAdminMiddleware, async (req, res) => {
       admins
     });
 
-  } catch (error) {
-    console.error('Admin fetch error:', error);
-    res.status(500).json({ 
+  } catch (error) {    res.status(500).json({ 
       success: false, 
       message: 'Error fetching admin users' 
     });
@@ -725,9 +646,7 @@ router.post('/admins', verifyToken, superAdminMiddleware, async (req, res) => {
         displayName: adminName,
         emailVerified: true
       });
-    } catch (firebaseError) {
-      console.error('❌ Firebase user creation failed:', firebaseError);
-      return res.status(500).json({ 
+    } catch (firebaseError) {      return res.status(500).json({ 
         success: false, 
         message: 'Failed to create Firebase user: ' + firebaseError.message 
       });
@@ -768,15 +687,10 @@ router.post('/admins', verifyToken, superAdminMiddleware, async (req, res) => {
         }
       });
 
-    } catch (mongoError) {
-      console.error('❌ MongoDB admin creation failed:', mongoError);
-      
-      // Rollback: Delete the Firebase user if MongoDB creation fails
+    } catch (mongoError) {      // Rollback: Delete the Firebase user if MongoDB creation fails
       try {
         await admin.auth().deleteUser(firebaseUser.uid);
-      } catch (rollbackError) {
-        console.error('❌ Failed to rollback Firebase user:', rollbackError);
-      }
+      } catch (rollbackError) {      }
       
       return res.status(500).json({ 
         success: false, 
@@ -784,9 +698,7 @@ router.post('/admins', verifyToken, superAdminMiddleware, async (req, res) => {
       });
     }
 
-  } catch (error) {
-    console.error('Admin creation error:', error);
-    res.status(500).json({ 
+  } catch (error) {    res.status(500).json({ 
       success: false, 
       message: 'Error creating admin user: ' + error.message 
     });
@@ -828,9 +740,7 @@ router.get('/documents/pending', verifyToken, adminMiddleware, async (req, res) 
       documents: pendingDocuments
     });
 
-  } catch (error) {
-    console.error('Pending documents fetch error:', error);
-    res.status(500).json({ 
+  } catch (error) {    res.status(500).json({ 
       success: false, 
       message: 'Error fetching pending documents' 
     });
@@ -851,20 +761,8 @@ router.get('/employers/:employerId/documents', verifyToken, adminMiddleware, asy
       });
     }
 
-    // Debug logging
-    console.log(`📄 Fetching documents for employer ${employerId}`);
-    console.log(`📄 Found ${employer.documents?.length || 0} documents`);
-    
-    if (employer.documents && employer.documents.length > 0) {
-      employer.documents.forEach((doc, index) => {
-        console.log(`📄 Document ${index + 1}:`, {
-          name: doc.documentName,
-          type: doc.documentType,
-          hasCloudUrl: !!doc.cloudUrl,
-          cloudUrl: doc.cloudUrl ? `${doc.cloudUrl.substring(0, 50)}...` : 'MISSING',
-          verificationStatus: doc.verificationStatus
-        });
-      });
+    // Debug logging    if (employer.documents && employer.documents.length > 0) {
+      employer.documents.forEach((doc, index) => {      });
     }
 
     res.json({
@@ -872,9 +770,7 @@ router.get('/employers/:employerId/documents', verifyToken, adminMiddleware, asy
       documents: employer.documents || []
     });
 
-  } catch (error) {
-    console.error('Employer documents fetch error:', error);
-    res.status(500).json({ 
+  } catch (error) {    res.status(500).json({ 
       success: false, 
       message: 'Error fetching employer documents' 
     });
@@ -937,9 +833,7 @@ router.put('/documents/:documentId/verify', verifyToken, adminMiddleware, async 
       allRequiredApproved
     });
 
-  } catch (error) {
-    console.error('Document verification error:', error);
-    res.status(500).json({ 
+  } catch (error) {    res.status(500).json({ 
       success: false, 
       message: 'Error updating document status' 
     });
@@ -997,9 +891,7 @@ router.put('/employers/:employerId/documents/bulk-verify', verifyToken, adminMid
       allRequiredApproved
     });
 
-  } catch (error) {
-    console.error('Bulk document verification error:', error);
-    res.status(500).json({ 
+  } catch (error) {    res.status(500).json({ 
       success: false, 
       message: 'Error updating documents status' 
     });
@@ -1111,9 +1003,7 @@ router.get('/users', verifyToken, superAdminMiddleware, async (req, res) => {
       }
     });
 
-  } catch (error) {
-    console.error('Users fetch error:', error);
-    res.status(500).json({ 
+  } catch (error) {    res.status(500).json({ 
       success: false, 
       message: 'Error fetching users' 
     });
@@ -1124,12 +1014,7 @@ router.get('/users', verifyToken, superAdminMiddleware, async (req, res) => {
 router.put('/users/:userId', verifyToken, superAdminMiddleware, async (req, res) => {
   try {
     const { userId } = req.params;
-    const { role, isActive, canLogin, registrationStatus, adminLevel, department, adminName, status } = req.body;
-
-    console.log(`🔧 Admin user status update request - UserID: ${userId}, Status: ${status || 'N/A'}`);
-    console.log('📦 Full request body:', req.body);
-
-    const updateData = {};
+    const { role, isActive, canLogin, registrationStatus, adminLevel, department, adminName, status } = req.body;    const updateData = {};
     if (role !== undefined) updateData.role = role;
     if (isActive !== undefined) updateData.isActive = isActive;
     if (canLogin !== undefined) updateData.canLogin = canLogin;
@@ -1147,11 +1032,7 @@ router.put('/users/:userId', verifyToken, superAdminMiddleware, async (req, res)
       if (status === 'active') {
         updateData.suspendedAt = null;
       }
-    }
-
-    console.log('🔄 Update data prepared:', updateData);
-
-    // Store original user data for email notification
+    }    // Store original user data for email notification
     let originalUser = null;
 
     // Try to find user first to get original data
@@ -1165,40 +1046,16 @@ router.put('/users/:userId', verifyToken, superAdminMiddleware, async (req, res)
         success: false,
         message: 'User not found'
       });
-    }
-
-    console.log(`✅ User found: ${originalUser.email} - Current status: ${originalUser.status || 'active'}`);
-
-    // Try to update in Admin collection first
-    console.log(`🔍 Searching Admin collection for uid: ${userId}`);
-    let user = await Admin.findOneAndUpdate(
+    }    // Try to update in Admin collection first    let user = await Admin.findOneAndUpdate(
       { uid: userId },
       updateData,
       { new: true, runValidators: true }
-    );
-    
-    console.log(`🔍 Admin collection result:`, user ? 'Found and updated' : 'Not found');
-
-    // If not found in Admin collection, try User collection
-    if (!user) {
-      console.log(`🔍 Searching User collection for uid: ${userId}`);
-      user = await User.findOneAndUpdate(
+    );    // If not found in Admin collection, try User collection
+    if (!user) {      user = await User.findOneAndUpdate(
         { uid: userId },
         updateData,
         { new: true, runValidators: true }
-      );
-      console.log(`🔍 User collection result:`, user ? 'Found and updated' : 'Not found');
-      
-      if (user) {
-        console.log(`📋 Updated user data:`, {
-          uid: user.uid,
-          email: user.email,
-          role: user.role,
-          status: user.status,
-          firstName: user.firstName,
-          lastName: user.lastName
-        });
-      }
+      );      if (user) {      }
     }
 
     if (!user) {
@@ -1206,62 +1063,29 @@ router.put('/users/:userId', verifyToken, superAdminMiddleware, async (req, res)
         success: false,
         message: 'User not found'
       });
-    }
-
-    console.log(`💾 User updated successfully with new status: ${user.status || 'active'}`);
-
-    // Send email notification for jobseeker status changes
+    }    // Send email notification for jobseeker status changes
     const originalStatus = originalUser.status || 'active';
     const newStatus = user.status || 'active';
     
     // For suspension, always send email if suspendedAt was updated (even if status didn't change)
     const wasSuspended = updateData.suspendedAt !== undefined;
-    const shouldSendEmail = (originalStatus !== newStatus || wasSuspended) && user.role === 'jobseeker';
-    
-    console.log(`🔍 Email notification check:`, {
-      originalStatus,
-      newStatus,
-      userRole: user.role,
-      statusChanged: originalStatus !== newStatus,
-      wasSuspended,
-      isJobseeker: user.role === 'jobseeker',
-      shouldSendEmail
-    });
-    
-    if (shouldSendEmail) {
-      console.log(`📧 Jobseeker status changed from ${originalStatus} to ${newStatus}, preparing email notification...`);
-      
-      try {
+    const shouldSendEmail = (originalStatus !== newStatus || wasSuspended) && user.role === 'jobseeker';    if (shouldSendEmail) {      try {
         const emailService = require('../services/emailService');
         const userEmail = user.email;
-        const userName = `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.email;
-        
-        console.log(`📤 Sending ${newStatus} email to: ${userEmail}`);
-        
-        if (newStatus === 'removed') {
+        const userName = `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.email;        if (newStatus === 'removed') {
           await emailService.sendJobseekerRemovalEmail(
             userEmail,
             userName,
             'Your account has been removed by the administrator for policy compliance or security reasons.'
-          );
-          console.log(`📧 Jobseeker removal notification sent to ${userEmail}`);
-        } else if (newStatus === 'inactive') {
+          );        } else if (newStatus === 'inactive') {
           await emailService.sendJobseekerSuspensionEmail(
             userEmail,
             userName,
             'Your account has been suspended due to inactivity (no login for over 1 year). Simply log in to reactivate.'
-          );
-          console.log(`📧 Jobseeker suspension notification sent to ${userEmail}`);
-        }
-      } catch (emailError) {
-        console.error(`❌ Error sending jobseeker ${newStatus} email:`, emailError);
-        // Don't fail the request if email fails
+          );        }
+      } catch (emailError) {        // Don't fail the request if email fails
       }
-    }
-
-    console.log(`🎉 User status update completed successfully`);
-
-    res.json({
+    }    res.json({
       success: true,
       message: `User updated successfully${newStatus !== originalStatus && user.role === 'jobseeker' ? '. User has been notified via email.' : ''}`,
       user: {
@@ -1279,10 +1103,7 @@ router.put('/users/:userId', verifyToken, superAdminMiddleware, async (req, res)
       }
     });
 
-  } catch (error) {
-    console.error('❌ User update error:', error);
-    console.error('Error stack:', error.stack);
-    res.status(500).json({ 
+  } catch (error) {    res.status(500).json({ 
       success: false, 
       message: 'Error updating user',
       error: error.message
@@ -1325,9 +1146,7 @@ router.delete('/users/:userId', verifyToken, superAdminMiddleware, async (req, r
     if (isAdminCollection) {
       try {
         await admin.auth().deleteUser(user.uid);
-      } catch (firebaseError) {
-        console.error('⚠️ Firebase deletion failed:', firebaseError.message);
-        // Continue with MongoDB deletion even if Firebase fails
+      } catch (firebaseError) {        // Continue with MongoDB deletion even if Firebase fails
       }
     }
 
@@ -1344,9 +1163,7 @@ router.delete('/users/:userId', verifyToken, superAdminMiddleware, async (req, r
       message: 'User deleted successfully'
     });
 
-  } catch (error) {
-    console.error('User deletion error:', error);
-    res.status(500).json({ 
+  } catch (error) {    res.status(500).json({ 
       success: false, 
       message: 'Error deleting user' 
     });
@@ -1356,11 +1173,7 @@ router.delete('/users/:userId', verifyToken, superAdminMiddleware, async (req, r
 // Complete jobseeker deletion (admin only) - removes from both Firebase and database
 router.delete('/jobseekers/:userId/complete', verifyToken, adminMiddleware, async (req, res) => {
   try {
-    const { userId } = req.params;
-
-    console.log(`🗑️ Complete jobseeker deletion request - UserID: ${userId}`);
-
-    // Find user in User collection by UID
+    const { userId } = req.params;    // Find user in User collection by UID
     const user = await User.findOne({ uid: userId });
     if (!user) {
       return res.status(404).json({
@@ -1375,44 +1188,22 @@ router.delete('/jobseekers/:userId/complete', verifyToken, adminMiddleware, asyn
         success: false,
         message: 'User is not a jobseeker'
       });
-    }
-
-    console.log(`✅ Found jobseeker: ${user.email} - ${user.firstName} ${user.lastName}`);
-
-    // Store user info for email notification
+    }    // Store user info for email notification
     const userEmail = user.email;
     const userName = `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.email;
 
     // 1. Delete from Firebase Authentication
     try {
-      await admin.auth().deleteUser(user.uid);
-      console.log(`🔥 Firebase user deleted: ${user.uid}`);
-    } catch (firebaseError) {
-      console.error('⚠️ Firebase deletion failed:', firebaseError.message);
-      // Continue with database deletion even if Firebase fails
+      await admin.auth().deleteUser(user.uid);    } catch (firebaseError) {      // Continue with database deletion even if Firebase fails
     }
 
     // 2. Delete related data from MongoDB collections
     try {
       // Delete JobSeeker profile
-      await JobSeeker.deleteMany({ uid: user.uid });
-      console.log(`📋 JobSeeker profile deleted for UID: ${user.uid}`);
-
-      // Delete Resume data
-      await Resume.deleteMany({ jobSeekerUid: user.uid });
-      console.log(`📄 Resume data deleted for UID: ${user.uid}`);
-
-      // Delete Applications
-      const deletedApplications = await Application.deleteMany({ jobSeekerUid: user.uid });
-      console.log(`📝 ${deletedApplications.deletedCount} applications deleted for UID: ${user.uid}`);
-
-      // Delete from User collection
-      await User.findByIdAndDelete(user._id);
-      console.log(`👤 User record deleted: ${user._id}`);
-
-    } catch (dbError) {
-      console.error('❌ Database deletion error:', dbError);
-      return res.status(500).json({
+      await JobSeeker.deleteMany({ uid: user.uid });      // Delete Resume data
+      await Resume.deleteMany({ jobSeekerUid: user.uid });      // Delete Applications
+      const deletedApplications = await Application.deleteMany({ jobSeekerUid: user.uid });      // Delete from User collection
+      await User.findByIdAndDelete(user._id);    } catch (dbError) {      return res.status(500).json({
         success: false,
         message: 'Error deleting user data from database'
       });
@@ -1425,24 +1216,13 @@ router.delete('/jobseekers/:userId/complete', verifyToken, adminMiddleware, asyn
         userEmail,
         userName,
         'Your account has been permanently removed from the system by the administrator.'
-      );
-      console.log(`📧 Complete removal notification sent to ${userEmail}`);
-    } catch (emailError) {
-      console.error(`❌ Error sending complete removal email:`, emailError);
-      // Don't fail the request if email fails
-    }
-
-    console.log(`🎉 Complete jobseeker deletion completed successfully`);
-
-    res.json({
+      );    } catch (emailError) {      // Don't fail the request if email fails
+    }    res.json({
       success: true,
       message: 'Jobseeker completely removed from system. User has been notified via email.'
     });
 
-  } catch (error) {
-    console.error('❌ Complete jobseeker deletion error:', error);
-    console.error('Error stack:', error.stack);
-    res.status(500).json({ 
+  } catch (error) {    res.status(500).json({ 
       success: false, 
       message: 'Error completely deleting jobseeker',
       error: error.message
@@ -1497,9 +1277,7 @@ router.get('/analytics/system', verifyToken, superAdminMiddleware, async (req, r
       }
     });
 
-  } catch (error) {
-    console.error('System analytics error:', error);
-    res.status(500).json({ 
+  } catch (error) {    res.status(500).json({ 
       success: false, 
       message: 'Error fetching system analytics' 
     });
@@ -1897,24 +1675,10 @@ router.post('/reports/generate', verifyToken, superAdminMiddleware, async (req, 
     
     // Handle PDF generation
     if (format === 'pdf') {
-      try {
-        console.log('Starting PDF generation for report type:', reportType);
-        const reportName = getReportDisplayName(reportType);
-        console.log('Report name:', reportName);
-        
-        const pdfBuffer = await pdfReportService.generateReportPDF(finalReportData, reportName);
-        console.log('PDF buffer generated, size:', pdfBuffer.length, 'bytes');
-        
-        res.setHeader('Content-Type', 'application/pdf');
+      try {        const reportName = getReportDisplayName(reportType);        const pdfBuffer = await pdfReportService.generateReportPDF(finalReportData, reportName);        res.setHeader('Content-Type', 'application/pdf');
         res.setHeader('Content-Disposition', `attachment; filename="${reportName}_${startDate}_to_${endDate}.pdf"`);
-        res.setHeader('Content-Length', pdfBuffer.length);
-        
-        console.log('Sending PDF buffer to client');
-        return res.send(pdfBuffer);
-      } catch (pdfError) {
-        console.error('PDF generation error:', pdfError);
-        console.error('Error stack:', pdfError.stack);
-        // Fallback to JSON response if PDF generation fails
+        res.setHeader('Content-Length', pdfBuffer.length);        return res.send(pdfBuffer);
+      } catch (pdfError) {        // Fallback to JSON response if PDF generation fails
         return res.json({
           success: true,
           report: finalReportData,
@@ -1936,9 +1700,7 @@ router.post('/reports/generate', verifyToken, superAdminMiddleware, async (req, 
         res.setHeader('Content-Length', xlsxBuffer.length);
         
         return res.send(xlsxBuffer);
-      } catch (xlsxError) {
-        console.error('XLSX generation error:', xlsxError);
-        // Fallback to JSON response if XLSX generation fails
+      } catch (xlsxError) {        // Fallback to JSON response if XLSX generation fails
         return res.json({
           success: true,
           report: finalReportData,
@@ -1959,9 +1721,7 @@ router.post('/reports/generate', verifyToken, superAdminMiddleware, async (req, 
         res.setHeader('Content-Length', csvBuffer.length);
         
         return res.send(csvBuffer);
-      } catch (csvError) {
-        console.error('CSV generation error:', csvError);
-        // Fallback to JSON response if CSV generation fails
+      } catch (csvError) {        // Fallback to JSON response if CSV generation fails
         return res.json({
           success: true,
           report: finalReportData,
@@ -1977,9 +1737,7 @@ router.post('/reports/generate', verifyToken, superAdminMiddleware, async (req, 
       message: 'Report generated successfully'
     });
     
-  } catch (error) {
-    console.error('Report generation error:', error);
-    res.status(500).json({
+  } catch (error) {    res.status(500).json({
       success: false,
       message: 'Error generating report'
     });
@@ -2007,9 +1765,7 @@ router.get('/reports/history', verifyToken, superAdminMiddleware, async (req, re
       reports: [],
       message: 'Report history retrieved successfully'
     });
-  } catch (error) {
-    console.error('Report history error:', error);
-    res.status(500).json({
+  } catch (error) {    res.status(500).json({
       success: false,
       message: 'Error fetching report history'
     });
@@ -2191,9 +1947,7 @@ router.post('/reports/generate-all', verifyToken, superAdminMiddleware, async (r
           data: reportData
         };
         
-      } catch (error) {
-        console.error(`Error generating ${reportType}:`, error);
-        failedReports.push(reportType);
+      } catch (error) {        failedReports.push(reportType);
         return null;
       }
     });
@@ -2225,9 +1979,7 @@ router.post('/reports/generate-all', verifyToken, superAdminMiddleware, async (r
         res.setHeader('Content-Length', pdfBuffer.length);
         
         return res.send(pdfBuffer);
-      } catch (pdfError) {
-        console.error('Bulk PDF generation error:', pdfError);
-        // Fallback to JSON response if PDF generation fails
+      } catch (pdfError) {        // Fallback to JSON response if PDF generation fails
         return res.json({
           success: true,
           data: response,
@@ -2247,9 +1999,7 @@ router.post('/reports/generate-all', verifyToken, superAdminMiddleware, async (r
         res.setHeader('Content-Length', xlsxBuffer.length);
         
         return res.send(xlsxBuffer);
-      } catch (xlsxError) {
-        console.error('Bulk XLSX generation error:', xlsxError);
-        // Fallback to JSON response if XLSX generation fails
+      } catch (xlsxError) {        // Fallback to JSON response if XLSX generation fails
         return res.json({
           success: true,
           data: response,
@@ -2265,9 +2015,7 @@ router.post('/reports/generate-all', verifyToken, superAdminMiddleware, async (r
       message: `Generated ${successfulReports.length} reports successfully`
     });
     
-  } catch (error) {
-    console.error('Bulk report generation error:', error);
-    res.status(500).json({
+  } catch (error) {    res.status(500).json({
       success: false,
       message: 'Error generating bulk reports'
     });
@@ -2286,9 +2034,7 @@ router.get('/jobseekers/all', verifyToken, adminMiddleware, async (req, res) => 
       total: jobseekers.length
     });
 
-  } catch (error) {
-    console.error('Error fetching jobseekers:', error);
-    res.status(500).json({ 
+  } catch (error) {    res.status(500).json({ 
       success: false, 
       message: 'Error fetching jobseekers',
       error: error.message
@@ -2312,9 +2058,7 @@ router.get('/jobseekers/users', verifyToken, adminMiddleware, async (req, res) =
       total: jobseekerUsers.length
     });
 
-  } catch (error) {
-    console.error('Error fetching jobseeker users:', error);
-    res.status(500).json({ 
+  } catch (error) {    res.status(500).json({ 
       success: false, 
       message: 'Error fetching jobseeker users',
       error: error.message
@@ -2352,9 +2096,7 @@ router.get('/resumes/all', verifyToken, adminMiddleware, async (req, res) => {
       total: resumes.length
     });
 
-  } catch (error) {
-    console.error('Error fetching all resumes:', error);
-    res.status(500).json({ 
+  } catch (error) {    res.status(500).json({ 
       success: false, 
       message: 'Error fetching resumes',
       error: error.message
@@ -2696,9 +2438,7 @@ router.get('/job-demand-analytics', verifyToken, adminMiddleware, async (req, re
       data: analytics
     });
 
-  } catch (error) {
-    console.error('❌ Error fetching job demand analytics:', error);
-    res.status(500).json({
+  } catch (error) {    res.status(500).json({
       success: false,
       message: 'Error fetching job demand analytics',
       error: error.message
@@ -2824,9 +2564,7 @@ router.post('/reports/generate-selected', verifyToken, superAdminMiddleware, asy
           data: reportData
         };
         
-      } catch (error) {
-        console.error(`Error generating ${reportType}:`, error);
-        failedReports.push(reportType);
+      } catch (error) {        failedReports.push(reportType);
         return null;
       }
     });
@@ -2859,9 +2597,7 @@ router.post('/reports/generate-selected', verifyToken, superAdminMiddleware, asy
         res.setHeader('Content-Length', pdfBuffer.length);
         
         return res.send(pdfBuffer);
-      } catch (pdfError) {
-        console.error('Selected PDF generation error:', pdfError);
-        return res.json({
+      } catch (pdfError) {        return res.json({
           success: true,
           data: response,
           message: `Generated ${successfulReports.length} selected reports successfully (PDF generation failed, returning JSON)`,
@@ -2879,9 +2615,7 @@ router.post('/reports/generate-selected', verifyToken, superAdminMiddleware, asy
         res.setHeader('Content-Length', xlsxBuffer.length);
         
         return res.send(xlsxBuffer);
-      } catch (xlsxError) {
-        console.error('Selected XLSX generation error:', xlsxError);
-        return res.json({
+      } catch (xlsxError) {        return res.json({
           success: true,
           data: response,
           message: `Generated ${successfulReports.length} selected reports successfully (XLSX generation failed, returning JSON)`,
@@ -2896,9 +2630,7 @@ router.post('/reports/generate-selected', verifyToken, superAdminMiddleware, asy
       message: `Generated ${successfulReports.length} selected reports successfully`
     });
     
-  } catch (error) {
-    console.error('Selected reports generation error:', error);
-    res.status(500).json({
+  } catch (error) {    res.status(500).json({
       success: false,
       message: 'Error generating selected reports'
     });
@@ -2907,10 +2639,7 @@ router.post('/reports/generate-selected', verifyToken, superAdminMiddleware, asy
 
 // Test endpoint for XLSX generation
 router.get('/test-xlsx', verifyToken, adminMiddleware, async (req, res) => {
-  try {
-    console.log('Testing XLSX generation...');
-    
-    // Create sample report data using real database queries
+  try {    // Create sample report data using real database queries
     const [totalUsers, totalJobs, totalApplications] = await Promise.all([
       User.countDocuments(),
       Job.countDocuments(),
@@ -2949,9 +2678,7 @@ router.get('/test-xlsx', verifyToken, adminMiddleware, async (req, res) => {
     
     res.send(xlsxBuffer);
     
-  } catch (error) {
-    console.error('XLSX test error:', error);
-    res.status(500).json({
+  } catch (error) {    res.status(500).json({
       success: false,
       message: 'XLSX test failed',
       error: error.message
@@ -3026,25 +2753,19 @@ router.get('/view-document/:documentId', async (req, res) => {
         response.pipe(res);
       });
       
-      request.on('error', (error) => {
-        console.error('Error fetching document from cloud:', error);
-        res.status(500).json({
+      request.on('error', (error) => {        res.status(500).json({
           success: false,
           message: 'Error loading document'
         });
       });
       
-    } catch (error) {
-      console.error('Error streaming document:', error);
-      res.status(500).json({
+    } catch (error) {      res.status(500).json({
         success: false,
         message: 'Error loading document'
       });
     }
     
-  } catch (error) {
-    console.error('Error fetching document for preview:', error);
-    res.status(500).json({
+  } catch (error) {    res.status(500).json({
       success: false,
       message: 'Error fetching document',
       error: error.message

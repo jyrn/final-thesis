@@ -9,10 +9,7 @@ const GeneralizableTextCleaner = require('./GeneralizableTextCleaner');
 class ResumeTextCleaner {
   constructor() {
     this.version = '1.2.0';
-    this.generalizableCleaner = new GeneralizableTextCleaner();
-    console.log('🧹 ResumeTextCleaner v1.2.0 initialized with PDF line-break handling');
-    
-    // Comprehensive list of concatenated word fixes
+    this.generalizableCleaner = new GeneralizableTextCleaner();    // Comprehensive list of concatenated word fixes
     this.concatenatedFixes = {
       // Common resume concatenations
       'Systemfor': 'System for',
@@ -292,67 +289,43 @@ class ResumeTextCleaner {
    * @param {string} rawText - Raw text from PDF extraction
    * @returns {object} - Cleaned text with metadata
    */
-  cleanResumeText(rawText) {
-    console.log('🧹 Starting comprehensive text cleaning...');
-    console.log('🧹 Original text length:', rawText.length);
-    
-    let cleanedText = rawText;
+  cleanResumeText(rawText) {    let cleanedText = rawText;
     const cleaningSteps = [];
     
-    // Step 1: Basic normalization
-    console.log('🧹 Step 1: Basic normalization');
-    cleanedText = this.normalizeBasicCharacters(cleanedText);
+    // Step 1: Basic normalization    cleanedText = this.normalizeBasicCharacters(cleanedText);
     cleaningSteps.push('Basic character normalization');
     
-    // Step 2: Fix concatenated words
-    console.log('🧹 Step 2: Fix concatenated words');
-    const concatenationResult = this.fixConcatenatedWords(cleanedText);
+    // Step 2: Fix concatenated words    const concatenationResult = this.fixConcatenatedWords(cleanedText);
     cleanedText = concatenationResult.text;
     cleaningSteps.push(`Fixed ${concatenationResult.fixesApplied} concatenated words`);
     
-    // Step 2.5: Fix comma-separated concatenations
-    console.log('🧹 Step 2.5: Fix comma-separated concatenations');
-    cleanedText = this.fixCommaSeparatedConcatenations(cleanedText);
+    // Step 2.5: Fix comma-separated concatenations    cleanedText = this.fixCommaSeparatedConcatenations(cleanedText);
     cleaningSteps.push('Fixed comma-separated concatenations');
     
     // Step 2.7: Apply generalizable patterns (disabled - too aggressive for now)
-    // console.log('🧹 Step 2.7: Apply generalizable patterns');
+    // console.log('� Step 2.7: Apply generalizable patterns');
     // cleanedText = this.generalizableCleaner.cleanAnyResumeFormat(cleanedText);
     // cleaningSteps.push('Applied generalizable cleaning patterns');
     
-    // Step 3: Normalize spacing and line breaks
-    console.log('🧹 Step 3: Normalize spacing');
-    cleanedText = this.normalizeSpacing(cleanedText);
+    // Step 3: Normalize spacing and line breaks    cleanedText = this.normalizeSpacing(cleanedText);
     cleaningSteps.push('Normalized spacing and line breaks');
     
-    // Step 4: Fix section headers
-    console.log('🧹 Step 4: Fix section headers');
-    cleanedText = this.normalizeSectionHeaders(cleanedText);
+    // Step 4: Fix section headers    cleanedText = this.normalizeSectionHeaders(cleanedText);
     cleaningSteps.push('Normalized section headers');
     
-    // Step 5: Clean contact information
-    console.log('🧹 Step 5: Clean contact information');
-    cleanedText = this.normalizeContactInfo(cleanedText);
+    // Step 5: Clean contact information    cleanedText = this.normalizeContactInfo(cleanedText);
     cleaningSteps.push('Normalized contact information');
     
-    // Step 6: Fix date formats
-    console.log('🧹 Step 6: Fix date formats');
-    cleanedText = this.normalizeDateFormats(cleanedText);
+    // Step 6: Fix date formats    cleanedText = this.normalizeDateFormats(cleanedText);
     cleaningSteps.push('Normalized date formats');
     
-    // Step 7: Remove artifacts and noise
-    console.log('🧹 Step 7: Remove artifacts');
-    cleanedText = this.removeArtifacts(cleanedText);
+    // Step 7: Remove artifacts and noise    cleanedText = this.removeArtifacts(cleanedText);
     cleaningSteps.push('Removed PDF artifacts and noise');
     
-    // Step 8: Fix technology names that got broken
-    console.log('🧹 Step 8: Fix technology names');
-    cleanedText = this.fixTechnologyNames(cleanedText);
+    // Step 8: Fix technology names that got broken    cleanedText = this.fixTechnologyNames(cleanedText);
     cleaningSteps.push('Fixed technology names');
     
-    // Step 9: Final cleanup
-    console.log('🧹 Step 9: Final cleanup');
-    cleanedText = this.finalCleanup(cleanedText);
+    // Step 9: Final cleanup    cleanedText = this.finalCleanup(cleanedText);
     cleaningSteps.push('Final text cleanup');
     
     const result = {
@@ -365,13 +338,7 @@ class ResumeTextCleaner {
         cleaningSteps: cleaningSteps,
         processedAt: new Date().toISOString()
       }
-    };
-    
-    console.log('🧹 Text cleaning completed');
-    console.log('🧹 Length change:', rawText.length, '→', cleanedText.length);
-    console.log('🧹 Reduction:', result.metadata.reductionPercentage + '%');
-    
-    return result;
+    };    return result;
   }
 
   /**
@@ -522,11 +489,7 @@ class ResumeTextCleaner {
     const lines = text.split('\n');
     const hasVeryLongLine = lines.some(line => line.length > 1000);
     
-    if (hasVeryLongLine || lines.length === 1) {
-      console.log('🧹 Detected single-line PDF extraction, breaking into proper sections...');
-      normalized = this.breakUpSingleLineText(text);
-      console.log('🧹 After breaking: lines =', normalized.split('\n').length);
-    }
+    if (hasVeryLongLine || lines.length === 1) {      normalized = this.breakUpSingleLineText(text);    }
     
     return normalized
       // Normalize multiple spaces to single space (but preserve line breaks)
@@ -605,11 +568,7 @@ class ResumeTextCleaner {
     broken = broken.replace(/\n{3,}/g, '\n\n');
     
     // Remove line breaks at the very beginning
-    broken = broken.replace(/^\n+/, '');
-    
-    console.log('🧹 Single-line text broken into', broken.split('\n').length, 'lines');
-    
-    return broken;
+    broken = broken.replace(/^\n+/, '');    return broken;
   }
 
   /**
@@ -754,10 +713,7 @@ class ResumeTextCleaner {
   /**
    * Quick clean method for lighter processing
    */
-  quickClean(text) {
-    console.log('🧹 Quick text cleaning...');
-    
-    let cleaned = text;
+  quickClean(text) {    let cleaned = text;
     
     // Basic normalization only
     cleaned = this.normalizeBasicCharacters(cleaned);

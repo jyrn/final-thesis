@@ -78,12 +78,8 @@ export class OCRService {
           }
 
           resolve(images)
-        } catch (error) {
-          console.error("PDF processing error:", error)
-          // Fallback: create a mock text extraction for development
-          if (process.env.NODE_ENV === "development") {
-            console.warn("Using mock OCR data for development")
-            resolve([]) // Return empty array to trigger mock processing
+        } catch (error) {          // Fallback: create a mock text extraction for development
+          if (process.env.NODE_ENV === "development") {            resolve([]) // Return empty array to trigger mock processing
           } else {
             reject(error)
           }
@@ -276,9 +272,7 @@ University of the Philippines | 2020`,
         confidence: averageConfidence,
         pages: ocrResults,
       }
-    } catch (error) {
-      console.error("OCR processing error:", error)
-      throw new Error(`OCR processing failed: ${error instanceof Error ? error.message : "Unknown error"}`)
+    } catch (error) {      throw new Error(`OCR processing failed: ${error instanceof Error ? error.message : "Unknown error"}`)
     }
   }
 

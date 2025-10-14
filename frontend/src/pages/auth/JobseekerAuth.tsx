@@ -69,9 +69,7 @@ const JobseekerAuth: React.FC = () => {
             // Delete the newly created Google provider account from Firebase
             try {
               await response.user.delete()
-            } catch (deleteError) {
-              console.error('Failed to delete Google account:', deleteError)
-              // If we can't delete, at least sign out
+            } catch (deleteError) {              // If we can't delete, at least sign out
               await firebaseAuthService.signOut()
             }
             
@@ -181,9 +179,7 @@ const JobseekerAuth: React.FC = () => {
           }))
         }
       }
-    } catch (error: any) {
-      console.error("Google authentication error:", error)
-      setErrors(prev => ({ ...prev, general: error.message || "Google authentication failed. Please try again." }))
+    } catch (error: any) {      setErrors(prev => ({ ...prev, general: error.message || "Google authentication failed. Please try again." }))
     } finally {
       setIsUploading(false)
     }
@@ -409,9 +405,7 @@ const JobseekerAuth: React.FC = () => {
           general: response.error || "Login failed. Please try again." 
         }))
       }
-    } catch (error: any) {
-      console.error('Login error:', error)
-      setErrors(prev => ({ 
+    } catch (error: any) {      setErrors(prev => ({ 
         ...prev, 
         general: error.message || "Login failed. Please try again." 
       }))
@@ -488,10 +482,7 @@ const JobseekerAuth: React.FC = () => {
       // Redirect to OTP verification page
       navigate(`/auth/verify-otp?email=${encodeURIComponent(formData.email)}&role=jobseeker`)
       
-    } catch (error: any) {
-      console.error('Registration error:', error)
-      
-      // If Firebase throws "email already in use" error, show a more helpful message
+    } catch (error: any) {      // If Firebase throws "email already in use" error, show a more helpful message
       let errorMessage = error.message || 'Registration failed. Please try again.'
       if (error.code === 'auth/email-already-in-use') {
         errorMessage = 'An account with this email already exists. Please login instead or use a different email address.'

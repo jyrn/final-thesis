@@ -1,9 +1,7 @@
 let PDFDocument;
 try {
   PDFDocument = require('pdfkit');
-} catch (error) {
-  console.error('PDFKit not found. Please install it with: npm install pdfkit');
-  PDFDocument = null;
+} catch (error) {  PDFDocument = null;
 }
 
 const fs = require('fs');

@@ -82,9 +82,7 @@ const UsersTab: React.FC<UsersTabProps> = () => {
       try {
         const analyticsData = await fetchAnalyticsData();
         setData(analyticsData);
-      } catch (error) {
-        console.error("Error loading analytics data:", error);
-      } finally {
+      } catch (error) {      } finally {
         setLoading(false);
       }
     };

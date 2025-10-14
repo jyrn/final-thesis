@@ -147,13 +147,9 @@ export const ApplicantDetailsModal: React.FC<ApplicantDetailsModalProps> = ({
         if (application) {
           setApplicationData(application);
           setNotes(application.notes || '');
-        } else {
-          console.error('No application found for applicant:', applicant.id);
-        }
+        } else {        }
       }
-    } catch (error) {
-      console.error('Error fetching application details:', error);
-    } finally {
+    } catch (error) {    } finally {
       setIsLoadingApplication(false);
     }
   };
@@ -238,9 +234,7 @@ export const ApplicantDetailsModal: React.FC<ApplicantDetailsModalProps> = ({
           // Ignore parse errors
         }
       }
-    } catch (error) {
-      console.error('Error fetching resume:', error);
-    }
+    } catch (error) {    }
   };
 
   const handleBackToDetails = () => {
@@ -301,10 +295,7 @@ export const ApplicantDetailsModal: React.FC<ApplicantDetailsModalProps> = ({
         const data = await response.json();
         
         // Check if cloud URLs are available for direct download
-        if (data.success && data.useCloudUrl && data.resumes) {
-          console.log('✅ Downloading from cloud:', data.resumes);
-          
-          // Download both resumes if available
+        if (data.success && data.useCloudUrl && data.resumes) {          // Download both resumes if available
           if (data.resumes.generated) {
             const fileName = `${data.applicantName.replace(/[^a-zA-Z0-9]/g, '_')}_Generated_Resume.pdf`;
             const link = document.createElement('a');
@@ -377,9 +368,7 @@ export const ApplicantDetailsModal: React.FC<ApplicantDetailsModalProps> = ({
       } else {
         alert('Failed to save notes');
       }
-    } catch (error) {
-      console.error('Error saving notes:', error);
-      alert('Error saving notes');
+    } catch (error) {      alert('Error saving notes');
     }
   };
 
@@ -550,9 +539,7 @@ export const ApplicantDetailsModal: React.FC<ApplicantDetailsModalProps> = ({
                         const blob = await response.blob();
                         const blobUrl = URL.createObjectURL(new Blob([blob], { type: 'application/pdf' }));
                         window.open(blobUrl, '_blank');
-                      } catch (error) {
-                        console.error('Error opening in new tab:', error);
-                        // Fallback to direct URL
+                      } catch (error) {                        // Fallback to direct URL
                         window.open(url, '_blank');
                       }
                     }

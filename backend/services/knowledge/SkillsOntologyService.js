@@ -11,10 +11,6 @@ class SkillsOntologyService {
     this.skillsGraph = this.loadSkillsOntology();
     this.skillIndex = this.buildSkillIndex();
     this.synonymMap = this.buildSynonymMap();
-    
-    console.log('✅ Skills Ontology Service initialized');
-    console.log(`   - ${Object.keys(this.skillIndex).length} skills loaded`);
-    console.log(`   - ${Object.keys(this.synonymMap).length} synonyms mapped`);
   }
 
   /**
@@ -25,7 +21,6 @@ class SkillsOntologyService {
     
     // If file doesn't exist, create default ontology
     if (!fs.existsSync(ontologyPath)) {
-      console.log('⚠️  Skills ontology not found, creating default...');
       const defaultOntology = this.createDefaultOntology();
       
       // Ensure directory exists

@@ -62,11 +62,7 @@ const DocumentViewer: React.FC<DocumentViewerProps> = ({
   };
 
 
-  const openDocumentPreview = async (document: EmployerDocument) => {
-    console.log('🔍 Opening document preview:', document.documentName);
-    console.log('🔍 Document _id:', document._id);
-    
-    if (!document._id) {
+  const openDocumentPreview = async (document: EmployerDocument) => {    if (!document._id) {
       alert('Document ID not available');
       return;
     }
@@ -85,15 +81,10 @@ const DocumentViewer: React.FC<DocumentViewerProps> = ({
       const previewDoc = {
         ...document,
         cloudUrl: authenticatedUrl
-      };
-      
-      console.log('📄 Opening authenticated document preview:', authenticatedUrl);
-      setPreviewDocument(previewDoc);
+      };      setPreviewDocument(previewDoc);
       setShowPreview(true);
       
-    } catch (error) {
-      console.error('❌ Error preparing document preview:', error);
-      alert('Unable to preview document');
+    } catch (error) {      alert('Unable to preview document');
     }
   };
 
@@ -218,14 +209,7 @@ const DocumentViewer: React.FC<DocumentViewerProps> = ({
               
               <button
                 className="action-btn download"
-                onClick={() => {
-                  console.log('📥 Download requested for:', document.documentName);
-                  console.log('📥 Document cloudUrl:', document.cloudUrl);
-                  console.log('📥 Document data:', document);
-                  
-                  if (!document.cloudUrl) {
-                    console.error('❌ No cloudUrl available for download:', document);
-                    alert('Document download not available - document URL missing');
+                onClick={() => {                  if (!document.cloudUrl) {                    alert('Document download not available - document URL missing');
                     return;
                   }
                   

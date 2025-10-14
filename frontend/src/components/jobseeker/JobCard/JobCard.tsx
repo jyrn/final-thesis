@@ -136,9 +136,7 @@ const JobCard: React.FC<JobCardProps> = ({
     // Only trigger if clicking on the card itself, not buttons
     if ((e.target as HTMLElement).closest('button')) {
       return;
-    }
-    console.log(' JobCard clicked:', job.title);
-    onJobClick?.(job);
+    }    onJobClick?.(job);
   };
 
   return (

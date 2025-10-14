@@ -76,9 +76,7 @@ router.get('/account-status', verifyToken, requireRole('employer'), async (req, 
         canPostJobs: employer.canPerform('post_jobs')
       }
     });
-  } catch (error) {
-    console.error('Error fetching employer account status:', error);
-    res.status(500).json({
+  } catch (error) {    res.status(500).json({
       success: false,
       message: 'Error fetching account status',
       error: error.message
@@ -102,9 +100,7 @@ router.get('/profile', verifyToken, requireRole('employer'), async (req, res) =>
       success: true,
       data: employer.getPublicProfile()
     });
-  } catch (error) {
-    console.error('Error fetching employer profile:', error);
-    res.status(500).json({
+  } catch (error) {    res.status(500).json({
       success: false,
       message: 'Error fetching profile',
       error: error.message
@@ -160,9 +156,7 @@ router.put('/profile', verifyToken, requireRole('employer'), async (req, res) =>
       message: 'Profile updated successfully',
       data: employer.getPublicProfile()
     });
-  } catch (error) {
-    console.error('Error updating employer profile:', error);
-    res.status(500).json({
+  } catch (error) {    res.status(500).json({
       success: false,
       message: 'Error updating profile',
       error: error.message
@@ -177,10 +171,7 @@ router.post('/upload-documents-cloud', verifyToken, requireRole('employer'), clo
   { name: 'philjobnetRegistration', maxCount: 1 },
   { name: 'doleNoPendingCase', maxCount: 1 }
 ]), async (req, res) => {
-  const requestId = Math.random().toString(36).substr(2, 9);
-  console.log(`☁️ [${requestId}] Cloud document upload request received`);
-  
-  try {
+  const requestId = Math.random().toString(36).substr(2, 9);  try {
     const employer = await Employer.findOne({ uid: req.user.uid });
     
     if (!employer) {
@@ -208,11 +199,7 @@ router.post('/upload-documents-cloud', verifyToken, requireRole('employer'), clo
           message: `Missing required document: ${docType}`
         });
       }
-    }
-
-    console.log(`☁️ [${requestId}] Uploading ${Object.keys(uploadedFiles).length} documents to cloud storage`);
-
-    // Upload files to cloud storage and create documents array
+    }    // Upload files to cloud storage and create documents array
     const documentsArray = [];
     
     for (const [docType, files] of Object.entries(uploadedFiles)) {
@@ -237,12 +224,7 @@ router.post('/upload-documents-cloud', verifyToken, requireRole('employer'), clo
             mimeType: file.mimetype,
             uploadedAt: new Date(),
             isRequired: true
-          });
-          
-          console.log(`✅ [${requestId}] Uploaded ${docType} to cloud: ${cloudResult.publicId}`);
-        } catch (uploadError) {
-          console.error(`❌ [${requestId}] Failed to upload ${docType}:`, uploadError);
-          return res.status(500).json({
+          });        } catch (uploadError) {          return res.status(500).json({
             success: false,
             message: `Failed to upload ${docType} to cloud storage`,
             error: uploadError.message
@@ -295,11 +277,7 @@ router.post('/upload-documents-cloud', verifyToken, requireRole('employer'), clo
     employer.documentVerificationStatus = 'pending';
     employer.profileComplete = true;
 
-    await employer.save();
-    
-    console.log(`✅ [${requestId}] Documents saved successfully to database`);
-
-    res.json({
+    await employer.save();    res.json({
       success: true,
       message: 'Documents uploaded successfully to cloud storage',
       data: {
@@ -320,10 +298,7 @@ router.post('/upload-documents-cloud', verifyToken, requireRole('employer'), clo
       }
     });
 
-  } catch (error) {
-    console.error(`❌ [${requestId}] Error uploading documents:`, error);
-    
-    res.status(500).json({
+  } catch (error) {    res.status(500).json({
       success: false,
       message: 'Error uploading documents to cloud storage',
       error: error.message
@@ -338,12 +313,7 @@ router.post('/upload-single-document', verifyToken, requireRole('employer'), clo
   { name: 'philjobnetRegistration', maxCount: 1 },
   { name: 'doleNoPendingCase', maxCount: 1 }
 ]), async (req, res) => {
-  const requestId = Math.random().toString(36).substr(2, 9);
-  console.log(`📄 [${requestId}] Single document upload request received`);
-  console.log(`📄 [${requestId}] User:`, req.user?.uid);
-  console.log(`📄 [${requestId}] Files received:`, Object.keys(req.files || {}));
-  
-  try {
+  const requestId = Math.random().toString(36).substr(2, 9);  try {
     const employer = await Employer.findOne({ uid: req.user.uid });
     
     if (!employer) {
@@ -360,11 +330,7 @@ router.post('/upload-single-document', verifyToken, requireRole('employer'), clo
         success: false,
         message: 'No document was uploaded'
       });
-    }
-
-    console.log(`📄 [${requestId}] Uploading single document to cloud storage`);
-
-    // Process the single uploaded document
+    }    // Process the single uploaded document
     let uploadedDocument = null;
     let documentType = null;
     
@@ -374,15 +340,7 @@ router.post('/upload-single-document', verifyToken, requireRole('employer'), clo
         documentType = docType;
         
         try {
-          // Validate cloud storage service
-          console.log(`☁️ [${requestId}] Validating cloud storage service...`);
-          console.log(`☁️ [${requestId}] File mimetype: ${file.mimetype}`);
-          cloudStorageService.validateConfig();
-          console.log(`☁️ [${requestId}] Cloud storage validation passed`);
-          
-          // Upload to cloud storage
-          console.log(`☁️ [${requestId}] Uploading to cloud storage: ${file.originalname} (${file.size} bytes)`);
-          const cloudResult = await cloudStorageService.uploadBuffer(
+          // Validate cloud storage service          cloudStorageService.validateConfig();          // Upload to cloud storage          const cloudResult = await cloudStorageService.uploadBuffer(
             file.buffer, 
             file.originalname, 
             `users/${req.user.uid}/documents/${docType}`,
@@ -398,13 +356,8 @@ router.post('/upload-single-document', verifyToken, requireRole('employer'), clo
             mimeType: file.mimetype,
             uploadedAt: new Date(),
             isRequired: true
-          };
-          
-          console.log(`✅ [${requestId}] Uploaded ${docType} to cloud: ${cloudResult.publicId}`);
-          break; // Only process one document
-        } catch (uploadError) {
-          console.error(`❌ [${requestId}] Failed to upload ${docType}:`, uploadError);
-          return res.status(500).json({
+          };          break; // Only process one document
+        } catch (uploadError) {          return res.status(500).json({
             success: false,
             message: `Failed to upload ${docType} to cloud storage`,
             error: uploadError.message
@@ -440,11 +393,7 @@ router.post('/upload-single-document', verifyToken, requireRole('employer'), clo
       employer.documentVerificationStatus = 'pending';
     }
 
-    await employer.save();
-    
-    console.log(`✅ [${requestId}] Single document saved successfully to database`);
-
-    res.json({
+    await employer.save();    res.json({
       success: true,
       message: 'Document uploaded successfully to cloud storage',
       data: {
@@ -455,11 +404,7 @@ router.post('/upload-single-document', verifyToken, requireRole('employer'), clo
       }
     });
 
-  } catch (error) {
-    console.error(`❌ [${requestId}] Error uploading single document:`, error);
-    console.error(`❌ [${requestId}] Error stack:`, error.stack);
-    
-    res.status(500).json({
+  } catch (error) {    res.status(500).json({
       success: false,
       message: 'Error uploading document to cloud storage',
       error: error.message,
@@ -499,10 +444,7 @@ router.get('/view-document/:documentType', async (req, res) => {
       error: authError.message
     });
   }
-  const requestId = Math.random().toString(36).substr(2, 9);
-  console.log(`👁️ [${requestId}] Document view request for type: ${req.params.documentType}`);
-  
-  try {
+  const requestId = Math.random().toString(36).substr(2, 9);  try {
     const employer = await Employer.findOne({ uid: req.user.uid });
     
     if (!employer) {
@@ -522,19 +464,11 @@ router.get('/view-document/:documentType', async (req, res) => {
       });
     }
 
-    let documentUrl = document.cloudUrl;
-    console.log(`🔍 [${requestId}] Document cloudUrl:`, documentUrl);
-    console.log(`🔍 [${requestId}] Document cloudPublicId:`, document.cloudPublicId);
-    
-    // If we have a cloudPublicId, generate a proper public URL
+    let documentUrl = document.cloudUrl;    // If we have a cloudPublicId, generate a proper public URL
     if (document.cloudPublicId) {
       try {
-        const publicUrl = cloudStorageService.generatePublicUrl(document.cloudPublicId);
-        console.log(`🌐 [${requestId}] Generated public URL for document: ${publicUrl}`);
-        documentUrl = publicUrl; // Use generated public URL
-      } catch (error) {
-        console.error(`❌ [${requestId}] Failed to generate public URL:`, error);
-        // Fall back to original cloudUrl if public URL generation fails
+        const publicUrl = cloudStorageService.generatePublicUrl(document.cloudPublicId);        documentUrl = publicUrl; // Use generated public URL
+      } catch (error) {        // Fall back to original cloudUrl if public URL generation fails
       }
     }
     
@@ -543,45 +477,24 @@ router.get('/view-document/:documentType', async (req, res) => {
         success: false,
         message: 'Document URL not available - cloud storage required'
       });
-    }
-
-    console.log(`✅ [${requestId}] Document URL provided: ${documentUrl.substring(0, 50)}...`);
-    
-    // Always fetch and serve the content directly to avoid CORS issues
+    }    // Always fetch and serve the content directly to avoid CORS issues
     try {
       const https = require('https');
       const http = require('http');
       const url = require('url');
       
       const parsedUrl = url.parse(documentUrl);
-      const client = parsedUrl.protocol === 'https:' ? https : http;
-      
-      console.log(`📥 [${requestId}] Fetching document from: ${parsedUrl.protocol}//${parsedUrl.host}`);
-      
-      const request = client.get(documentUrl, (response) => {
-        console.log(`📡 [${requestId}] Response status: ${response.statusCode}`);
-        console.log(`📡 [${requestId}] Response headers:`, response.headers);
-        
-        if (response.statusCode !== 200) {
-          console.error(`❌ [${requestId}] HTTP ${response.statusCode}: ${response.statusMessage}`);
-          
-          // Try to read the error response body
+      const client = parsedUrl.protocol === 'https:' ? https : http;      const request = client.get(documentUrl, (response) => {        if (response.statusCode !== 200) {          // Try to read the error response body
           let errorBody = '';
           response.on('data', chunk => errorBody += chunk);
-          response.on('end', () => {
-            console.error(`❌ [${requestId}] Error response body:`, errorBody);
-            return res.status(response.statusCode).json({
+          response.on('end', () => {            return res.status(response.statusCode).json({
               success: false,
               message: `Failed to fetch document: ${response.statusMessage}`,
               details: errorBody
             });
           });
           return;
-        }
-        
-        console.log(`✅ [${requestId}] Document fetched successfully, streaming to client`);
-        
-        // Set appropriate headers for PDF
+        }        // Set appropriate headers for PDF
         res.setHeader('Content-Type', 'application/pdf');
         res.setHeader('Content-Disposition', `inline; filename="${document.documentName}"`);
         res.setHeader('Cache-Control', 'public, max-age=3600'); // Cache for 1 hour
@@ -591,37 +504,28 @@ router.get('/view-document/:documentType', async (req, res) => {
         response.pipe(res);
       });
       
-      request.on('error', (error) => {
-        console.error(`❌ [${requestId}] Request error:`, error);
-        res.status(500).json({
+      request.on('error', (error) => {        res.status(500).json({
           success: false,
           message: 'Failed to fetch document',
           error: error.message
         });
       });
       
-      request.setTimeout(30000, () => {
-        console.error(`❌ [${requestId}] Request timeout`);
-        request.destroy();
+      request.setTimeout(30000, () => {        request.destroy();
         res.status(408).json({
           success: false,
           message: 'Document request timeout'
         });
       });
       
-    } catch (fetchError) {
-      console.error(`❌ [${requestId}] Error fetching document:`, fetchError);
-      res.status(500).json({
+    } catch (fetchError) {      res.status(500).json({
         success: false,
         message: 'Error accessing document',
         error: fetchError.message
       });
     }
 
-  } catch (error) {
-    console.error(`❌ [${requestId}] Error viewing document:`, error);
-    
-    res.status(500).json({
+  } catch (error) {    res.status(500).json({
       success: false,
       message: 'Error accessing document',
       error: error.message
@@ -636,11 +540,7 @@ router.post('/upload-documents', verifyToken, requireRole('employer'), diskUploa
   { name: 'philjobnetRegistration', maxCount: 1 },
   { name: 'doleNoPendingCase', maxCount: 1 }
 ]), async (req, res) => {
-  const requestId = Math.random().toString(36).substr(2, 9);
-  console.log(`📄 [${requestId}] Document upload request received`);
-  console.log(`📁 [${requestId}] Files:`, Object.keys(req.files || {}));
-  
-  try {
+  const requestId = Math.random().toString(36).substr(2, 9);  try {
     const employer = await Employer.findOne({ uid: req.user.uid });
     
     if (!employer) {
@@ -699,11 +599,7 @@ router.post('/upload-documents', verifyToken, requireRole('employer'), diskUploa
           isRequired: true
         });
       }
-    }
-    
-    console.log(`📄 [${requestId}] Documents array to save:`, documentsArray.length, 'documents');
-    
-    // Update employer with company details
+    }    // Update employer with company details
     if (contactPersonFirstName || contactPersonLastName) {
       const fullName = [contactPersonFirstName, contactPersonLastName]
         .filter(name => name && name.trim())
@@ -775,10 +671,7 @@ router.post('/upload-documents', verifyToken, requireRole('employer'), diskUploa
       }
     });
 
-  } catch (error) {
-    console.error('Error uploading documents:', error);
-    
-    // Clean up uploaded files if there was an error
+  } catch (error) {    // Clean up uploaded files if there was an error
     if (req.files) {
       Object.values(req.files).flat().forEach(file => {
         if (fs.existsSync(file.path)) {
@@ -837,9 +730,7 @@ router.get('/documents/pending', verifyToken, requireRole('admin'), async (req, 
       }))
     });
 
-  } catch (error) {
-    console.error('Error fetching pending documents:', error);
-    res.status(500).json({
+  } catch (error) {    res.status(500).json({
       success: false,
       message: 'Error fetching pending documents',
       error: error.message
@@ -874,9 +765,7 @@ router.get('/:employerId/documents', verifyToken, requireRole('admin'), async (r
       }
     });
 
-  } catch (error) {
-    console.error('Error fetching employer documents:', error);
-    res.status(500).json({
+  } catch (error) {    res.status(500).json({
       success: false,
       message: 'Error fetching documents',
       error: error.message
@@ -951,9 +840,7 @@ router.put('/documents/:documentId/verify', verifyToken, requireRole('admin'), a
       }
     });
 
-  } catch (error) {
-    console.error('Error verifying document:', error);
-    res.status(500).json({
+  } catch (error) {    res.status(500).json({
       success: false,
       message: 'Error verifying document',
       error: error.message
@@ -1017,9 +904,7 @@ router.get('/documents/:documentId', verifyToken, async (req, res) => {
       });
     }
     
-  } catch (error) {
-    console.error('Error fetching document:', error);
-    res.status(500).json({
+  } catch (error) {    res.status(500).json({
       success: false,
       message: 'Error fetching document',
       error: error.message
@@ -1054,9 +939,7 @@ router.get('/documents', verifyToken, requireRole('employer'), async (req, res) 
       documents
     });
     
-  } catch (error) {
-    console.error('Error fetching documents:', error);
-    res.status(500).json({
+  } catch (error) {    res.status(500).json({
       success: false,
       message: 'Error fetching documents',
       error: error.message

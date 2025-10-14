@@ -318,10 +318,7 @@ const ReportsTab: React.FC = () => {
     }
 
     setLoading(true);
-    try {
-      console.log('Generating reports with filters:', filters);
-      
-      if (filters.reportTypes.length === 1) {
+    try {      if (filters.reportTypes.length === 1) {
         // Single report generation
         const reportType = filters.reportTypes[0];
         const selectedReport = reportTypes.find(r => r.id === reportType);
@@ -363,9 +360,7 @@ const ReportsTab: React.FC = () => {
           } else {
             // Handle JSON fallback
             const data = await response.json();
-            if (data.pdfError || data.xlsxError) {
-              console.warn(`${filters.format.toUpperCase()} generation failed, falling back to text format:`, data.pdfError || data.xlsxError);
-              const textContent = formatReportForPDF(data.report, selectedReport?.name);
+            if (data.pdfError || data.xlsxError) {              const textContent = formatReportForPDF(data.report, selectedReport?.name);
               const blob = new Blob([textContent], { type: 'text/plain' });
               const url = URL.createObjectURL(blob);
               const a = document.createElement('a');
@@ -398,9 +393,7 @@ const ReportsTab: React.FC = () => {
       
       // Auto-hide notification after 3 seconds
       setTimeout(() => setNotification(null), 3000);
-    } catch (error) {
-      console.error('Error generating report:', error);
-      setNotification({type: 'error', message: `Failed to generate report: ${error.message}`});
+    } catch (error) {      setNotification({type: 'error', message: `Failed to generate report: ${error.message}`});
       
       // Auto-hide notification after 5 seconds
       setTimeout(() => setNotification(null), 5000);
@@ -457,9 +450,7 @@ const ReportsTab: React.FC = () => {
         } else {
           // Handle JSON fallback
           const data = await response.json();
-          if (data.pdfError || data.xlsxError) {
-            console.warn(`Selected ${filters.format.toUpperCase()} generation failed, falling back to text format:`, data.pdfError || data.xlsxError);
-            let textContent = `SELECTED REPORTS SUMMARY\n${'='.repeat(50)}\n\n`;
+          if (data.pdfError || data.xlsxError) {            let textContent = `SELECTED REPORTS SUMMARY\n${'='.repeat(50)}\n\n`;
             textContent += `Generated: ${new Date().toLocaleString()}\n`;
             textContent += `Selected Reports: ${filters.reportTypes.length}\n\n`;
             
@@ -477,9 +468,7 @@ const ReportsTab: React.FC = () => {
       setNotification({type: 'success', message: `${filters.reportTypes.length} selected reports generated successfully! 🎉`});
       setTimeout(() => setNotification(null), 5000);
 
-    } catch (error) {
-      console.error('Selected reports generation error:', error);
-      setNotification({type: 'error', message: `Selected reports generation failed: ${error.message}`});
+    } catch (error) {      setNotification({type: 'error', message: `Selected reports generation failed: ${error.message}`});
       setTimeout(() => setNotification(null), 5000);
     } finally {
       setBulkGenerating(false);
@@ -544,9 +533,7 @@ const ReportsTab: React.FC = () => {
               reportName: reportInfo?.name || reportType,
               data: reportData.report
             };
-          } catch (error) {
-            console.error(`Error generating preview for ${reportType}:`, error);
-            return {
+          } catch (error) {            return {
               reportType: reportType,
               reportName: reportTypes.find(r => r.id === reportType)?.name || reportType,
               error: error.message
@@ -584,9 +571,7 @@ const ReportsTab: React.FC = () => {
       }
       
       setTimeout(() => setNotification(null), 3000);
-    } catch (error) {
-      console.error('Error generating preview:', error);
-      setNotification({type: 'error', message: `Failed to generate preview: ${error.message}`});
+    } catch (error) {      setNotification({type: 'error', message: `Failed to generate preview: ${error.message}`});
       setTimeout(() => setNotification(null), 5000);
     } finally {
       setLoading(false);
@@ -682,9 +667,7 @@ const ReportsTab: React.FC = () => {
         } else {
           // Handle JSON fallback
           const data = await response.json();
-          if (data.pdfError || data.xlsxError) {
-            console.warn(`Bulk ${filters.format.toUpperCase()} generation failed, falling back to text format:`, data.pdfError || data.xlsxError);
-            let textContent = `ALL REPORTS SUMMARY\n${'='.repeat(50)}\n\n`;
+          if (data.pdfError || data.xlsxError) {            let textContent = `ALL REPORTS SUMMARY\n${'='.repeat(50)}\n\n`;
             textContent += `Generated: ${new Date(data.data.metadata.generatedAt).toLocaleString()}\n`;
             textContent += `Date Range: ${data.data.metadata.dateRange}\n`;
             textContent += `Total Reports: ${data.data.metadata.totalReports}\n\n`;
@@ -716,9 +699,7 @@ const ReportsTab: React.FC = () => {
       setNotification({type: 'success', message: successMessage});
       setTimeout(() => setNotification(null), 5000);
 
-    } catch (error) {
-      console.error('Bulk generation error:', error);
-      setNotification({type: 'error', message: `Bulk generation failed: ${error.message}`});
+    } catch (error) {      setNotification({type: 'error', message: `Bulk generation failed: ${error.message}`});
       setTimeout(() => setNotification(null), 5000);
     } finally {
       setBulkGenerating(false);

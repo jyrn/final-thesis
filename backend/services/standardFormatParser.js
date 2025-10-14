@@ -7,10 +7,7 @@ class StandardFormatParser {
   /**
    * Extract name from the top of the resume
    */
-  static extractName(text) {
-    console.log('📛 Extracting name (standard format)...');
-    
-    // Get first 500 characters where name is usually located
+  static extractName(text) {    // Get first 500 characters where name is usually located
     const topSection = text.substring(0, 500);
     
     // Try multiple patterns
@@ -42,54 +39,36 @@ class StandardFormatParser {
         const nameParts = fullName.split(/\s+/);
         if (nameParts.length >= 2) {
           const firstName = nameParts[0];
-          const lastName = nameParts.slice(1).join(' ');
-          
-          console.log('📛 ✅ Found name:', firstName, lastName);
-          return { firstName, lastName };
+          const lastName = nameParts.slice(1).join(' ');          return { firstName, lastName };
         }
       }
-    }
-    
-    console.log('📛 ❌ Could not extract name');
-    return { firstName: '', lastName: '' };
+    }    return { firstName: '', lastName: '' };
   }
   
   /**
    * Extract projects from standard format (no pipe separator)
    */
-  static extractProjects(text) {
-    console.log('🚀 Extracting projects (standard format)...');
-    const projects = [];
+  static extractProjects(text) {    const projects = [];
     
     // Find the PROJECTS section
     const projectsSectionMatch = text.match(/\b(PROJECTS?|Personal\s+Projects?)\b\s*(.+?)(?=\b(EDUCATION|EXPERIENCE|SKILLS|CERTIFICATIONS|$))/is);
     
-    if (!projectsSectionMatch) {
-      console.log('🚀 ❌ No PROJECTS section found');
-      return projects;
+    if (!projectsSectionMatch) {      return projects;
     }
     
-    const projectsText = projectsSectionMatch[2];
-    console.log('🚀 Found PROJECTS section, length:', projectsText.length);
-    console.log('🚀 First 300 chars:', projectsText.substring(0, 300));
-    
-    // Try multiple splitting strategies
+    const projectsText = projectsSectionMatch[2];    // Try multiple splitting strategies
     let projectBlocks = [];
     
     // Strategy 1: Split by bullet points (-, •, *, numbered)
     const bulletSplit = projectsText.split(/(?=^[\-•\*]\s+[A-Z]|^\d+\.\s+[A-Z])/m);
     if (bulletSplit.length > 1 && bulletSplit.some(b => b.trim().length > 20)) {
-      projectBlocks = bulletSplit;
-      console.log('🚀 Using bullet point split strategy');
-    }
+      projectBlocks = bulletSplit;    }
     
     // Strategy 2: Split by double newlines (paragraph-based)
     if (projectBlocks.length === 0) {
       const paragraphSplit = projectsText.split(/\n\s*\n/);
       if (paragraphSplit.length > 1) {
-        projectBlocks = paragraphSplit;
-        console.log('🚀 Using paragraph split strategy');
-      }
+        projectBlocks = paragraphSplit;      }
     }
     
     // Strategy 3: Split by project name patterns (capitalized titles followed by description)
@@ -122,20 +101,12 @@ class StandardFormatParser {
         projectBlocks.push(currentProject);
       }
       
-      if (projectBlocks.length > 0) {
-        console.log('🚀 Using pattern-based split strategy');
-      }
+      if (projectBlocks.length > 0) {      }
     }
     
     // Strategy 4: If still nothing, treat entire section as one project
     if (projectBlocks.length === 0) {
-      projectBlocks = [projectsText];
-      console.log('🚀 Using single project strategy');
-    }
-    
-    console.log('🚀 Found', projectBlocks.length, 'project blocks');
-    
-    // Process each project block
+      projectBlocks = [projectsText];    }    // Process each project block
     for (const block of projectBlocks) {
       const trimmed = block.trim();
       if (trimmed.length < 20) continue;
@@ -186,23 +157,13 @@ class StandardFormatParser {
         startDate: '',
         endDate: '',
         url: ''
-      });
-      
-      console.log('🚀 ✅ Added project:', projectName);
-      console.log('🚀    Technologies:', technologies || 'None detected');
-      console.log('🚀    Description preview:', description.substring(0, 80) + '...');
-    }
-    
-    console.log('🚀 Total projects extracted:', projects.length);
-    return projects;
+      });    }    return projects;
   }
   
   /**
    * Extract skills using keyword matching
    */
-  static extractSkills(text) {
-    console.log('💡 Extracting skills (standard format)...');
-    const skills = [];
+  static extractSkills(text) {    const skills = [];
     const seenSkills = new Set();
     
     // Common tech skills and soft skills
@@ -235,35 +196,23 @@ class StandardFormatParser {
         
         if (!seenSkills.has(normalized)) {
           skills.push(cleanSkill);
-          seenSkills.add(normalized);
-          console.log('💡 ✅ Found skill:', cleanSkill);
-        }
+          seenSkills.add(normalized);        }
       }
-    }
-    
-    console.log('💡 Total skills found:', skills.length);
-    return skills;
+    }    return skills;
   }
   
   /**
    * Extract certificates using date patterns
    */
-  static extractCertificates(text) {
-    console.log('🎓 Extracting certificates (standard format)...');
-    const certificates = [];
+  static extractCertificates(text) {    const certificates = [];
     
     // Find CERTIFICATIONS section
     const certSectionMatch = text.match(/\b(CERTIFICATIONS?|CERTIFICATES?)\b\s*(.+?)(?=\b(EDUCATION|EXPERIENCE|SKILLS|PROJECTS|$))/is);
     
-    if (!certSectionMatch) {
-      console.log('🎓 ❌ No CERTIFICATIONS section found');
-      return certificates;
+    if (!certSectionMatch) {      return certificates;
     }
     
-    const certText = certSectionMatch[2];
-    console.log('🎓 Found CERTIFICATIONS section, length:', certText.length);
-    
-    // Pattern: Certificate name followed by issuer and date
+    const certText = certSectionMatch[2];    // Pattern: Certificate name followed by issuer and date
     // Example: "Introduction to AI - Elements of AI December 2024"
     const certPattern = /([A-Z][A-Za-z\s\-:]{10,100}?)\s*(?:-|–)\s*([A-Za-z\s]+?)\s*(January|February|March|April|May|June|July|August|September|October|November|December)\s*(\d{4})/gi;
     
@@ -293,13 +242,7 @@ class StandardFormatParser {
         issuer,
         date,
         description: ''
-      });
-      
-      console.log('🎓 ✅ Found certificate:', name);
-    }
-    
-    console.log('🎓 Total certificates found:', certificates.length);
-    return certificates;
+      });    }    return certificates;
   }
 }
 

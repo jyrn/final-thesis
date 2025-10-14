@@ -16,9 +16,6 @@ class JobseekerCloudService {
       }
 
       const token = await user.getIdToken();
-
-      console.log('🔧 Uploading resume photo to cloud storage');
-
       const response = await fetch(`${this.baseUrl}/jobseekers/upload-resume-photo`, {
         method: 'POST',
         headers: {
@@ -26,18 +23,12 @@ class JobseekerCloudService {
         },
         body: formData
       });
-
-      console.log('🔧 Response status:', response.status);
-
       if (!response.ok) {
         const errorText = await response.text();
-        console.error('🔧 Response error text:', errorText);
         throw new Error(`HTTP ${response.status}: ${errorText}`);
       }
 
       const result = await response.json();
-      console.log('🔧 Response result:', result);
-
       if (result.success) {
         return result;
       } else {
@@ -45,7 +36,6 @@ class JobseekerCloudService {
       }
 
     } catch (error) {
-      console.error('Resume photo upload error:', error);
       return {
         success: false,
         message: error instanceof Error ? error.message : 'Failed to upload photo'
@@ -68,9 +58,6 @@ class JobseekerCloudService {
       }
 
       const token = await user.getIdToken();
-
-      console.log('🔧 Uploading to jobseeker endpoint:', `${this.baseUrl}/jobseekers/upload-profile-photo`);
-
       const response = await fetch(`${this.baseUrl}/jobseekers/upload-profile-photo`, {
         method: 'POST',
         headers: {
@@ -78,19 +65,12 @@ class JobseekerCloudService {
         },
         body: formData
       });
-
-      console.log('🔧 Response status:', response.status);
-      console.log('🔧 Response headers:', Object.fromEntries(response.headers.entries()));
-
       if (!response.ok) {
         const errorText = await response.text();
-        console.error('🔧 Response error text:', errorText);
         throw new Error(`HTTP ${response.status}: ${errorText}`);
       }
 
       const result = await response.json();
-      console.log('🔧 Response result:', result);
-
       if (result.success) {
         return result;
       } else {
@@ -98,7 +78,6 @@ class JobseekerCloudService {
       }
 
     } catch (error) {
-      console.error('Profile photo upload error:', error);
       return {
         success: false,
         message: error instanceof Error ? error.message : 'Failed to upload photo'

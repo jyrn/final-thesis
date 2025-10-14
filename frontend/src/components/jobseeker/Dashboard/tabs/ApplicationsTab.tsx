@@ -70,9 +70,7 @@ const ApplicationsTab: React.FC<any> = ({
       } else {
         setError(data.error || 'Failed to fetch applications');
       }
-    } catch (err) {
-      console.error('Error fetching applications:', err);
-      setError('Failed to load applications');
+    } catch (err) {      setError('Failed to load applications');
     } finally {
       setLoading(false);
     }
@@ -104,16 +102,12 @@ const ApplicationsTab: React.FC<any> = ({
               jobDetailsMap[jobId] = jobData.data;
             }
           }
-        } catch (jobErr) {
-          console.error(`Error fetching job ${jobId}:`, jobErr);
-          // Continue with other jobs even if one fails
+        } catch (jobErr) {          // Continue with other jobs even if one fails
         }
       }
 
       setJobDetails(jobDetailsMap);
-    } catch (err) {
-      console.error('Error fetching job details:', err);
-    }
+    } catch (err) {    }
   };
 
   const handleViewApplication = (job: Job) => {
@@ -147,9 +141,7 @@ const ApplicationsTab: React.FC<any> = ({
 
       // Refresh applications list
       await fetchApplications();
-    } catch (error) {
-      console.error('Error withdrawing application:', error);
-      throw error; // Re-throw to let the modal handle the error
+    } catch (error) {      throw error; // Re-throw to let the modal handle the error
     }
   };
 

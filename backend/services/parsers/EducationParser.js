@@ -48,10 +48,7 @@ class EducationParser extends BaseParser {
         gpa: '',
         location: '',
         description: ''
-      });
-      
-      console.log(`🎓 ✅ Found education (Pattern 1): ${school} - ${degree}`);
-    }
+      });    }
     
     // Pattern 2: "Ph.D. in Computer Science, MIT (2010)"
     const pattern2 = /(Ph\.?D\.?|M\.?S\.?|B\.?S\.?|M\.?A\.?|B\.?A\.?)\s+in\s+([A-Za-z\s]+),\s+([A-Z][A-Za-z\s]+(?:University|College|Institute|MIT|Stanford))[^\n]*\((\d{4})\)/gi;
@@ -68,10 +65,7 @@ class EducationParser extends BaseParser {
         gpa: '',
         location: '',
         description: ''
-      });
-      
-      console.log(`🎓 ✅ Found education (Pattern 2): ${school} - ${degree}`);
-    }
+      });    }
     
     // Pattern 3: "BFA Graphic Design → Art School → 2020"
     const pattern3 = /([A-Z][A-Za-z\s]+)\s*[→-]\s*([A-Z][A-Za-z\s]+(?:School|College|University|Institute))\s*[→-]\s*(\d{4})/gi;
@@ -88,10 +82,7 @@ class EducationParser extends BaseParser {
         gpa: '',
         location: '',
         description: ''
-      });
-      
-      console.log(`🎓 ✅ Found education (Pattern 3): ${school} - ${degree}`);
-    }
+      });    }
     
     // Pattern 4: Bullet points "• M.A. Design, Art Institute (2019)"
     const pattern4 = /[•·▪▫-]\s*([A-Z][A-Za-z\s\.]+),\s*([A-Z][A-Za-z\s]+(?:Institute|University|College|School))[^\n]*\((\d{4})\)/gi;
@@ -108,10 +99,7 @@ class EducationParser extends BaseParser {
         gpa: '',
         location: '',
         description: ''
-      });
-      
-      console.log(`🎓 ✅ Found education (Pattern 4): ${school} - ${degree}`);
-    }
+      });    }
     
     // Pattern 5: Multi-line education formats - Parse ALL entries, not just first
     const lines = educationText.split('\n').filter(line => line.trim().length > 0);
@@ -129,11 +117,7 @@ class EducationParser extends BaseParser {
         const fullSchoolText = schoolMatch[1].trim();
         const parts = fullSchoolText.split(',').map(p => p.trim());
         const school = parts[0]; // First part is school name
-        const location = parts.slice(1).join(', '); // Rest is location
-        
-        console.log(`🎓 DEBUG Pattern 5A: fullSchoolText="${fullSchoolText}", school="${school}", location="${location}"`);
-        
-        // Check if this school is already in our education list
+        const location = parts.slice(1).join(', '); // Rest is location        // Check if this school is already in our education list
         const alreadyExists = education.some(edu => edu.school.toLowerCase().includes(school.toLowerCase().split(' ')[0]));
         if (alreadyExists) {
           continue; // Skip if we already have this school
@@ -226,10 +210,7 @@ class EducationParser extends BaseParser {
             gpa: gpa,
             location: location,
             description: description.trim()
-          });
-          
-          console.log(`🎓 ✅ Found education (Pattern 5A): ${school} - ${degree} (${startDate} - ${endDate}) Location: ${location} GPA: ${gpa}`);
-          i = Math.max(degreeLineIndex, i + 2); // Continue from after the degree line or skip at least 2 lines
+          });          i = Math.max(degreeLineIndex, i + 2); // Continue from after the degree line or skip at least 2 lines
           continue;
         }
       }
@@ -252,11 +233,7 @@ class EducationParser extends BaseParser {
             const fullSchoolText = schoolMatch[1].trim();
             const parts = fullSchoolText.split(',').map(p => p.trim());
             const school = parts[0]; // First part is school name
-            const location = parts.slice(1).join(', '); // Rest is location
-            
-            console.log(`🎓 DEBUG Pattern 5B-alt: fullSchoolText="${fullSchoolText}", school="${school}", location="${location}"`);
-            
-            // Look for date in next lines (NOT from current line, as that date belongs to a different education)
+            const location = parts.slice(1).join(', '); // Rest is location            // Look for date in next lines (NOT from current line, as that date belongs to a different education)
             let startDate = '', endDate = '';
             
             // Search in next lines for the date that belongs to THIS education entry
@@ -298,10 +275,7 @@ class EducationParser extends BaseParser {
               gpa: '',
               location: location,
               description: ''
-            });
-            
-            console.log(`🎓 ✅ Found education (Pattern 5B-alt): ${school} - ${degree} (${startDate} - ${endDate}) Location: ${location}`);
-            i += 2; // Skip processed lines
+            });            i += 2; // Skip processed lines
             continue;
           }
         }
@@ -316,11 +290,7 @@ class EducationParser extends BaseParser {
           const fullSchoolText = schoolMatch[1].trim();
           const parts = fullSchoolText.split(',').map(p => p.trim());
           const school = parts[0]; // First part is school name
-          const location = parts.slice(1).join(', '); // Rest is location
-          
-          console.log(`🎓 DEBUG Pattern 5B: fullSchoolText="${fullSchoolText}", school="${school}", location="${location}"`);
-          
-          // Look for date in next lines
+          const location = parts.slice(1).join(', '); // Rest is location          // Look for date in next lines
           let startDate = '', endDate = '';
           for (let j = i + 2; j < Math.min(i + 6, lines.length); j++) {
             const dateLine = lines[j].trim();
@@ -370,10 +340,7 @@ class EducationParser extends BaseParser {
             gpa: '',
             location: location,
             description: ''
-          });
-          
-          console.log(`🎓 ✅ Found education (Pattern 5B): ${school} - ${degree} (${startDate} - ${endDate}) Location: ${location}`);
-          i += 2; // Skip processed lines
+          });          i += 2; // Skip processed lines
         }
       }
     }
@@ -498,10 +465,7 @@ class EducationParser extends BaseParser {
             gpa,
             location: '',
             description: description.trim()
-          });
-          
-          console.log(`🎓 ✅ Found education (Pattern 6): ${school} - ${degree || 'Senior High School'} (${startDate} - ${endDate}) GPA: ${gpa}`);
-        }
+          });        }
       }
     }
     

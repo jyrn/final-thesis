@@ -42,9 +42,7 @@ const VerificationPending: React.FC = () => {
             return
           }
         }
-      } catch (error) {
-        console.error('Error checking auth status:', error)
-        navigate('/auth')
+      } catch (error) {        navigate('/auth')
       } finally {
         setIsLoading(false)
       }
@@ -57,9 +55,7 @@ const VerificationPending: React.FC = () => {
     try {
       await firebaseAuthService.signOut()
       navigate('/auth/employer')
-    } catch (error) {
-      console.error('Error signing out:', error)
-    }
+    } catch (error) {    }
   }
 
   const handleRefreshStatus = async () => {
@@ -74,9 +70,7 @@ const VerificationPending: React.FC = () => {
           return
         }
       }
-    } catch (error) {
-      console.error('Error refreshing status:', error)
-    } finally {
+    } catch (error) {    } finally {
       setIsLoading(false)
     }
   }

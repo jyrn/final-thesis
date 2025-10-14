@@ -124,9 +124,7 @@ Once removed, the job cannot be recovered and all associated data will be lost. 
             message: 'The job posting has been permanently removed from the system. The employer has been notified of this action.',
             icon: '✅'
           });
-        } catch (error) {
-          console.error('Error removing job:', error);
-          alert('❌ Failed to remove job. Please try again.');
+        } catch (error) {          alert('❌ Failed to remove job. Please try again.');
         }
       },
       actionText: 'Remove Permanently',
@@ -163,9 +161,7 @@ The job posting will remain in the system and can be reactivated by the employer
             message: 'The job posting has been temporarily hidden from jobseekers. It can be reactivated by the employer at any time.',
             icon: '⏸️'
           });
-        } catch (error) {
-          console.error('Error pausing job:', error);
-          alert('❌ Failed to pause job. Please try again.');
+        } catch (error) {          alert('❌ Failed to pause job. Please try again.');
         }
       },
       actionText: 'Pause Job',
@@ -199,9 +195,7 @@ Flagged jobs will be temporarily hidden from jobseekers while under review. The 
             message: 'The job posting has been flagged for administrative review. It will be temporarily hidden while under investigation.',
             icon: '🚩'
           });
-        } catch (error) {
-          console.error('Error flagging job:', error);
-          alert('❌ Failed to flag job. Please try again.');
+        } catch (error) {          alert('❌ Failed to flag job. Please try again.');
         }
       },
       actionText: 'Flag for Review',
@@ -209,9 +203,7 @@ Flagged jobs will be temporarily hidden from jobseekers while under review. The 
     });
   };
 
-  const handleViewJob = (job: Job) => {
-    console.log('🔍 Admin viewing job details:', job.title);
-    setSelectedJob(job);
+  const handleViewJob = (job: Job) => {    setSelectedJob(job);
     setShowJobModal(true);
   };
 
@@ -434,18 +426,14 @@ Flagged jobs will be temporarily hidden from jobseekers while under review. The 
         setJobs([]);
         setTotalJobs(0);
       }
-    } catch (error) {
-      console.error('❌ Error fetching jobs:', error);
-      setError('Failed to fetch jobs. Please try again.');
+    } catch (error) {      setError('Failed to fetch jobs. Please try again.');
       setJobs([]);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleJobClick = (job: Job) => {
-    console.log('🔍 SuperAdmin viewing job details:', job.title);
-    // TODO: Implement job details modal for admin view
+  const handleJobClick = (job: Job) => {    // TODO: Implement job details modal for admin view
     alert(`Job Details: ${job.title}\nCompany: ${job.company}\nStatus: ${job.status}\nApplicants: ${job.applicants}`);
   };
 
@@ -454,9 +442,7 @@ Flagged jobs will be temporarily hidden from jobseekers while under review. The 
       await adminService.updateJobStatus(String(jobId), newStatus);
       await fetchJobs(); // Refresh the jobs list
       onJobStatusChange?.(String(jobId), newStatus);
-    } catch (error) {
-      console.error('❌ Error updating job status:', error);
-      alert('Failed to update job status. Please try again.');
+    } catch (error) {      alert('Failed to update job status. Please try again.');
     }
   };
 

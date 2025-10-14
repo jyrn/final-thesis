@@ -108,9 +108,7 @@ router.post('/resume-data', verifyToken, async (req, res) => {
       }
     });
 
-  } catch (error) {
-    console.error('Error saving resume data:', error);
-    res.status(500).json({
+  } catch (error) {    res.status(500).json({
       success: false,
       error: 'Failed to save resume data'
     });
@@ -156,9 +154,7 @@ router.get('/profile', verifyToken, async (req, res) => {
       }
     });
 
-  } catch (error) {
-    console.error('Get jobseeker profile error:', error);
-    res.status(500).json({
+  } catch (error) {    res.status(500).json({
       success: false,
       error: error.message || 'Failed to get jobseeker profile'
     });
@@ -231,9 +227,7 @@ router.put('/profile', verifyToken, async (req, res) => {
       }
     });
 
-  } catch (error) {
-    console.error('Update jobseeker profile error:', error);
-    res.status(500).json({
+  } catch (error) {    res.status(500).json({
       success: false,
       error: error.message || 'Failed to update jobseeker profile'
     });
@@ -289,9 +283,7 @@ router.post('/resume', verifyToken, upload.single('resume'), async (req, res) =>
           uploadedAt: new Date()
         };
       }
-    } catch (parseError) {
-      console.warn('Resume parsing error:', parseError.message);
-      // Continue without parsed data - just save the file URL
+    } catch (parseError) {      // Continue without parsed data - just save the file URL
     }
 
     await jobseekerProfile.save();
@@ -305,9 +297,7 @@ router.post('/resume', verifyToken, upload.single('resume'), async (req, res) =>
       }
     });
 
-  } catch (error) {
-    console.error('Resume upload error:', error);
-    res.status(500).json({
+  } catch (error) {    res.status(500).json({
       success: false,
       error: error.message || 'Failed to upload resume'
     });
@@ -339,9 +329,7 @@ router.get('/resume/view', verifyToken, async (req, res) => {
       }
     });
 
-  } catch (error) {
-    console.error('Resume view error:', error);
-    res.status(500).json({
+  } catch (error) {    res.status(500).json({
       success: false,
       error: error.message || 'Failed to get resume'
     });
@@ -373,9 +361,7 @@ router.delete('/resume', verifyToken, async (req, res) => {
       message: 'Resume deleted successfully'
     });
 
-  } catch (error) {
-    console.error('Resume delete error:', error);
-    res.status(500).json({
+  } catch (error) {    res.status(500).json({
       success: false,
       error: error.message || 'Failed to delete resume'
     });
@@ -405,9 +391,7 @@ router.get('/public-profile/:id', verifyToken, async (req, res) => {
       profile: publicProfile
     });
 
-  } catch (error) {
-    console.error('Get public profile error:', error);
-    res.status(500).json({
+  } catch (error) {    res.status(500).json({
       success: false,
       error: error.message || 'Failed to get public profile'
     });
@@ -446,9 +430,7 @@ router.post('/skills', verifyToken, async (req, res) => {
       skills: jobseekerProfile.skills
     });
 
-  } catch (error) {
-    console.error('Update skills error:', error);
-    res.status(500).json({
+  } catch (error) {    res.status(500).json({
       success: false,
       error: error.message || 'Failed to update skills'
     });
@@ -480,9 +462,7 @@ router.post('/experience', verifyToken, async (req, res) => {
       experience: jobseekerProfile.experience
     });
 
-  } catch (error) {
-    console.error('Add experience error:', error);
-    res.status(500).json({
+  } catch (error) {    res.status(500).json({
       success: false,
       error: error.message || 'Failed to add experience'
     });
@@ -514,9 +494,7 @@ router.post('/education', verifyToken, async (req, res) => {
       education: jobseekerProfile.education
     });
 
-  } catch (error) {
-    console.error('Add education error:', error);
-    res.status(500).json({
+  } catch (error) {    res.status(500).json({
       success: false,
       error: error.message || 'Failed to add education'
     });
@@ -525,10 +503,7 @@ router.post('/education', verifyToken, async (req, res) => {
 
 // POST /api/jobseekers/upload-profile-photo - Upload profile photo to cloud storage
 router.post('/upload-profile-photo', verifyToken, requireRole('jobseeker'), profilePhotoUpload.single('profilePhoto'), async (req, res) => {
-  const requestId = Math.random().toString(36).substr(2, 9);
-  console.log(`📸 [${requestId}] Profile photo upload request received`);
-  
-  try {
+  const requestId = Math.random().toString(36).substr(2, 9);  try {
     const jobseeker = await JobSeeker.findOne({ uid: req.user.uid });
     
     if (!jobseeker) {
@@ -538,25 +513,12 @@ router.post('/upload-profile-photo', verifyToken, requireRole('jobseeker'), prof
       });
     }
 
-    const uploadedFile = req.file;
-    
-    console.log(`📸 [${requestId}] File details:`, {
-      originalname: uploadedFile?.originalname,
-      mimetype: uploadedFile?.mimetype,
-      size: uploadedFile?.size,
-      buffer: uploadedFile?.buffer ? 'Present' : 'Missing'
-    });
-    
-    if (!uploadedFile) {
+    const uploadedFile = req.file;    if (!uploadedFile) {
       return res.status(400).json({
         success: false,
         message: 'No photo was uploaded'
       });
-    }
-
-    console.log(`📸 [${requestId}] Uploading profile photo to cloud storage`);
-
-    try {
+    }    try {
       // Upload to cloud storage using image-specific method
       const cloudResult = await cloudStorageService.uploadImageBuffer(
         uploadedFile.buffer, 
@@ -574,11 +536,7 @@ router.post('/upload-profile-photo', verifyToken, requireRole('jobseeker'), prof
       if (user) {
         user.profilePicture = cloudResult.url;
         await user.save();
-      }
-      
-      console.log(`✅ [${requestId}] Profile photo uploaded successfully: ${cloudResult.publicId}`);
-
-      res.json({
+      }      res.json({
         success: true,
         message: 'Profile photo uploaded successfully to cloud storage',
         data: {
@@ -587,19 +545,14 @@ router.post('/upload-profile-photo', verifyToken, requireRole('jobseeker'), prof
         }
       });
 
-    } catch (uploadError) {
-      console.error(`❌ [${requestId}] Failed to upload profile photo:`, uploadError);
-      return res.status(500).json({
+    } catch (uploadError) {      return res.status(500).json({
         success: false,
         message: 'Failed to upload photo to cloud storage',
         error: uploadError.message
       });
     }
 
-  } catch (error) {
-    console.error(`❌ [${requestId}] Error uploading profile photo:`, error);
-    
-    res.status(500).json({
+  } catch (error) {    res.status(500).json({
       success: false,
       message: 'Error uploading profile photo',
       error: error.message
@@ -629,9 +582,7 @@ router.get('/saved-jobs', verifyToken, async (req, res) => {
       }
     });
 
-  } catch (error) {
-    console.error('Get saved jobs error:', error);
-    res.status(500).json({
+  } catch (error) {    res.status(500).json({
       success: false,
       error: error.message || 'Failed to get saved jobs'
     });
@@ -684,9 +635,7 @@ router.post('/saved-jobs/:jobId', verifyToken, async (req, res) => {
       }
     });
 
-  } catch (error) {
-    console.error('Save/unsave job error:', error);
-    res.status(500).json({
+  } catch (error) {    res.status(500).json({
       success: false,
       error: error.message || 'Failed to save/unsave job'
     });
@@ -697,10 +646,7 @@ router.post('/saved-jobs/:jobId', verifyToken, async (req, res) => {
 // @desc    Upload resume photo to cloud storage (separate from profile picture)
 // @access  Private
 router.post('/upload-resume-photo', verifyToken, profilePhotoUpload.single('resumePhoto'), async (req, res) => {
-  const requestId = Math.random().toString(36).substr(2, 9);
-  console.log(`📷 [${requestId}] Resume photo upload request received`);
-
-  try {
+  const requestId = Math.random().toString(36).substr(2, 9);  try {
     const { uid } = req.user;
     const uploadedFile = req.file;
 
@@ -709,20 +655,12 @@ router.post('/upload-resume-photo', verifyToken, profilePhotoUpload.single('resu
         success: false,
         message: 'No resume photo was uploaded'
       });
-    }
-
-    console.log(`📷 [${requestId}] Uploading resume photo to cloud storage`);
-
-    // Upload to cloud storage using image-specific method
+    }    // Upload to cloud storage using image-specific method
     const cloudResult = await cloudStorageService.uploadImageBuffer(
       uploadedFile.buffer, 
       uploadedFile.originalname, 
       `users/${req.user.uid}/photos`
-    );
-    
-    console.log(`✅ [${requestId}] Resume photo uploaded successfully: ${cloudResult.publicId}`);
-
-    // Note: We don't update any user profile here - this is just for resume use
+    );    // Note: We don't update any user profile here - this is just for resume use
     res.json({
       success: true,
       message: 'Resume photo uploaded successfully',
@@ -732,9 +670,7 @@ router.post('/upload-resume-photo', verifyToken, profilePhotoUpload.single('resu
       }
     });
 
-  } catch (error) {
-    console.error(`❌ [${requestId}] Resume photo upload error:`, error);
-    res.status(500).json({
+  } catch (error) {    res.status(500).json({
       success: false,
       message: error.message || 'Failed to upload resume photo'
     });
@@ -745,22 +681,9 @@ router.post('/upload-resume-photo', verifyToken, profilePhotoUpload.single('resu
 // @desc    Upload original resume PDF to cloud storage
 // @access  Private
 router.post('/upload-original-resume', verifyToken, resumePdfUpload.single('originalResume'), async (req, res) => {
-  const requestId = Math.random().toString(36).substr(2, 9);
-  console.log(`📄 [${requestId}] Original resume upload request received`);
-
-  try {
+  const requestId = Math.random().toString(36).substr(2, 9);  try {
     const { uid } = req.user;
-    const uploadedFile = req.file;
-
-    console.log(`📄 [${requestId}] File details:`, {
-      hasFile: !!uploadedFile,
-      originalname: uploadedFile?.originalname,
-      mimetype: uploadedFile?.mimetype,
-      size: uploadedFile?.size,
-      buffer: uploadedFile?.buffer ? 'Present' : 'Missing'
-    });
-
-    if (!uploadedFile) {
+    const uploadedFile = req.file;    if (!uploadedFile) {
       return res.status(400).json({
         success: false,
         message: 'No resume file was uploaded'
@@ -773,21 +696,13 @@ router.post('/upload-original-resume', verifyToken, resumePdfUpload.single('orig
         success: false,
         message: 'Only PDF files are allowed'
       });
-    }
-
-    console.log(`📄 [${requestId}] Uploading original resume to cloud storage`);
-
-    // Upload to cloud storage with user-specific folder structure
+    }    // Upload to cloud storage with user-specific folder structure
     const cloudResult = await cloudStorageService.uploadBuffer(
       uploadedFile.buffer, 
       uploadedFile.originalname, 
       `users/${req.user.uid}/resumes/original`,
       'application/pdf'
-    );
-    
-    console.log(`✅ [${requestId}] Original resume uploaded successfully: ${cloudResult.publicId}`);
-
-    res.json({
+    );    res.json({
       success: true,
       message: 'Original resume uploaded successfully',
       data: {
@@ -796,10 +711,7 @@ router.post('/upload-original-resume', verifyToken, resumePdfUpload.single('orig
       }
     });
 
-  } catch (error) {
-    console.error(`❌ [${requestId}] Original resume upload error:`, error);
-    console.error(`❌ [${requestId}] Error stack:`, error.stack);
-    res.status(500).json({
+  } catch (error) {    res.status(500).json({
       success: false,
       message: error.message || 'Failed to upload original resume',
       error: process.env.NODE_ENV === 'development' ? error.stack : undefined

@@ -30,43 +30,17 @@ class MLResumeParser {
       projects: new ProjectsParser(),
       certifications: new CertificationsParser(),
       optionalSections: new OptionalSectionsParser()
-    };
-
-    console.log('🤖 MLResumeParser v2.0.1 initialized with config:', {
-      useMLParser: config.parser.useMLParser,
-      verboseLogging: config.parser.verboseLogging,
-      enabledParsers: Object.keys(this.parsers).filter(k => config.sectionParsers[k]?.enabled),
-      version: this.version
-    });
-  }
+    };  }
 
   /**
    * Main parsing method with ML-based format detection
    * @param {string} text - Raw resume text
    * @returns {object} - Parsed resume data with metadata
    */
-  async parse(text) {
-    console.log('🤖 ========================================');
-    console.log('🤖 ML RESUME PARSER: Starting v2.1.0');
-    console.log('🤖 ========================================');
-    console.log('🤖 Original text length:', text.length, 'characters');
+  async parse(text) {    const startTime = Date.now();
     
-    const startTime = Date.now();
-    
-    // Step 0: Clean the text before processing
-    console.log('\n🤖 STEP 0: Text Cleaning');
-    const cleaningResult = this.textCleaner.cleanResumeText(text);
-    const cleanedText = cleaningResult.cleanedText;
-    
-    console.log('🤖 Text cleaning completed:');
-    console.log('🤖   Original length:', cleaningResult.metadata.originalLength);
-    console.log('🤖   Cleaned length:', cleaningResult.metadata.cleanedLength);
-    console.log('🤖   Reduction:', cleaningResult.metadata.reductionPercentage + '%');
-    console.log('🤖   Steps applied:', cleaningResult.metadata.cleaningSteps.length);
-    
-    // Step 1: ML Format Classification (using cleaned text)
-    console.log('\n🤖 STEP 1: ML Format Classification');
-    const classification = this.classifier.classifyFormat(cleanedText);
+    // Step 0: Clean the text before processing    const cleaningResult = this.textCleaner.cleanResumeText(text);
+    const cleanedText = cleaningResult.cleanedText;    // Step 1: ML Format Classification (using cleaned text)    const classification = this.classifier.classifyFormat(cleanedText);
     let format = classification.format;
     const confidence = classification.confidence;
     
@@ -75,21 +49,9 @@ class MLResumeParser {
       const lines = cleanedText.split('\n').filter(l => l.trim().length > 0);
       const hasProperSections = cleanedText.match(/\b(Education|Projects|Skills|Certifications)\b/gi);
       
-      if (lines.length > 10 && hasProperSections) {
-        console.log('🤖 Override: Detected standard format with clear sections, not pipe-separated');
-        format = 'standard';
+      if (lines.length > 10 && hasProperSections) {        format = 'standard';
       }
-    }
-    
-    console.log('🤖 Detected format:', format);
-    console.log('🤖 Confidence:', (confidence * 100).toFixed(1) + '%');
-    console.log('🤖 Layout:', classification.characteristics.layout);
-    console.log('🤖 Separator:', classification.characteristics.separator);
-    
-    // Step 2: Parse each section using modular parsers
-    console.log('\n🤖 STEP 2: Section Parsing');
-    
-    const context = {
+    }    console.log(' Confidence:', (confidence * 100).toFixed(1) + '%');    // Step 2: Parse each section using modular parsers    const context = {
       format: format, // Use the potentially overridden format
       characteristics: classification.characteristics
     };
@@ -104,87 +66,56 @@ class MLResumeParser {
     
     const confidenceScores = {};
     
-    // Parse Personal Info (using cleaned text)
-    console.log('\n👤 Parsing Personal Information...');
-    try {
+    // Parse Personal Info (using cleaned text)    try {
       const personalResult = this.parsers.personalInfo.parse(cleanedText, context);
       results.personalInfo = personalResult.data;
       confidenceScores.personalInfo = personalResult.confidence;
-    } catch (error) {
-      console.error('❌ Personal Info parsing error:', error.message);
-      confidenceScores.personalInfo = 0;
+    } catch (error) {      confidenceScores.personalInfo = 0;
     }
     
-    // Parse Education (using cleaned text)
-    console.log('\n🎓 Parsing Education...');
-    try {
+    // Parse Education (using cleaned text)    try {
       const educationResult = this.parsers.education.parse(cleanedText, context);
       results.education = educationResult.data;
       confidenceScores.education = educationResult.confidence;
-    } catch (error) {
-      console.error('❌ Education parsing error:', error.message);
-      confidenceScores.education = 0;
+    } catch (error) {      confidenceScores.education = 0;
     }
     
-    // Parse Work Experience (using cleaned text)
-    console.log('\n💼 Parsing Work Experience...');
-    try {
+    // Parse Work Experience (using cleaned text)    try {
       const experienceResult = this.parsers.experience.parse(cleanedText, context);
       results.experience = experienceResult.data;
       confidenceScores.experience = experienceResult.confidence;
-    } catch (error) {
-      console.error('❌ Experience parsing error:', error.message);
-      confidenceScores.experience = 0;
+    } catch (error) {      confidenceScores.experience = 0;
     }
     
-    // Parse Skills (using cleaned text)
-    console.log('\n💡 Parsing Skills...');
-    try {
+    // Parse Skills (using cleaned text)    try {
       const skillsResult = this.parsers.skills.parse(cleanedText, context);
       results.skills = skillsResult.data;
       confidenceScores.skills = skillsResult.confidence;
-    } catch (error) {
-      console.error('❌ Skills parsing error:', error.message);
-      confidenceScores.skills = 0;
+    } catch (error) {      confidenceScores.skills = 0;
     }
     
-    // Parse Projects (using cleaned text)
-    console.log('\n🚀 Parsing Projects...');
-    try {
+    // Parse Projects (using cleaned text)    try {
       const projectsResult = this.parsers.projects.parse(cleanedText, context);
       results.projects = projectsResult.data;
       confidenceScores.projects = projectsResult.confidence;
-    } catch (error) {
-      console.error('❌ Projects parsing error:', error.message);
-      confidenceScores.projects = 0;
+    } catch (error) {      confidenceScores.projects = 0;
     }
     
-    // Parse Certifications (using cleaned text)
-    console.log('\n🎓 Parsing Certifications...');
-    try {
+    // Parse Certifications (using cleaned text)    try {
       // Use cleaned text for certifications parsing
       const textToUse = cleanedText;
       // Ensure format is passed in context
-      const certContext = { ...context, format: format };
-      console.log('🎓 Passing context to certifications parser:', { format: certContext.format });
-      const certsResult = this.parsers.certifications.parse(textToUse, certContext);
+      const certContext = { ...context, format: format };      const certsResult = this.parsers.certifications.parse(textToUse, certContext);
       results.certifications = certsResult.data;
       confidenceScores.certifications = certsResult.confidence;
-    } catch (error) {
-      console.error('❌ Certifications parsing error:', error.message);
-      console.error('❌ Error details:', error);
-      confidenceScores.certifications = 0;
+    } catch (error) {      confidenceScores.certifications = 0;
     }
     
-    // Parse Optional Sections (organizations, awards & achievements combined)
-    console.log('\n💫 Parsing Optional Sections...');
-    try {
+    // Parse Optional Sections (organizations, awards & achievements combined)    try {
       const optionalResult = this.parsers.optionalSections.parse(cleanedText, context);
       results.organizations = optionalResult.organizations || [];
       results.awards = optionalResult.awards || []; // Awards includes achievements
-    } catch (error) {
-      console.error('❌ Optional sections parsing error:', error.message);
-      results.organizations = [];
+    } catch (error) {      results.organizations = [];
       results.awards = [];
     }
     
@@ -195,22 +126,7 @@ class MLResumeParser {
     const formattedResults = this.formatResults(results);
     
     const endTime = Date.now();
-    const duration = ((endTime - startTime) / 1000).toFixed(2);
-    
-    console.log('\n🤖 ========================================');
-    console.log('🤖 ML RESUME PARSER: Complete');
-    console.log('🤖 ========================================');
-    console.log('🤖 Duration:', duration, 'seconds');
-    console.log('🤖 Overall Confidence:', (overallConfidence * 100).toFixed(1) + '%');
-    console.log('🤖 Results Summary:');
-    console.log('🤖   - Personal Info:', results.personalInfo.firstName, results.personalInfo.lastName);
-    console.log('🤖   - Education:', results.education.length, 'entries');
-    console.log('🤖   - Skills:', results.skills.length, 'skills');
-    console.log('🤖   - Projects:', results.projects.length, 'projects');
-    console.log('🤖   - Certifications:', results.certifications.length, 'certifications');
-    console.log('🤖 ========================================\n');
-    
-    return {
+    const duration = ((endTime - startTime) / 1000).toFixed(2);    console.log(' Overall Confidence:', (overallConfidence * 100).toFixed(1) + '%');    return {
       success: true,
       data: formattedResults,
       metadata: {

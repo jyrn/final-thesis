@@ -11,9 +11,6 @@ class JobTitleStandardizer {
     this.titleTaxonomy = this.loadTitleTaxonomy();
     this.titleIndex = this.buildTitleIndex();
     this.seniorityLevels = ['Intern', 'Junior', 'Mid-Level', 'Senior', 'Lead', 'Principal', 'Staff', 'Director', 'VP', 'C-Level'];
-    
-    console.log('✅ Job Title Standardizer initialized');
-    console.log(`   - ${Object.keys(this.titleIndex).length} job titles loaded`);
   }
 
   /**
@@ -23,7 +20,6 @@ class JobTitleStandardizer {
     const taxonomyPath = path.join(__dirname, '../../data/job_title_taxonomy.json');
     
     if (!fs.existsSync(taxonomyPath)) {
-      console.log('⚠️  Job title taxonomy not found, creating default...');
       const defaultTaxonomy = this.createDefaultTaxonomy();
       
       const dir = path.dirname(taxonomyPath);

@@ -80,7 +80,6 @@ export const CompanyProfileModal: React.FC<CompanyProfileModalProps> = ({
             setProfilePicture(data.user?.profilePicture || '');
           }
         } catch (error) {
-          console.error('Error loading user profile:', error);
         }
       };
 
@@ -139,19 +138,14 @@ export const CompanyProfileModal: React.FC<CompanyProfileModalProps> = ({
           window.dispatchEvent(new CustomEvent('profilePictureUpdated', {
             detail: { profilePicture: result.profilePicture }
           }));
-          
-          console.log('✅ Profile picture uploaded successfully:', result.profilePicture);
         } else {
-          console.error('❌ Upload response missing data:', result);
           setUploadError('Upload response was invalid');
         }
       } else {
         const errorData = await response.json();
-        console.error('❌ Upload failed:', errorData);
         setUploadError(errorData.error || 'Failed to upload profile picture');
       }
     } catch (error) {
-      console.error('Logo upload error:', error);
       setUploadError('Failed to upload logo. Please try again.');
     } finally {
       setIsUploading(false);
@@ -180,13 +174,10 @@ export const CompanyProfileModal: React.FC<CompanyProfileModalProps> = ({
         window.dispatchEvent(new CustomEvent('profilePictureUpdated', {
           detail: { profilePicture: null }
         }));
-        
-        console.log('Profile picture removed successfully');
       } else {
         setUploadError(data.error || 'Failed to remove profile picture');
       }
     } catch (error) {
-      console.error('Logo removal error:', error);
       setUploadError('Failed to remove logo. Please try again.');
     } finally {
       setIsUploading(false);
@@ -235,8 +226,6 @@ export const CompanyProfileModal: React.FC<CompanyProfileModalProps> = ({
                       className={styles.profilePictureImage}
                       onLoad={() => console.log('✅ Image loaded successfully')}
                       onError={(e) => {
-                        console.error('❌ Image failed to load:', e);
-                        console.error('❌ Failed image URL:', profilePicture);
                         setUploadError('Image failed to load. Please try uploading again.');
                       }}
                     />

@@ -27,10 +27,7 @@ class EmailService {
 
       this.transporter = nodemailer.createTransport(emailConfig);
       this.isConfigured = true;
-    } else {
-      console.log('⚠️  Email service not configured. OTP codes will only be logged to console.');
-      console.log('📧 To enable email sending, configure EMAIL_USER and EMAIL_PASS in your .env file.');
-      this.transporter = null;
+    } else {      this.transporter = null;
     }
   }
 
@@ -81,12 +78,8 @@ class EmailService {
     };
 
     try {
-      const result = await this.transporter.sendMail(mailOptions);
-      console.log('✅ Approval email sent successfully:', result.messageId);
-      return { success: true, messageId: result.messageId };
-    } catch (error) {
-      console.error('❌ Error sending approval email:', error);
-      return { success: false, error: error.message };
+      const result = await this.transporter.sendMail(mailOptions);      return { success: true, messageId: result.messageId };
+    } catch (error) {      return { success: false, error: error.message };
     }
   }
 
@@ -144,20 +137,14 @@ class EmailService {
     };
 
     try {
-      const result = await this.transporter.sendMail(mailOptions);
-      console.log('✅ Rejection email sent successfully:', result.messageId);
-      return { success: true, messageId: result.messageId };
-    } catch (error) {
-      console.error('❌ Error sending rejection email:', error);
-      return { success: false, error: error.message };
+      const result = await this.transporter.sendMail(mailOptions);      return { success: true, messageId: result.messageId };
+    } catch (error) {      return { success: false, error: error.message };
     }
   }
 
   async sendOTPEmail(email, otp, userRole = 'user') {
     // If email service is not configured, just return success (OTP will be logged to console)
-    if (!this.isConfigured) {
-      console.log(`📧 Email service not configured. OTP for ${email}: ${otp}`);
-      return { success: true, message: 'Email service not configured - OTP logged to console' };
+    if (!this.isConfigured) {      return { success: true, message: 'Email service not configured - OTP logged to console' };
     }
 
     const mailOptions = {
@@ -213,20 +200,14 @@ class EmailService {
     };
 
     try {
-      const result = await this.transporter.sendMail(mailOptions);
-      console.log(`✅ OTP email sent successfully to ${email}:`, result.messageId);
-      return { success: true, messageId: result.messageId };
-    } catch (error) {
-      console.error(`❌ Error sending OTP email to ${email}:`, error);
-      return { success: false, error: error.message };
+      const result = await this.transporter.sendMail(mailOptions);      return { success: true, messageId: result.messageId };
+    } catch (error) {      return { success: false, error: error.message };
     }
   }
 
   async sendJobRemovalEmail(employerEmail, companyName, jobTitle, reason) {
     // If email service is not configured, just log the action
-    if (!this.isConfigured) {
-      console.log(`Email service not configured. Job removal notification for ${employerEmail}: Job "${jobTitle}" has been removed.`);
-      return { success: true, message: 'Email service not configured - notification logged to console' };
+    if (!this.isConfigured) {      return { success: true, message: 'Email service not configured - notification logged to console' };
     }
 
     const mailOptions = {
@@ -298,20 +279,14 @@ class EmailService {
     };
 
     try {
-      const result = await this.transporter.sendMail(mailOptions);
-      console.log('✅ Job removal email sent successfully:', result.messageId);
-      return { success: true, messageId: result.messageId };
-    } catch (error) {
-      console.error('❌ Error sending job removal email:', error);
-      return { success: false, error: error.message };
+      const result = await this.transporter.sendMail(mailOptions);      return { success: true, messageId: result.messageId };
+    } catch (error) {      return { success: false, error: error.message };
     }
   }
 
   async sendJobPauseEmail(employerEmail, companyName, jobTitle, reason) {
     // If email service is not configured, just log the action
-    if (!this.isConfigured) {
-      console.log(`📧 Email service not configured. Job pause notification for ${employerEmail}: Job "${jobTitle}" has been paused.`);
-      return { success: true, message: 'Email service not configured - notification logged to console' };
+    if (!this.isConfigured) {      return { success: true, message: 'Email service not configured - notification logged to console' };
     }
 
     const mailOptions = {
@@ -357,7 +332,7 @@ class EmailService {
                 <li> Your job posting is temporarily hidden from jobseekers</li>
                 <li> You can still manage existing applications</li>
                 <li> The posting can be reactivated once issues are resolved</li>
-                <li>📞 Contact our team for assistance or clarification</li>
+                <li>� Contact our team for assistance or clarification</li>
               </ul>
             </div>
             
@@ -382,20 +357,14 @@ class EmailService {
     };
 
     try {
-      const result = await this.transporter.sendMail(mailOptions);
-      console.log('✅ Job pause email sent successfully:', result.messageId);
-      return { success: true, messageId: result.messageId };
-    } catch (error) {
-      console.error('❌ Error sending job pause email:', error);
-      return { success: false, error: error.message };
+      const result = await this.transporter.sendMail(mailOptions);      return { success: true, messageId: result.messageId };
+    } catch (error) {      return { success: false, error: error.message };
     }
   }
 
   async sendJobFlagEmail(employerEmail, companyName, jobTitle, reason) {
     // If email service is not configured, just log the action
-    if (!this.isConfigured) {
-      console.log(`📧 Email service not configured. Job flag notification for ${employerEmail}: Job "${jobTitle}" has been flagged.`);
-      return { success: true, message: 'Email service not configured - notification logged to console' };
+    if (!this.isConfigured) {      return { success: true, message: 'Email service not configured - notification logged to console' };
     }
 
     const mailOptions = {
@@ -466,20 +435,14 @@ class EmailService {
     };
 
     try {
-      const result = await this.transporter.sendMail(mailOptions);
-      console.log('✅ Job flag email sent successfully:', result.messageId);
-      return { success: true, messageId: result.messageId };
-    } catch (error) {
-      console.error('❌ Error sending job flag email:', error);
-      return { success: false, error: error.message };
+      const result = await this.transporter.sendMail(mailOptions);      return { success: true, messageId: result.messageId };
+    } catch (error) {      return { success: false, error: error.message };
     }
   }
 
   async sendJobseekerSuspensionEmail(jobseekerEmail, jobseekerName, reason) {
     // If email service is not configured, just log the action
-    if (!this.isConfigured) {
-      console.log(`📧 Email service not configured. Jobseeker suspension notification for ${jobseekerEmail}: Account has been suspended due to inactivity.`);
-      return { success: true, message: 'Email service not configured - notification logged to console' };
+    if (!this.isConfigured) {      return { success: true, message: 'Email service not configured - notification logged to console' };
     }
 
     const mailOptions = {
@@ -521,7 +484,7 @@ class EmailService {
             
             <div style="background-color: #fff3cd; border-radius: 6px; padding: 15px; margin: 20px 0;">
               <p style="margin: 0; color: #856404;">
-                <strong>⚠️ Important:</strong> If you don't log in within 30 days from today, 
+                <strong> Important:</strong> If you don't log in within 30 days from today, 
                 your account will be permanently removed to maintain database hygiene.
               </p>
             </div>
@@ -544,20 +507,14 @@ class EmailService {
     };
 
     try {
-      const result = await this.transporter.sendMail(mailOptions);
-      console.log('✅ Jobseeker suspension email sent successfully:', result.messageId);
-      return { success: true, messageId: result.messageId };
-    } catch (error) {
-      console.error('❌ Error sending jobseeker suspension email:', error);
-      return { success: false, error: error.message };
+      const result = await this.transporter.sendMail(mailOptions);      return { success: true, messageId: result.messageId };
+    } catch (error) {      return { success: false, error: error.message };
     }
   }
 
   async sendJobseekerRemovalEmail(jobseekerEmail, jobseekerName, reason) {
     // If email service is not configured, just log the action
-    if (!this.isConfigured) {
-      console.log(`📧 Email service not configured. Jobseeker removal notification for ${jobseekerEmail}: Account has been removed.`);
-      return { success: true, message: 'Email service not configured - notification logged to console' };
+    if (!this.isConfigured) {      return { success: true, message: 'Email service not configured - notification logged to console' };
     }
 
     const mailOptions = {
@@ -630,20 +587,14 @@ class EmailService {
     };
 
     try {
-      const result = await this.transporter.sendMail(mailOptions);
-      console.log('✅ Jobseeker removal email sent successfully:', result.messageId);
-      return { success: true, messageId: result.messageId };
-    } catch (error) {
-      console.error('❌ Error sending jobseeker removal email:', error);
-      return { success: false, error: error.message };
+      const result = await this.transporter.sendMail(mailOptions);      return { success: true, messageId: result.messageId };
+    } catch (error) {      return { success: false, error: error.message };
     }
   }
 
   async sendJobseekerCompleteRemovalEmail(jobseekerEmail, jobseekerName, reason) {
     // If email service is not configured, just log the action
-    if (!this.isConfigured) {
-      console.log(`📧 Email service not configured. Jobseeker complete removal notification for ${jobseekerEmail}: Account has been completely removed.`);
-      return { success: true, message: 'Email service not configured - notification logged to console' };
+    if (!this.isConfigured) {      return { success: true, message: 'Email service not configured - notification logged to console' };
     }
 
     const mailOptions = {
@@ -681,7 +632,7 @@ class EmailService {
             </div>
             
             <div style="background-color: #fef2f2; border-left: 4px solid #dc2626; padding: 15px; margin: 20px 0;">
-              <h3 style="color: #dc2626; margin-top: 0;">⚠️ Important Notice</h3>
+              <h3 style="color: #dc2626; margin-top: 0;"> Important Notice</h3>
               <p style="margin-bottom: 0;">
                 This deletion is <strong>irreversible</strong>. All your data has been permanently removed from our systems. 
                 You will now be able to register again with the same email address if you choose to do so, 
@@ -718,23 +669,15 @@ class EmailService {
     };
 
     try {
-      const result = await this.transporter.sendMail(mailOptions);
-      console.log('✅ Jobseeker complete removal email sent successfully:', result.messageId);
-      return { success: true, messageId: result.messageId };
-    } catch (error) {
-      console.error('❌ Error sending jobseeker complete removal email:', error);
-      return { success: false, error: error.message };
+      const result = await this.transporter.sendMail(mailOptions);      return { success: true, messageId: result.messageId };
+    } catch (error) {      return { success: false, error: error.message };
     }
   }
 
   async testConnection() {
     try {
-      await this.transporter.verify();
-      console.log('✅ Email service connection verified');
-      return true;
-    } catch (error) {
-      console.error('❌ Email service connection failed:', error);
-      return false;
+      await this.transporter.verify();      return true;
+    } catch (error) {      return false;
     }
   }
 }

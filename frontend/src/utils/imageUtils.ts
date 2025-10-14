@@ -15,9 +15,7 @@ export const getImageSrc = (imageData: string | null | undefined): string => {
     return imageData;
   }
   
-  // No legacy support - only cloud URLs accepted
-  console.warn('Non-cloud URL detected, ignoring:', imageData.substring(0, 50));
-  return '';
+  // No legacy support - only cloud URLs accepted  return '';
 };
 
 /**

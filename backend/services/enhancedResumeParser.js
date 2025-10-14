@@ -20,7 +20,7 @@ class EnhancedResumeParser {
     this.textCleaner = new ResumeTextCleaner();
     this.useMLParser = true; // Flag to enable/disable ML parser
     this.version = '2.1.0'; // Updated version with text cleaning
-    console.log('🔄 EnhancedResumeParser v2.1.0 initialized with text cleaning');
+    console.log(' EnhancedResumeParser v2.1.0 initialized with text cleaning');
   }
 
   /**
@@ -29,30 +29,30 @@ class EnhancedResumeParser {
    */
   async parseResume(pdfBuffer) {
     try {
-      console.log('🚀 Starting enhanced resume parsing with fixes...');
+      console.log(' Starting enhanced resume parsing with fixes...');
       
       // Step 1: Extract raw text from PDF
       let rawText = await this.extractTextFromPDF(pdfBuffer);
-      console.log(`📄 Raw text extracted: ${rawText.length} characters`);
-      console.log('📄 First 500 characters of raw text:', rawText.substring(0, 500));
+      console.log(` Raw text extracted: ${rawText.length} characters`);
+      console.log(' First 500 characters of raw text:', rawText.substring(0, 500));
       
       // Debug: Check PDF extraction quality
       const lines = rawText.split('\n').filter(l => l.trim().length > 0);
-      console.log('📄 PDF Extraction Analysis:');
-      console.log('📄   - Total lines:', lines.length);
-      console.log('📄   - Average line length:', Math.round(rawText.length / lines.length));
-      console.log('📄   - Contains pipe separators:', rawText.includes('|'));
-      console.log('📄   - First 5 lines:');
+      console.log(' PDF Extraction Analysis:');
+      console.log('   - Total lines:', lines.length);
+      console.log('   - Average line length:', Math.round(rawText.length / lines.length));
+      console.log('   - Contains pipe separators:', rawText.includes('|'));
+      console.log('   - First 5 lines:');
       lines.slice(0, 5).forEach((line, i) => {
-        console.log(`📄     Line ${i + 1}: "${line.trim()}"`);
+        console.log(`     Line ${i + 1}: "${line.trim()}"`);
       });
       
       // Step 1.5: Clean text comprehensively before parsing
-      console.log('📄 BEFORE text cleaning - sample:', rawText.substring(0, 200));
+      console.log(' BEFORE text cleaning - sample:', rawText.substring(0, 200));
       const cleaningResult = this.textCleaner.cleanResumeText(rawText);
       rawText = cleaningResult.cleanedText;
-      console.log('📄 AFTER text cleaning - sample:', rawText.substring(0, 200));
-      console.log('📄 Text cleaning stats:', {
+      console.log(' AFTER text cleaning - sample:', rawText.substring(0, 200));
+      console.log(' Text cleaning stats:', {
         originalLength: cleaningResult.metadata.originalLength,
         cleanedLength: cleaningResult.metadata.cleanedLength,
         reduction: cleaningResult.metadata.reductionPercentage + '%'
@@ -60,16 +60,16 @@ class EnhancedResumeParser {
       
       // Test if specific fixes worked
       if (rawText.includes('System for')) {
-        console.log('✅ Text spacing fix SUCCESS: "System for" found');
+        console.log(' Text spacing fix SUCCESS: "System for" found');
       } else if (rawText.includes('Systemfor')) {
-        console.log('❌ Text spacing fix FAILED: "Systemfor" still present');
+        console.log(' Text spacing fix FAILED: "Systemfor" still present');
       }
       
       // Step 2: Choose parsing strategy
       let mergedResult;
       
       if (this.useMLParser) {
-        console.log('🤖 Using ML-powered modular parsing');
+        console.log(' Using ML-powered modular parsing');
         try {
           const mlResult = await this.mlParser.parse(rawText);
           mergedResult = mlResult.data;
@@ -77,26 +77,26 @@ class EnhancedResumeParser {
           // Store ML metadata for debugging
           this.lastMLMetadata = mlResult.metadata;
           
-          console.log('🤖 ML Parser Results Summary:');
-          console.log('🤖   - Format detected:', mlResult.metadata.classification.format);
-          console.log('🤖   - Overall confidence:', (mlResult.metadata.overallConfidence * 100).toFixed(1) + '%');
-          console.log('🤖   - Name found:', mergedResult.personalInfo.firstName, mergedResult.personalInfo.lastName);
-          console.log('🤖   - Education entries:', mergedResult.education.length);
-          console.log('🤖   - Skills found:', mergedResult.skills.length);
-          console.log('🤖   - Optional sections:', mergedResult.optionalSections.length);
+          console.log(' ML Parser Results Summary:');
+          console.log('   - Format detected:', mlResult.metadata.classification.format);
+          console.log('   - Overall confidence:', (mlResult.metadata.overallConfidence * 100).toFixed(1) + '%');
+          console.log('   - Name found:', mergedResult.personalInfo.firstName, mergedResult.personalInfo.lastName);
+          console.log('   - Education entries:', mergedResult.education.length);
+          console.log('   - Skills found:', mergedResult.skills.length);
+          console.log('   - Optional sections:', mergedResult.optionalSections.length);
           
         } catch (mlError) {
-          console.error('❌ ML Parser failed:', mlError.message);
-          console.log('🔄 Falling back to legacy parser...');
+          console.error(' ML Parser failed:', mlError.message);
+          console.log(' Falling back to legacy parser...');
           mergedResult = await this.parseWithAI(rawText);
         }
       } else {
-        console.log('🤖 Using legacy AI parsing with format detection');
+        console.log(' Using legacy AI parsing with format detection');
         mergedResult = await this.parseWithAI(rawText);
       }
       
       // Step 3: Name extraction fallback chain
-      console.log('🔍 Name extraction results:', {
+      console.log(' Name extraction results:', {
         aiResult: { firstName: mergedResult.personalInfo.firstName, lastName: mergedResult.personalInfo.lastName }
       });
       
@@ -107,23 +107,23 @@ class EnhancedResumeParser {
           mergedResult.personalInfo.firstName === 'Technical' ||
           mergedResult.personalInfo.lastName === 'Skills') {
         
-        console.log('⚠️ AI parsing did not find valid name, trying fallback methods...');
+        console.log(' AI parsing did not find valid name, trying fallback methods...');
         
         // Fallback 1: Direct text extraction
         const directNameExtraction = this.extractNameDirectlyFromRawText(rawText);
         if (directNameExtraction.firstName && directNameExtraction.lastName) {
-          console.log('✅ Using direct name extraction');
+          console.log(' Using direct name extraction');
           mergedResult.personalInfo.firstName = directNameExtraction.firstName;
           mergedResult.personalInfo.lastName = directNameExtraction.lastName;
         } else {
           // Fallback 2: Extract from email
           const emailBasedName = this.extractNameFromEmail(mergedResult.personalInfo.email);
           if (emailBasedName.firstName && emailBasedName.lastName) {
-            console.log('✅ Using email-based name extraction');
+            console.log(' Using email-based name extraction');
             mergedResult.personalInfo.firstName = emailBasedName.firstName;
             mergedResult.personalInfo.lastName = emailBasedName.lastName;
           } else {
-            console.log('⚠️ No valid name found in any method');
+            console.log(' No valid name found in any method');
           }
         }
       }
@@ -131,13 +131,13 @@ class EnhancedResumeParser {
       // Validate the merged result
       const validation = this.validateParsedData(mergedResult);
       
-      console.log('✅ Enhanced parsing completed');
-      console.log('✅ Validation status:', validation.isValid ? 'PASSED' : 'FAILED');
+      console.log(' Enhanced parsing completed');
+      console.log(' Validation status:', validation.isValid ? 'PASSED' : 'FAILED');
       if (validation.issues.length > 0) {
-        console.log('❌ Validation issues:', validation.issues);
+        console.log(' Validation issues:', validation.issues);
       }
       if (validation.warnings.length > 0) {
-        console.log('⚠️ Validation warnings:', validation.warnings);
+        console.log(' Validation warnings:', validation.warnings);
       }
       
       return {
@@ -148,7 +148,7 @@ class EnhancedResumeParser {
       };
       
     } catch (error) {
-      console.error('❌ Enhanced parsing failed:', error);
+      console.error(' Enhanced parsing failed:', error);
       return {
         success: false,
         error: error.message,
@@ -161,7 +161,7 @@ class EnhancedResumeParser {
    * Fix text spacing issues from PDF extraction
    */
   fixTextSpacing(text) {
-    console.log('🔤 Fixing text spacing issues...');
+    console.log(' Fixing text spacing issues...');
     
     // Comprehensive list of concatenated word fixes
     const concatenatedFixes = {
@@ -226,7 +226,7 @@ class EnhancedResumeParser {
       .replace(/\s+/g, ' ')
       .trim();
     
-    console.log('🔤 Text spacing fix completed');
+    console.log(' Text spacing fix completed');
     return fixedText;
   }
 
@@ -239,7 +239,7 @@ class EnhancedResumeParser {
       
       try {
         fs.writeFileSync(tempPdfPath, pdfBuffer);
-        console.log(`📄 PDF written: ${tempPdfPath}`);
+        console.log(` PDF written: ${tempPdfPath}`);
         
         const pythonScript = path.join(__dirname, 'pdf_parser.py');
         const python = spawn('python', [pythonScript, tempPdfPath]);
@@ -293,7 +293,7 @@ class EnhancedResumeParser {
    * Convert raw text to structured JSON format
    */
   async convertToStructuredJSON(rawText) {
-    console.log('🔄 Converting to structured JSON...');
+    console.log(' Converting to structured JSON...');
     
     // FIRST: Clean the text comprehensively (this should already be done, but ensure it's clean)
     let processedText = rawText; // Text should already be cleaned by the main pipeline
@@ -339,8 +339,8 @@ class EnhancedResumeParser {
       .replace(/\s+\n/g, '\n')
       .trim();
     
-    console.log('🔄 Enhanced text preprocessing completed');
-    console.log('🔄 Original length:', rawText.length, 'Processed length:', processedText.length);
+    console.log(' Enhanced text preprocessing completed');
+    console.log(' Original length:', rawText.length, 'Processed length:', processedText.length);
     
     const lines = processedText.split('\n').filter(line => line.trim());
     const structuredData = {
@@ -377,7 +377,7 @@ class EnhancedResumeParser {
       // First check for exact section headers - PRIORITIZE PROJECTS
       if (line.match(/^(Projects?):?$/i)) {
         newSection = 'projects';
-        console.log(`📋 ✅✅✅ PROJECTS SECTION DETECTED from exact header: "${line}"`);
+        console.log(`  PROJECTS SECTION DETECTED from exact header: "${line}"`);
       } else if (line.match(/^(Education|Experience|Skills|Certifications|Awards|Languages|Volunteer|References):?$/i)) {
         const sectionName = line.toLowerCase().replace(/[:\s]+$/, '');
         if (sectionName === 'certifications') newSection = 'certifications';
@@ -388,7 +388,7 @@ class EnhancedResumeParser {
         else newSection = sectionName;
         
         if (newSection) {
-          console.log(`📋 Detected section '${newSection}' from exact header: "${line}"`);
+          console.log(` Detected section '${newSection}' from exact header: "${line}"`);
         }
       }
       
@@ -401,13 +401,13 @@ class EnhancedResumeParser {
         line.match(/\b(Recruitment\s*System|Companion\s*App|Management\s*System|Email\s*Automation)\b/i)
       )) {
         newSection = 'projects';
-        console.log(`📋 ✅ PROJECTS SECTION DETECTED from: "${line}"`);
+        console.log(`  PROJECTS SECTION DETECTED from: "${line}"`);
       }
       
       // Also check for education patterns in the text
       if (!newSection && line.match(/\b(De\s*La\s*Salle|San\s*Pablo|Bachelor|Master|PhD|University|College|School)\b/i)) {
         newSection = 'education';
-        console.log(`📋 Detected education section from content: "${line}"`);
+        console.log(` Detected education section from content: "${line}"`);
       }
       
       // Check for certification patterns (improved)
@@ -417,7 +417,7 @@ class EnhancedResumeParser {
         line.match(/\b(Student\s*Mobility|Google\s*UX|Coursera|Cisco\s*Networking|EFSET)\b/i)
       )) {
         newSection = 'certifications';
-        console.log(`📋 Detected certifications section from header: "${line}"`);
+        console.log(` Detected certifications section from header: "${line}"`);
       }
       
       // If no exact match, check keywords - but prioritize projects over experience
@@ -430,7 +430,7 @@ class EnhancedResumeParser {
                  (lowerLine.includes(keyword) && lowerLine.length < 40);
         })) {
           newSection = 'projects';
-          console.log(`📋 Detected projects section from keyword: "${line}"`);
+          console.log(` Detected projects section from keyword: "${line}"`);
         } else {
           // Check other sections
           for (const [sectionName, keywords] of Object.entries(sectionKeywords)) {
@@ -442,7 +442,7 @@ class EnhancedResumeParser {
                      (lowerLine.includes(keyword) && lowerLine.length < 40 && !lowerLine.includes('developed') && !lowerLine.includes('implemented'));
             })) {
               newSection = sectionName;
-              console.log(`📋 Detected section '${sectionName}' from keyword: "${line}"`);
+              console.log(` Detected section '${sectionName}' from keyword: "${line}"`);
               break;
             }
           }
@@ -474,24 +474,24 @@ class EnhancedResumeParser {
       };
     }
     
-    console.log('📋 ========================================');
-    console.log('📋 DETECTED SECTIONS:', Object.keys(structuredData.sections));
-    console.log('📋 ========================================');
+    console.log(' ========================================');
+    console.log(' DETECTED SECTIONS:', Object.keys(structuredData.sections));
+    console.log(' ========================================');
     
     // Debug: Show content of each section
-    console.log('📋 DETECTED SECTIONS SUMMARY:');
+    console.log(' DETECTED SECTIONS SUMMARY:');
     for (const [sectionName, sectionData] of Object.entries(structuredData.sections)) {
-      console.log(`📋 ========================================`);
-      console.log(`📋 Section: "${sectionName}"`);
-      console.log(`📋 Lines: ${sectionData.lines?.length || 0}`);
-      console.log(`📋 Content preview: ${sectionData.content.substring(0, 200)}...`);
+      console.log(` ========================================`);
+      console.log(` Section: "${sectionName}"`);
+      console.log(` Lines: ${sectionData.lines?.length || 0}`);
+      console.log(` Content preview: ${sectionData.content.substring(0, 200)}...`);
       if (sectionName === 'projects') {
-        console.log(`📋 ✅✅✅ FULL PROJECTS CONTENT: ${sectionData.content}`);
+        console.log(`  FULL PROJECTS CONTENT: ${sectionData.content}`);
       }
       if (sectionName === 'experience') {
-        console.log(`📋 ⚠️⚠️⚠️ EXPERIENCE CONTENT (check if this should be projects): ${sectionData.content.substring(0, 500)}`);
+        console.log(`  EXPERIENCE CONTENT (check if this should be projects): ${sectionData.content.substring(0, 500)}`);
       }
-      console.log(`📋 ========================================`);
+      console.log(` ========================================`);
     }
     
     return structuredData;
@@ -502,12 +502,12 @@ class EnhancedResumeParser {
    * @deprecated Use ResumeTextCleaner instead
    */
   fixTextSpacing(text) {
-    console.log('🔤 Legacy fixTextSpacing called - using ResumeTextCleaner instead...');
+    console.log(' Legacy fixTextSpacing called - using ResumeTextCleaner instead...');
     
     // Use the comprehensive text cleaner
     const cleaningResult = this.textCleaner.cleanResumeText(text);
     
-    console.log('🔤 Text cleaning completed via ResumeTextCleaner');
+    console.log(' Text cleaning completed via ResumeTextCleaner');
     return cleaningResult.cleanedText;
   }
 
@@ -515,11 +515,11 @@ class EnhancedResumeParser {
    * Add spaces to concatenated text - comprehensive word separation
    */
   addSpacesToConcatenatedText(text) {
-    console.log('🔤 Adding spaces to concatenated text...');
+    console.log(' Adding spaces to concatenated text...');
     
     // Don't process if text is too short or already has good spacing
     if (text.length < 15 || text.split(' ').length > text.length / 12) {
-      console.log('🔤 Skipping text spacing - already well spaced or too short');
+      console.log(' Skipping text spacing - already well spaced or too short');
       return text;
     }
     
@@ -537,12 +537,12 @@ class EnhancedResumeParser {
       // Fix specific certification patterns
       .replace(/([a-z])(GoogleUXDesign|StudentMobilityProgramme|CiscoNetworkingAcademy)/g, '$1 $2');
     
-    console.log('🔤 Text spacing completed');
+    console.log(' Text spacing completed');
     return spacedText;
   }
 
   async parseWithRules(structuredData) {
-    console.log('🔧 Applying rule-based parsing...');
+    console.log(' Applying rule-based parsing...');
     
     const result = {
       method: 'rules',
@@ -568,13 +568,13 @@ class EnhancedResumeParser {
     
     // Parse each section with specific rules
     for (const [sectionName, sectionData] of Object.entries(structuredData.sections)) {
-      console.log(`📋 Section "${sectionName}" content preview: ${sectionData.content.substring(0, 200).replace(/\n/g, '\\n')}...`);
+      console.log(` Section "${sectionName}" content preview: ${sectionData.content.substring(0, 200).replace(/\n/g, '\\n')}...`);
       
       // Check if header section contains skills
       if (sectionName === 'header' && sectionData.content.includes('Programming Languages')) {
-        console.log('🔧 ⚠️ Skills found in header section! Parsing skills from header...');
+        console.log('  Skills found in header section! Parsing skills from header...');
         const headerSkills = this.parseSkillsRules(sectionData.content);
-        console.log('🔧 ⚠️ Header skills result:', headerSkills);
+        console.log('  Header skills result:', headerSkills);
         if (headerSkills && headerSkills.length > 0) {
           result.skills = (result.skills || []).concat(headerSkills);
         }
@@ -603,16 +603,16 @@ class EnhancedResumeParser {
           result.experience = this.parseExperienceRules(sectionData.content);
           break;
         case 'skills':
-          console.log('🔧 🔍 Skills section detected, content preview:', sectionData.content.substring(0, 300));
+          console.log('  Skills section detected, content preview:', sectionData.content.substring(0, 300));
           result.skills = this.parseSkillsRules(sectionData.content);
-          console.log('🔧 🔍 Skills parsing result:', result.skills);
+          console.log('  Skills parsing result:', result.skills);
           break;
         case 'certifications':
-          console.log('🔧 🏆 Processing certifications section, content:', sectionData.content.substring(0, 200));
+          console.log('  Processing certifications section, content:', sectionData.content.substring(0, 200));
           result.certifications = this.parseCertificationsRules(sectionData.content);
           // Also add to optional sections
           const certificates = this.parseOptionalCertificatesRules(sectionData.content);
-          console.log('🔧 🏆 Parsed certificates count:', certificates.length);
+          console.log('  Parsed certificates count:', certificates.length);
           if (certificates.length > 0) {
             result.optionalSections.push({
               id: 'certificates-' + Date.now(),
@@ -626,18 +626,18 @@ class EnhancedResumeParser {
               title: 'Certificates & Seminars',
               optionalType: 'certificates'
             });
-            console.log('🔧 🏆 Added certificates to optional sections');
+            console.log('  Added certificates to optional sections');
           } else {
-            console.log('🔧 🏆 No certificates found to add to optional sections');
+            console.log('  No certificates found to add to optional sections');
           }
           break;
         case 'projects':
-          console.log('🔧 💼 Processing projects section, content:', sectionData.content.substring(0, 200));
-          console.log('🔧 💼 Full projects section content:', sectionData.content);
+          console.log(' � Processing projects section, content:', sectionData.content.substring(0, 200));
+          console.log(' � Full projects section content:', sectionData.content);
           // Parse projects as optional section
           const projects = this.parseProjectsRules(sectionData.content);
-          console.log('🔧 💼 Parsed projects count:', projects.length);
-          console.log('🔧 💼 Parsed projects data:', JSON.stringify(projects, null, 2));
+          console.log(' � Parsed projects count:', projects.length);
+          console.log(' � Parsed projects data:', JSON.stringify(projects, null, 2));
           if (projects.length > 0) {
             const projectSection = {
               id: 'projects-' + Date.now(),
@@ -652,9 +652,9 @@ class EnhancedResumeParser {
               title: 'Projects',
               optionalType: 'projects'
             });
-            console.log('🔧 💼 Added projects to optional sections:', projectSection);
+            console.log(' � Added projects to optional sections:', projectSection);
           } else {
-            console.log('🔧 💼 No projects found to add to optional sections');
+            console.log(' � No projects found to add to optional sections');
           }
           break;
         case 'awards':
@@ -736,12 +736,12 @@ class EnhancedResumeParser {
     
     // If we still don't have a name, try global extraction as fallback
     if (!result.personalInfo.firstName || !result.personalInfo.lastName) {
-      console.log('🔄 No name found in sections, trying global extraction...');
+      console.log(' No name found in sections, trying global extraction...');
       const fallbackPersonalInfo = this.parsePersonalInfoFromEntireDocument(allContent);
       if (fallbackPersonalInfo.firstName && fallbackPersonalInfo.lastName) {
         result.personalInfo.firstName = fallbackPersonalInfo.firstName;
         result.personalInfo.lastName = fallbackPersonalInfo.lastName;
-        console.log('✅ Global extraction found name:', {
+        console.log(' Global extraction found name:', {
           firstName: fallbackPersonalInfo.firstName,
           lastName: fallbackPersonalInfo.lastName
         });
@@ -754,7 +754,7 @@ class EnhancedResumeParser {
       // Look for certificate patterns in the entire document, but be very selective
       const certMatches = allContent.match(/\b(Student\s+Mobility\s+Programme|Google\s+UX\s+Design|Coursera|Cisco\s+Networking\s+Academy|EFSET|Certificate|Certification)\b[^\n]{0,100}/gi);
       if (certMatches && certMatches.length > 0) {
-        console.log('🔄 Found certificate patterns, creating certificates section');
+        console.log(' Found certificate patterns, creating certificates section');
         const fallbackCerts = certMatches.map(match => {
           const cleanMatch = match.trim();
           // Try to extract issuer and date from the match
@@ -796,8 +796,8 @@ class EnhancedResumeParser {
     
     // DISABLED fallback for projects to prevent duplicates
     if (false && result.optionalSections.filter(s => s.type === 'projects').length === 0) {
-      console.log('🔄 No projects found in sections, trying fallback pattern matching...');
-      console.log('🔄 Searching in content:', allContent.substring(0, 500));
+      console.log(' No projects found in sections, trying fallback pattern matching...');
+      console.log(' Searching in content:', allContent.substring(0, 500));
       
       // Look for project patterns in the entire document - be more flexible
       const projectLines = allContent.split('\n').filter(line => 
@@ -805,10 +805,10 @@ class EnhancedResumeParser {
         line.length > 20 && line.length < 200
       );
       
-      console.log('🔄 Project lines found:', projectLines);
+      console.log(' Project lines found:', projectLines);
       
       if (projectLines && projectLines.length > 0) {
-        console.log('🔄 Found project lines, creating projects section');
+        console.log(' Found project lines, creating projects section');
         const fallbackProjects = projectLines.map(line => {
           let name = line.trim();
           let description = '';
@@ -832,7 +832,7 @@ class EnhancedResumeParser {
           return { name, description, technologies, startDate: '', endDate: '', url: '' };
         }).filter(project => project.name.length > 5);
         
-        console.log('🔄 Fallback projects created:', fallbackProjects);
+        console.log(' Fallback projects created:', fallbackProjects);
         
         result.optionalSections.push({
           id: 'projects-fallback-' + Date.now(),
@@ -849,8 +849,8 @@ class EnhancedResumeParser {
       }
     }
     
-    console.log('📋 Final optional sections:', result.optionalSections.map(s => s.type));
-    console.log('📋 Total optional sections:', result.optionalSections.length);
+    console.log(' Final optional sections:', result.optionalSections.map(s => s.type));
+    console.log(' Total optional sections:', result.optionalSections.length);
     
     return result;
   }
@@ -860,18 +860,18 @@ class EnhancedResumeParser {
    * Now with multi-format support
    */
   async parseWithAI(rawText) {
-    console.log('🤖 Applying AI-powered parsing...');
-    console.log('🤖 Text length:', rawText.length);
+    console.log(' Applying AI-powered parsing...');
+    console.log(' Text length:', rawText.length);
     
     // Detect resume format
     const format = ResumeFormatDetector.detectFormat(rawText);
     const strategy = ResumeFormatDetector.getParserStrategy(format);
-    console.log('🤖 Using format:', format);
-    console.log('🤖 Strategy:', strategy);
+    console.log(' Using format:', format);
+    console.log(' Strategy:', strategy);
     
     // Split text into sections
     const sections = this.splitIntoSections(rawText);
-    console.log('🤖 Detected sections:', Object.keys(sections));
+    console.log(' Detected sections:', Object.keys(sections));
     
     // Extract personal info based on format
     let personalInfo;
@@ -912,7 +912,7 @@ class EnhancedResumeParser {
     } else {
       projects = this.extractProjectsAI(sections.projects || rawText);
     }
-    console.log('🤖 Extracted projects:', projects.length);
+    console.log(' Extracted projects:', projects.length);
     if (projects.length > 0) {
       result.optionalSections.push({
         id: 'projects-ai-' + Date.now(),
@@ -939,7 +939,7 @@ class EnhancedResumeParser {
     } else {
       certificates = this.extractCertificatesAI(sections.certifications || rawText);
     }
-    console.log('🤖 Extracted certificates:', certificates.length);
+    console.log(' Extracted certificates:', certificates.length);
     if (certificates.length > 0) {
       result.optionalSections.push({
         id: 'certificates-ai-' + Date.now(),
@@ -955,8 +955,8 @@ class EnhancedResumeParser {
       });
     }
     
-    console.log('🤖 AI parsing completed');
-    console.log('🤖 Result summary:', {
+    console.log(' AI parsing completed');
+    console.log(' Result summary:', {
       hasName: !!(result.personalInfo.firstName && result.personalInfo.lastName),
       educationCount: result.education.length,
       skillsCount: result.skills.length,
@@ -971,7 +971,7 @@ class EnhancedResumeParser {
    * Add spacing between concatenated words in text
    */
   addSpacingToText(text) {
-    console.log('🔤 Adding spacing to concatenated text...');
+    console.log(' Adding spacing to concatenated text...');
     
     let spacedText = text
       // Add space before capital letters that follow lowercase letters
@@ -1010,7 +1010,7 @@ class EnhancedResumeParser {
       .replace(/\s+/g, ' ')
       .trim();
     
-    console.log('🔤 Spacing added successfully');
+    console.log(' Spacing added successfully');
     return spacedText;
   }
 
@@ -1018,20 +1018,20 @@ class EnhancedResumeParser {
    * Split text into sections - handles one-line text
    */
   splitIntoSections(text) {
-    console.log('🤖 Splitting text into sections...');
-    console.log('🤖 Original text preview:', text.substring(0, 500));
+    console.log(' Splitting text into sections...');
+    console.log(' Original text preview:', text.substring(0, 500));
     
     // Add spacing between concatenated words
     text = this.addSpacingToText(text);
-    console.log('🤖 After spacing text preview:', text.substring(0, 500));
+    console.log(' After spacing text preview:', text.substring(0, 500));
     
     // Debug: Check if "PROJECTS" exists in the text
     const projectsIndex = text.search(/PROJECTS/i);
     const technicalIndex = text.search(/TECHNICAL\s+SKILLS/i);
-    console.log('🤖 DEBUG: "PROJECTS" found at index:', projectsIndex);
-    console.log('🤖 DEBUG: "TECHNICAL SKILLS" found at index:', technicalIndex);
+    console.log(' DEBUG: "PROJECTS" found at index:', projectsIndex);
+    console.log(' DEBUG: "TECHNICAL SKILLS" found at index:', technicalIndex);
     if (projectsIndex !== -1) {
-      console.log('🤖 DEBUG: Text around PROJECTS:', text.substring(Math.max(0, projectsIndex - 50), Math.min(text.length, projectsIndex + 200)));
+      console.log(' DEBUG: Text around PROJECTS:', text.substring(Math.max(0, projectsIndex - 50), Math.min(text.length, projectsIndex + 200)));
     }
     
     const sections = {};
@@ -1041,7 +1041,7 @@ class EnhancedResumeParser {
     const educationMatch = text.match(/Education\s*(.+?)(?=\s*(?:Projects?|Experience|Skills|Certifications?|$))/i);
     if (educationMatch) {
       sections.education = educationMatch[1];
-      console.log('🤖 Found education section, length:', educationMatch[1].length);
+      console.log(' Found education section, length:', educationMatch[1].length);
     }
     
     // Projects section - FIXED: Projects content comes BEFORE the "PROJECTS" header!
@@ -1062,26 +1062,26 @@ class EnhancedResumeParser {
       
       if (certificationsIndex !== -1 && certificationsIndex > startIdx) {
         endIdx = Math.min(endIdx, certificationsIndex);
-        console.log('🤖 DEBUG: Found CERTIFICATIONS at index:', certificationsIndex);
+        console.log(' DEBUG: Found CERTIFICATIONS at index:', certificationsIndex);
       }
       
       if (projectsHeaderMatch !== -1 && projectsHeaderMatch > startIdx) {
         endIdx = Math.min(endIdx, projectsHeaderMatch);
-        console.log('🤖 DEBUG: Found PROJECTS header at index:', projectsHeaderMatch);
+        console.log(' DEBUG: Found PROJECTS header at index:', projectsHeaderMatch);
       }
       
       if (technicalSkillsMatch !== -1 && technicalSkillsMatch > startIdx) {
         endIdx = Math.min(endIdx, technicalSkillsMatch);
-        console.log('🤖 DEBUG: Found TECHNICAL SKILLS at index:', technicalSkillsMatch);
+        console.log(' DEBUG: Found TECHNICAL SKILLS at index:', technicalSkillsMatch);
       }
       
       if (endIdx > startIdx) {
         let potentialProjects = text.substring(startIdx, endIdx).trim();
         
-        console.log('🤖 DEBUG: Extracted content between EDUCATION and first section marker');
-        console.log('🤖 DEBUG: Content length:', potentialProjects.length);
-        console.log('🤖 DEBUG: First 300 chars:', potentialProjects.substring(0, 300));
-        console.log('🤖 DEBUG: Last 200 chars:', potentialProjects.substring(Math.max(0, potentialProjects.length - 200)));
+        console.log(' DEBUG: Extracted content between EDUCATION and first section marker');
+        console.log(' DEBUG: Content length:', potentialProjects.length);
+        console.log(' DEBUG: First 300 chars:', potentialProjects.substring(0, 300));
+        console.log(' DEBUG: Last 200 chars:', potentialProjects.substring(Math.max(0, potentialProjects.length - 200)));
         
         // Remove degree text if present at the end
         potentialProjects = potentialProjects
@@ -1091,33 +1091,33 @@ class EnhancedResumeParser {
         // Check if this section contains project-like content
         if (potentialProjects.match(/\|/) && potentialProjects.match(/\b(React|JavaScript|HTML|CSS|Python|Java|Node|Unity|Type Script|Expo|Figma|Web-Based|Management|System|Application|App)\b/i)) {
           sections.projects = potentialProjects;
-          console.log('🤖 ✅ Found projects section, length:', potentialProjects.length);
-          console.log('🤖 Projects section preview:', potentialProjects.substring(0, 300));
+          console.log('  Found projects section, length:', potentialProjects.length);
+          console.log(' Projects section preview:', potentialProjects.substring(0, 300));
         } else {
-          console.log('🤖 ❌ Content does not look like projects (no | or tech keywords)');
+          console.log('  Content does not look like projects (no | or tech keywords)');
         }
       } else {
-        console.log('🤖 ❌ Invalid indices: start:', startIdx, 'end:', endIdx);
+        console.log('  Invalid indices: start:', startIdx, 'end:', endIdx);
       }
     } else {
-      console.log('🤖 ❌ Could not find EDUCATION marker');
+      console.log('  Could not find EDUCATION marker');
     }
     
     // Skills section
     const skillsMatch = text.match(/Skills?\s*(?:and\s+Abilities)?\s*(.+?)(?=\s*(?:Projects?|Certifications?|Experience|Education|$))/i);
     if (skillsMatch) {
       sections.skills = skillsMatch[1];
-      console.log('🤖 Found skills section, length:', skillsMatch[1].length);
+      console.log(' Found skills section, length:', skillsMatch[1].length);
     }
     
     // Certifications section
     const certificationsMatch = text.match(/Certifications?\s*(?:and\s+Seminars?)?\s*(.+?)(?=\s*(?:Skills?|Projects?|Experience|Education|$))/i);
     if (certificationsMatch) {
       sections.certifications = certificationsMatch[1];
-      console.log('🤖 Found certifications section, length:', certificationsMatch[1].length);
+      console.log(' Found certifications section, length:', certificationsMatch[1].length);
     }
     
-    console.log('🤖 Sections found:', Object.keys(sections));
+    console.log(' Sections found:', Object.keys(sections));
     return sections;
   }
   
@@ -1125,16 +1125,16 @@ class EnhancedResumeParser {
    * Extract projects using AI - GENERIC for any resume
    */
   extractProjectsAI(text) {
-    console.log('🤖 ========================================');
-    console.log('🤖 EXTRACTING PROJECTS FROM TEXT');
-    console.log('🤖 ========================================');
-    console.log('🤖 Full text length:', text.length);
+    console.log(' ========================================');
+    console.log(' EXTRACTING PROJECTS FROM TEXT');
+    console.log(' ========================================');
+    console.log(' Full text length:', text.length);
     
     const projects = [];
     
     // Check if text is too short or empty
     if (!text || text.length < 20) {
-      console.log('🤖 ❌ Text is too short or empty');
+      console.log('  Text is too short or empty');
       return projects;
     }
     
@@ -1150,9 +1150,9 @@ class EnhancedResumeParser {
       const projectName = match[1].trim();
       const restOfContent = match[2].trim();
       
-      console.log(`🤖 Match ${projectCount}:`);
-      console.log(`🤖   Raw name: "${projectName}"`);
-      console.log(`🤖   Raw content: "${restOfContent.substring(0, 100)}..."`);
+      console.log(` Match ${projectCount}:`);
+      console.log(`   Raw name: "${projectName}"`);
+      console.log(`   Raw content: "${restOfContent.substring(0, 100)}..."`);
       
       // Clean up project name (remove dates like "- Present" or "2022 -")
       let cleanName = projectName
@@ -1163,13 +1163,13 @@ class EnhancedResumeParser {
       
       // Skip if this looks like contact info
       if (cleanName.match(/@|linkedin|github|phone|email|www\./i)) {
-        console.log('🤖 ⏭️ Skipping contact info');
+        console.log(' ⏭ Skipping contact info');
         continue;
       }
       
       // Skip if too short after cleaning
       if (cleanName.length < 10) {
-        console.log('🤖 ⏭️ Skipping - too short after cleaning');
+        console.log(' ⏭ Skipping - too short after cleaning');
         continue;
       }
       
@@ -1200,26 +1200,26 @@ class EnhancedResumeParser {
       };
       
       projects.push(project);
-      console.log(`🤖 ✅ Added project: "${cleanName}"`);
+      console.log(`  Added project: "${cleanName}"`);
     }
     
     // If no projects found with pipe separator, the resume might not have a projects section
     // or projects are formatted differently. Just return empty array.
     // Note: We don't want to over-extract and mistake other content for projects
     
-    console.log('🤖 ========================================');
-    console.log('🤖 EXTRACTION COMPLETE');
-    console.log('🤖 Total projects extracted:', projects.length);
+    console.log(' ========================================');
+    console.log(' EXTRACTION COMPLETE');
+    console.log(' Total projects extracted:', projects.length);
     if (projects.length > 0) {
-      console.log('🤖 Project names:');
+      console.log(' Project names:');
       projects.forEach((p, idx) => {
-        console.log(`🤖   ${idx + 1}. ${p.name}`);
-        console.log(`🤖      Tech: ${p.technologies.substring(0, 50)}...`);
+        console.log(`   ${idx + 1}. ${p.name}`);
+        console.log(`      Tech: ${p.technologies.substring(0, 50)}...`);
       });
     } else {
-      console.log('🤖 ℹ️ No projects found. This resume may not have a projects section or uses a different format.');
+      console.log('  No projects found. This resume may not have a projects section or uses a different format.');
     }
-    console.log('🤖 ========================================');
+    console.log(' ========================================');
     
     return projects;
   }
@@ -1228,7 +1228,7 @@ class EnhancedResumeParser {
    * Extract certificates using AI - GENERIC for any resume
    */
   extractCertificatesAI(text) {
-    console.log('🤖 Extracting certificates from text:', text.substring(0, 200));
+    console.log(' Extracting certificates from text:', text.substring(0, 200));
     const certificates = [];
     
     // Pattern 1: "Certificate Name |Issuer/Details Month Year" (with pipe)
@@ -1241,35 +1241,35 @@ class EnhancedResumeParser {
       const month = match[3];
       const year = match[4];
       
-      console.log('🤖 Certificate candidate:', name);
+      console.log(' Certificate candidate:', name);
       
       // Skip if it contains email, phone, or contact info
       if (name.match(/@|gmail|yahoo|hotmail|outlook|phone|mobile|tel:|linkedin|github|www\./i)) {
-        console.log('🤖 ⏭️ Skipping contact info:', name);
+        console.log(' ⏭ Skipping contact info:', name);
         continue;
       }
       
       // Skip if the issuer part contains email or contact info
       if (issuerPart.match(/@|gmail|yahoo|hotmail|outlook|linkedin|github|www\./i)) {
-        console.log('🤖 ⏭️ Skipping - issuer contains contact info');
+        console.log(' ⏭ Skipping - issuer contains contact info');
         continue;
       }
       
       // Skip if it looks like a project
       if (name.match(/\b(System|App|Management|Automation|Recruitment|Companion|Inventory|Grade|Computation|Development|Platform|Application|Website|Tool|Software)\b/i)) {
-        console.log('🤖 ⏭️ Skipping project:', name);
+        console.log(' ⏭ Skipping project:', name);
         continue;
       }
       
       // Skip if it looks like a person's name (common pattern: FirstName LastName)
       if (name.match(/^[A-Z][a-z]+\s+[A-Z][a-z]+$/)) {
-        console.log('🤖 ⏭️ Skipping person name:', name);
+        console.log(' ⏭ Skipping person name:', name);
         continue;
       }
       
       // Skip if it looks like education (contains "Bachelor", "Master", "University", "College")
       if (name.match(/\b(Bachelor|Master|University|College|School|Degree|Education)\b/i)) {
-        console.log('🤖 ⏭️ Skipping education entry:', name);
+        console.log(' ⏭ Skipping education entry:', name);
         continue;
       }
       
@@ -1296,9 +1296,9 @@ class EnhancedResumeParser {
         description: ''
       });
       
-      console.log('🤖 ✅ Found certificate:', name);
-      console.log('🤖    Issuer:', issuer);
-      console.log('🤖    Date:', date);
+      console.log('  Found certificate:', name);
+      console.log('    Issuer:', issuer);
+      console.log('    Date:', date);
     }
     
     // Pattern 2: "Certificate Name - Issuer Month Year" (without pipe, more generic)
@@ -1310,29 +1310,29 @@ class EnhancedResumeParser {
       const month = match[3];
       const year = match[4];
       
-      console.log('🤖 Certificate candidate (no pipe):', name);
+      console.log(' Certificate candidate (no pipe):', name);
       
       // Skip if it contains email, phone, or contact info
       if (name.match(/@|gmail|yahoo|hotmail|outlook|phone|mobile|tel:|linkedin|github|www\./i)) {
-        console.log('🤖 ⏭️ Skipping contact info:', name);
+        console.log(' ⏭ Skipping contact info:', name);
         continue;
       }
       
       // Skip if the issuer part contains email or contact info
       if (issuerPart.match(/@|gmail|yahoo|hotmail|outlook|linkedin|github|www\./i)) {
-        console.log('🤖 ⏭️ Skipping - issuer contains contact info');
+        console.log(' ⏭ Skipping - issuer contains contact info');
         continue;
       }
       
       // Skip if it looks like a project
       if (name.match(/\b(System|App|Management|Automation|Recruitment|Companion|Inventory|Grade|Computation|Development|Platform|Application|Website|Tool|Software)\b/i)) {
-        console.log('🤖 ⏭️ Skipping project:', name);
+        console.log(' ⏭ Skipping project:', name);
         continue;
       }
       
       // Skip if it looks like education
       if (name.match(/\b(Bachelor|Master|University|College|School|Degree|Education)\b/i)) {
-        console.log('🤖 ⏭️ Skipping education entry:', name);
+        console.log(' ⏭ Skipping education entry:', name);
         continue;
       }
       
@@ -1359,15 +1359,15 @@ class EnhancedResumeParser {
         description: ''
       });
       
-      console.log('🤖 ✅ Found certificate (no pipe):', name);
-      console.log('🤖    Issuer:', issuer);
-      console.log('🤖    Date:', date);
+      console.log('  Found certificate (no pipe):', name);
+      console.log('    Issuer:', issuer);
+      console.log('    Date:', date);
     }
     
-    console.log('🤖 Total certificates:', certificates.length);
+    console.log(' Total certificates:', certificates.length);
     
     if (certificates.length === 0) {
-      console.log('🤖 ❌ No certificates found. Sample text:', text.substring(0, 300));
+      console.log('  No certificates found. Sample text:', text.substring(0, 300));
     }
     
     return certificates;
@@ -1377,21 +1377,21 @@ class EnhancedResumeParser {
    * AI-powered personal info extraction
    */
   extractPersonalInfoAI(text) {
-    console.log('🤖 Extracting personal info...');
+    console.log(' Extracting personal info...');
     const personalInfo = {};
     
     // Extract email
     const emailMatch = text.match(/\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b/);
     if (emailMatch) {
       personalInfo.email = emailMatch[0];
-      console.log('🤖 Found email:', personalInfo.email);
+      console.log(' Found email:', personalInfo.email);
     }
     
     // Extract phone - GENERIC pattern for various formats
     const phoneMatch = text.match(/(?:\+?63|0)?[\s\-\.]?9\d{2}[\s\-\.]?\d{3}[\s\-\.]?\d{4}|(?:\+?1[\s\-\.]?)?\(?\d{3}\)?[\s\-\.]?\d{3}[\s\-\.]?\d{4}|\d{10,11}/);
     if (phoneMatch) {
       personalInfo.phone = phoneMatch[0].replace(/[\s\-\.]/g, '');
-      console.log('🤖 Found phone:', personalInfo.phone);
+      console.log(' Found phone:', personalInfo.phone);
     }
     
     // Extract name from beginning of text (before ANY job title or location)
@@ -1399,7 +1399,7 @@ class EnhancedResumeParser {
     const nameMatch = text.match(/^([A-Z][a-z]+(?:\s+[A-Z][a-z]*\.?\s*)*[A-Z][a-z]+)\s+(?:[A-Z\/]+|[A-Z][A-Z\s]+|[A-Z][a-z]+\s+City)/);
     if (nameMatch) {
       let fullName = nameMatch[1].trim();
-      console.log('🤖 Full name found:', fullName);
+      console.log(' Full name found:', fullName);
       
       // Handle names like "Hannah Nicole L.Comia" - split by space or period
       fullName = fullName.replace(/([a-z])([A-Z])/g, '$1 $2'); // Add space before capital letters
@@ -1415,7 +1415,7 @@ class EnhancedResumeParser {
           personalInfo.firstName = parts.slice(0, parts.length - 1).join(' ');
         }
         
-        console.log('🤖 Parsed name:', personalInfo.firstName, personalInfo.lastName);
+        console.log(' Parsed name:', personalInfo.firstName, personalInfo.lastName);
       }
     }
     
@@ -1426,7 +1426,7 @@ class EnhancedResumeParser {
    * AI-powered education extraction - TRULY GENERIC for any resume
    */
   extractEducationAI(text) {
-    console.log('🤖 Extracting education from:', text.substring(0, 500));
+    console.log(' Extracting education from:', text.substring(0, 500));
     const education = [];
     
     // Multiple patterns to handle different resume formats
@@ -1448,7 +1448,7 @@ class EnhancedResumeParser {
       /([A-Za-z\s]{10,100}?(?:Bachelor|Master|Associate|Diploma))\s*-\s*([A-Z][^,\d\n]{5,80}?(?:University|College|School|Institute|Academy))\s+(\d{4})\s*-\s*(\d{4}|Present|Current)/gi
     ];
     
-    console.log('🤖 Trying to match education patterns...');
+    console.log(' Trying to match education patterns...');
     
     // Try Pattern 1 first (ALL CAPS format)
     let match;
@@ -1475,7 +1475,7 @@ class EnhancedResumeParser {
         description
       });
       
-      console.log('🤖 ✅ Found education (Pattern 1):', { school, degree, startDate, endDate });
+      console.log('  Found education (Pattern 1):', { school, degree, startDate, endDate });
     }
     
     // Try Pattern 2 (with comma)
@@ -1500,7 +1500,7 @@ class EnhancedResumeParser {
           description
         });
         
-        console.log('🤖 ✅ Found education (Pattern 2):', { school, degree, startDate, endDate });
+        console.log('  Found education (Pattern 2):', { school, degree, startDate, endDate });
       }
     }
     
@@ -1530,14 +1530,14 @@ class EnhancedResumeParser {
           description
         });
         
-        console.log('🤖 ✅ Found education (Pattern 3):', { school, degree, startDate, endDate });
+        console.log('  Found education (Pattern 3):', { school, degree, startDate, endDate });
       }
     }
     
-    console.log('🤖 Total education entries:', education.length);
+    console.log(' Total education entries:', education.length);
     
     if (education.length === 0) {
-      console.log('🤖 ❌ No education found. Sample text:', text.substring(0, 500));
+      console.log('  No education found. Sample text:', text.substring(0, 500));
     }
     
     return education;
@@ -1656,7 +1656,7 @@ class EnhancedResumeParser {
    * AI-powered skills extraction
    */
   extractSkillsAI(text) {
-    console.log('🤖 Extracting skills from:', text.substring(0, 200));
+    console.log(' Extracting skills from:', text.substring(0, 200));
     const skills = [];
     const seenSkills = new Set();
     
@@ -1689,7 +1689,7 @@ class EnhancedResumeParser {
         if (!seenSkills.has(normalized)) {
           skills.push(skill.replace(/\\\\/g, ''));
           seenSkills.add(normalized);
-          console.log('🤖 ✅ Found known skill:', skill);
+          console.log('  Found known skill:', skill);
         }
       }
     }
@@ -1725,12 +1725,12 @@ class EnhancedResumeParser {
         if (!seenSkills.has(normalized)) {
           skills.push(trimmed);
           seenSkills.add(normalized);
-          console.log('🤖 ✅ Added skill:', trimmed);
+          console.log('  Added skill:', trimmed);
         }
       }
     }
     
-    console.log('🤖 Total skills found:', skills.length);
+    console.log(' Total skills found:', skills.length);
     return skills.slice(0, 50); // Limit to 50
   }
 
@@ -1784,7 +1784,7 @@ class EnhancedResumeParser {
    * Template-based parsing
    */
   async parseWithTemplates(rawText) {
-    console.log('📋 Applying template-based parsing...');
+    console.log(' Applying template-based parsing...');
     
     const templates = [
       {
@@ -1860,7 +1860,7 @@ class EnhancedResumeParser {
               result.personalInfo.lastName = nameParts[nameParts.length - 1];
             }
             
-            console.log('📋 Template extraction found name:', {
+            console.log(' Template extraction found name:', {
               line: line,
               firstName: result.personalInfo.firstName,
               lastName: result.personalInfo.lastName
@@ -1905,7 +1905,7 @@ class EnhancedResumeParser {
    * Validate parsed data quality
    */
   validateParsedData(data) {
-    console.log('✅ Validating parsed data quality...');
+    console.log(' Validating parsed data quality...');
     
     const validation = {
       isValid: true,
@@ -1975,7 +1975,7 @@ class EnhancedResumeParser {
       validation.warnings.push('No skills found');
     }
     
-    console.log('✅ Validation results:', validation);
+    console.log(' Validation results:', validation);
     return validation;
   }
 
@@ -1983,7 +1983,7 @@ class EnhancedResumeParser {
    * Merge results from multiple parsing methods
    */
   mergeParsingResults(results) {
-    console.log('🔀 Merging parsing results...');
+    console.log('� Merging parsing results...');
     
     const merged = {
       personalInfo: {},
@@ -2058,7 +2058,7 @@ class EnhancedResumeParser {
       endDate: this.formatDateForFrontend(exp.endDate)
     }));
     
-    console.log(`✅ Merged results from ${methodCount} methods with ${(merged.metadata.confidence * 100).toFixed(1)}% confidence`);
+    console.log(` Merged results from ${methodCount} methods with ${(merged.metadata.confidence * 100).toFixed(1)}% confidence`);
     return merged;
   }
 
@@ -2066,7 +2066,7 @@ class EnhancedResumeParser {
    * Enhanced education parsing with better logic
    */
   parseEducationRules(educationText) {
-    console.log('🎓 Parsing education with rules:', educationText.substring(0, 200) + '...');
+    console.log('� Parsing education with rules:', educationText.substring(0, 200) + '...');
     const educationEntries = [];
     
     // Enhanced text preprocessing for education section
@@ -2086,17 +2086,17 @@ class EnhancedResumeParser {
       .replace(/\s+/g, ' ')
       .trim();
     
-    console.log('🎓 Processed education text:', processedText.substring(0, 300));
+    console.log('� Processed education text:', processedText.substring(0, 300));
     
     // Split by lines first, then group by school entries
     const lines = processedText.split('\n').filter(line => line.trim());
-    console.log('🎓 Education lines:', lines);
+    console.log('� Education lines:', lines);
     
     let currentEntry = null;
     
     for (const line of lines) {
       const trimmedLine = line.trim().replace(/\r/g, ''); // Remove carriage returns
-      console.log('🎓 Processing line:', `"${trimmedLine}"`);
+      console.log('� Processing line:', `"${trimmedLine}"`);
       
       // Enhanced school pattern detection
       const hasSchoolPattern = trimmedLine.match(/\b(?:DeLaSalleLipa|SanPabloColleges|De\s*La\s*Salle|San\s*Pablo|University|College|Institute|School|Academy)\b/i);
@@ -2109,7 +2109,7 @@ class EnhancedResumeParser {
       const endsWithDegree = trimmedLine.match(/\b(Bachelor\s+of\s+Science\s+in\s+Computer\s+Science|BSCS|BS\s+Computer\s+Science|Bachelor\s+of\s+Science|Master\s+of\s+Science|Bachelor\s+of\s+Arts|Senior\s+High\s+School)$/i);
       const startsWithDegree = trimmedLine.match(/^(Bachelor\s+of\s+Science\s+in\s+Computer\s+Science|BSCS|BS\s+Computer\s+Science|Bachelor\s+of\s+Science|Master\s+of\s+Science|Bachelor\s+of\s+Arts|Senior\s+High\s+School)/i);
       
-      console.log('🎓 Line analysis:', {
+      console.log('� Line analysis:', {
         hasSchoolPattern: !!hasSchoolPattern,
         hasComma: hasComma,
         hasExcludedWords: !!hasExcludedWords,
@@ -2126,13 +2126,13 @@ class EnhancedResumeParser {
         if (degreeMatch) {
           // Add degree to existing entry instead of creating new one
           currentEntry.degree = degreeMatch[2].trim();
-          console.log('🎓 ✅ Added concatenated degree to existing school entry:', currentEntry.degree);
+          console.log('�  Added concatenated degree to existing school entry:', currentEntry.degree);
           continue;
         }
       }
       
       if ((hasSchoolPattern || (hasEducationKeywords && !hasProjectWords) || (hasComma && !hasProjectWords && hasEducationKeywords) || endsWithDegree) && !hasExcludedWords) {
-        console.log('✅ Starting new education entry for line:', trimmedLine);
+        console.log(' Starting new education entry for line:', trimmedLine);
         
         // Save previous entry if exists
         if (currentEntry && (currentEntry.school || currentEntry.degree)) {
@@ -2154,7 +2154,7 @@ class EnhancedResumeParser {
           const degreeMatch = trimmedLine.match(/(.*?)\b(Bachelor\s+of\s+Science\s+in\s+Computer\s+Science|BSCS|BS\s+Computer\s+Science|Bachelor\s+of\s+Science|Master\s+of\s+Science)$/i);
           if (degreeMatch) {
             currentEntry.degree = degreeMatch[2].trim();
-            console.log('🎓 Extracted concatenated degree for new entry:', currentEntry.degree);
+            console.log('� Extracted concatenated degree for new entry:', currentEntry.degree);
             continue;
           }
         }
@@ -2162,7 +2162,7 @@ class EnhancedResumeParser {
         // Parse school and degree from comma-separated line
         if (trimmedLine.includes(',')) {
           const parts = trimmedLine.split(',').map(p => p.trim());
-          console.log('🎓 Processing comma-separated parts:', parts);
+          console.log('� Processing comma-separated parts:', parts);
           for (const part of parts) {
             // Check if this part is a school name (first priority)
             if (part.match(/(?:DeLaSalleLipa|SanPabloColleges|De\s*La\s*Salle|San\s*Pablo|University|College|Institute|School)/i)) {
@@ -2171,7 +2171,7 @@ class EnhancedResumeParser {
                 .replace(/SanPabloColleges/gi, 'San Pablo Colleges')
                 .replace(/([a-z])([A-Z])/g, '$1 $2')
                 .trim();
-              console.log('🏦 Detected school:', currentEntry.school);
+              console.log('� Detected school:', currentEntry.school);
               
               // Extract dates from school name if present
               const schoolDateMatch = currentEntry.school.match(/(.*?)\s+(\w+\s+\d{4}\s*-\s*(?:\d{4}|Present|Current))/i);
@@ -2182,7 +2182,7 @@ class EnhancedResumeParser {
                 if (dateMatch) {
                   currentEntry.startDate = dateMatch[1];
                   currentEntry.endDate = dateMatch[2] || (dateText.match(/present|current/i) ? 'present' : '');
-                  console.log('📅 Extracted dates from school name:', { startDate: currentEntry.startDate, endDate: currentEntry.endDate });
+                  console.log('� Extracted dates from school name:', { startDate: currentEntry.startDate, endDate: currentEntry.endDate });
                 }
               }
             } 
@@ -2194,7 +2194,7 @@ class EnhancedResumeParser {
               if (dateMatch) {
                 currentEntry.startDate = dateMatch[1];
                 currentEntry.endDate = dateMatch[2] || (part.match(/present|current/i) ? 'present' : '');
-                console.log('📅 Extracted dates from degree part:', { startDate: currentEntry.startDate, endDate: currentEntry.endDate });
+                console.log('� Extracted dates from degree part:', { startDate: currentEntry.startDate, endDate: currentEntry.endDate });
                 // Remove dates from degree text
                 currentEntry.degree = part.replace(/(\d{4})\s*-?\s*(?:\d{4}|Present|Current)/i, '').trim();
               } else {
@@ -2210,7 +2210,7 @@ class EnhancedResumeParser {
                 .replace(/Masterof/gi, 'Master of')
                 .replace(/Artsin/gi, 'Arts in')
                 .trim();
-              console.log('🎓 Detected degree:', currentEntry.degree);
+              console.log('� Detected degree:', currentEntry.degree);
             } else {
               // If not a school and contains degree-like words, treat as degree
               if (part.match(/\b(?:Bachelor|Science|Computer|Senior|High|School)\b/i)) {
@@ -2219,7 +2219,7 @@ class EnhancedResumeParser {
                 if (dateMatch) {
                   currentEntry.startDate = dateMatch[1];
                   currentEntry.endDate = dateMatch[2] || (part.match(/present|current/i) ? 'present' : '');
-                  console.log('📅 Extracted dates (fallback):', { startDate: currentEntry.startDate, endDate: currentEntry.endDate });
+                  console.log('� Extracted dates (fallback):', { startDate: currentEntry.startDate, endDate: currentEntry.endDate });
                   // Remove dates from degree text
                   currentEntry.degree = part.replace(/(\d{4})\s*-?\s*(?:\d{4}|Present|Current)/i, '').trim();
                 } else {
@@ -2236,7 +2236,7 @@ class EnhancedResumeParser {
                   .replace(/Masterof/gi, 'Master of')
                   .replace(/Artsin/gi, 'Arts in')
                   .trim();
-                console.log('🎓 Detected degree (fallback):', currentEntry.degree);
+                console.log('� Detected degree (fallback):', currentEntry.degree);
               }
             }
           }
@@ -2254,7 +2254,7 @@ class EnhancedResumeParser {
               if (dateMatch) {
                 currentEntry.startDate = dateMatch[1];
                 currentEntry.endDate = dateMatch[2] || (dateText.match(/present|current/i) ? 'present' : '');
-                console.log('📅 Extracted dates from school line:', { startDate: currentEntry.startDate, endDate: currentEntry.endDate });
+                console.log('� Extracted dates from school line:', { startDate: currentEntry.startDate, endDate: currentEntry.endDate });
               }
             }
           } else {
@@ -2273,7 +2273,7 @@ class EnhancedResumeParser {
           // Contains parentheses with details
           (trimmedLine.includes('(') && trimmedLine.includes(')'));
         
-        console.log('📝 Checking line for description:', {
+        console.log('� Checking line for description:', {
           line: trimmedLine.substring(0, 100),
           isDescriptionLine: isDescriptionLine,
           hasAcademicKeywords: !!trimmedLine.match(/\b(?:GPA|Grade|Honor|Award|Awardee|Average|Graduated|Strand|AY|Academic|Semester|Year|Dean|List|Magna|Summa|Cum\s*Laude|Technology|Engineering|Mathematics|STEM|Second|Third|Fourth|First)\b/i),
@@ -2283,7 +2283,7 @@ class EnhancedResumeParser {
         });
         
         if (isDescriptionLine) {
-          console.log('📝 ✅ Adding to description:', trimmedLine);
+          console.log('�  Adding to description:', trimmedLine);
         
         // Format description with proper spacing
         let formattedDescription = trimmedLine
@@ -2316,7 +2316,7 @@ class EnhancedResumeParser {
         
           if (formattedDescription.length > 0) {
             currentEntry.description += (currentEntry.description ? '\n' : '') + formattedDescription;
-            console.log('📝 Updated description:', currentEntry.description);
+            console.log('� Updated description:', currentEntry.description);
           }
         }
       }
@@ -2326,7 +2326,7 @@ class EnhancedResumeParser {
         if (dateMatch && !currentEntry.startDate) {
           currentEntry.startDate = dateMatch[1];
           currentEntry.endDate = dateMatch[2] || (trimmedLine.match(/present|current/i) ? 'present' : '');
-          console.log('📅 Extracted standalone dates:', { startDate: currentEntry.startDate, endDate: currentEntry.endDate });
+          console.log('� Extracted standalone dates:', { startDate: currentEntry.startDate, endDate: currentEntry.endDate });
         }
       }
     }
@@ -2347,13 +2347,13 @@ class EnhancedResumeParser {
       if (!seenEducation.has(key)) {
         seenEducation.add(key);
         uniqueEducationEntries.push(entry);
-        console.log('🎓 Added unique education entry:', entry);
+        console.log('� Added unique education entry:', entry);
       } else {
-        console.log('🎓 Skipping duplicate education entry:', entry);
+        console.log('� Skipping duplicate education entry:', entry);
       }
     }
     
-    console.log('🎓 Parsed education entries (after deduplication):', uniqueEducationEntries);
+    console.log('� Parsed education entries (after deduplication):', uniqueEducationEntries);
     return uniqueEducationEntries;
   }
 
@@ -2361,8 +2361,8 @@ class EnhancedResumeParser {
    * Extract name directly from raw text (most aggressive approach)
    */
   extractNameDirectlyFromRawText(rawText) {
-    console.log('🔪 Starting direct name extraction from raw text...');
-    console.log('🔪 First 300 chars:', rawText.substring(0, 300));
+    console.log('� Starting direct name extraction from raw text...');
+    console.log('� First 300 chars:', rawText.substring(0, 300));
     
     const personalInfo = {};
     const lines = rawText.split('\n').map(line => line.trim().replace(/\r/g, ''));
@@ -2466,11 +2466,11 @@ class EnhancedResumeParser {
         
         // Skip if matches exclude patterns
         if (excludePatterns.some(pattern => pattern.test(line))) {
-          console.log(`🔪 Skipping line ${i} - matches exclude pattern: "${line}"`);
+          console.log(`� Skipping line ${i} - matches exclude pattern: "${line}"`);
           continue;
         }
         
-        console.log(`🔪 Analyzing line ${i}: "${line}"`);
+        console.log(`� Analyzing line ${i}: "${line}"`);
         
         // Try each name pattern
         for (const pattern of namePatterns) {
@@ -2485,10 +2485,10 @@ class EnhancedResumeParser {
               if (confidence > bestConfidence) {
                 bestMatch = extracted;
                 bestConfidence = confidence;
-                console.log(`🔪 ✅ Found valid name (confidence ${confidence}):`, extracted);
+                console.log(`�  Found valid name (confidence ${confidence}):`, extracted);
               }
             } else {
-              console.log(`🔪 ❌ Invalid name rejected:`, extracted);
+              console.log(`�  Invalid name rejected:`, extracted);
             }
           }
         }
@@ -2497,7 +2497,7 @@ class EnhancedResumeParser {
         if (i === 0 && line.length > 100) {
           // Try to extract just the first part of the line as a potential name
           const firstPart = line.substring(0, 50).trim();
-          console.log(`🔪 Trying first part of long line: "${firstPart}"`);
+          console.log(`� Trying first part of long line: "${firstPart}"`);
           
           for (const pattern of namePatterns) {
             const match = firstPart.match(pattern.regex);
@@ -2510,7 +2510,7 @@ class EnhancedResumeParser {
                 if (confidence > bestConfidence) {
                   bestMatch = extracted;
                   bestConfidence = confidence;
-                  console.log(`🔪 ✅ Found valid name in first part (confidence ${confidence}):`, extracted);
+                  console.log(`�  Found valid name in first part (confidence ${confidence}):`, extracted);
                 }
               }
             }
@@ -2518,7 +2518,7 @@ class EnhancedResumeParser {
           
           // Also try the very beginning of the line for concatenated names
           const veryFirstPart = line.substring(0, 25).trim();
-          console.log(`🔪 Trying very first part: "${veryFirstPart}"`);
+          console.log(`� Trying very first part: "${veryFirstPart}"`);
           
           // Look for patterns like "HannahNicoleL.Comia"
           const concatMatch = veryFirstPart.match(/^([A-Z][a-z]+)([A-Z][a-z]+)([A-Z]\.?)([A-Z][a-z]+)/);
@@ -2534,7 +2534,7 @@ class EnhancedResumeParser {
               if (confidence > bestConfidence) {
                 bestMatch = extracted;
                 bestConfidence = confidence;
-                console.log(`🔪 ✅ Found concatenated name in very first part (confidence ${confidence}):`, extracted);
+                console.log(`�  Found concatenated name in very first part (confidence ${confidence}):`, extracted);
               }
             }
           }
@@ -2542,32 +2542,32 @@ class EnhancedResumeParser {
       }
     
     if (bestMatch && bestConfidence >= 6) {
-      console.log('🔪 ✅ Using best name match:', bestMatch);
+      console.log('�  Using best name match:', bestMatch);
       return bestMatch;
     }
     
     // Method 1: Try to find name on a single line (original approach)
     const singleLineResult = this.extractNameFromSingleLine(lines);
     if (singleLineResult.firstName && singleLineResult.lastName) {
-      console.log('🔪 ✅ Found name on single line:', singleLineResult);
+      console.log('�  Found name on single line:', singleLineResult);
       return singleLineResult;
     }
     
     // Method 2: Try to reconstruct name from multiple lines (for PDFs that split words)
     const multiLineResult = this.extractNameFromMultipleLines(lines);
     if (multiLineResult.firstName && multiLineResult.lastName) {
-      console.log('🔪 ✅ Found name from multiple lines:', multiLineResult);
+      console.log('�  Found name from multiple lines:', multiLineResult);
       return multiLineResult;
     }
     
     // Method 3: Simple fallback - look for any two capitalized words at the beginning
     const fallbackResult = this.extractNameFallback(lines);
     if (fallbackResult.firstName && fallbackResult.lastName) {
-      console.log('🔪 ✅ Found name using fallback method:', fallbackResult);
+      console.log('�  Found name using fallback method:', fallbackResult);
       return fallbackResult;
     }
     
-    console.log('🔪 ❌ Direct extraction found no name');
+    console.log('�  Direct extraction found no name');
     return personalInfo;
   }
   
@@ -2593,18 +2593,18 @@ class EnhancedResumeParser {
       // Skip empty lines
       if (!line || line.length < 3) continue;
       
-      console.log(`🔪 Single line ${i}: "${line}"`);
+      console.log(`� Single line ${i}: "${line}"`);
       
       // Check against strict non-name patterns first
       const isNonName = strictNonNamePatterns.some(pattern => pattern.test(line));
       if (isNonName) {
-        console.log(`🔪 Skipping line ${i} - matches non-name pattern`);
+        console.log(`� Skipping line ${i} - matches non-name pattern`);
         continue;
       }
       
       // Additional check: skip lines that are too long (likely not just a name)
       if (line.length > 50) {
-        console.log(`🔪 Skipping line ${i} - too long for a name`);
+        console.log(`� Skipping line ${i} - too long for a name`);
         continue;
       }
       
@@ -2632,7 +2632,7 @@ class EnhancedResumeParser {
       for (const pattern of aggressivePatterns) {
         const match = line.match(pattern);
         if (match) {
-          console.log('🔪 Pattern matched:', { pattern: pattern.toString(), match: match });
+          console.log('� Pattern matched:', { pattern: pattern.toString(), match: match });
           
           // Extract potential names
           let firstName, lastName;
@@ -2661,7 +2661,7 @@ class EnhancedResumeParser {
               personalInfo.firstName = firstName;
               personalInfo.lastName = lastName;
               
-              console.log('🔪 ✅ Single line extraction found valid name:', {
+              console.log('�  Single line extraction found valid name:', {
                 line: line,
                 firstName: personalInfo.firstName,
                 lastName: personalInfo.lastName
@@ -2669,7 +2669,7 @@ class EnhancedResumeParser {
               
               return personalInfo;
             } else {
-              console.log('🔪 ❌ Rejected technical terms as name:', { firstName, lastName });
+              console.log('�  Rejected technical terms as name:', { firstName, lastName });
             }
           }
         }
@@ -2683,8 +2683,8 @@ class EnhancedResumeParser {
    * Extract name from multiple lines (for PDFs that split each word)
    */
   extractNameFromMultipleLines(lines) {
-    console.log('🔪 Trying multi-line name extraction...');
-    console.log('🔪 First 10 lines for multi-line analysis:', lines.slice(0, 10));
+    console.log('� Trying multi-line name extraction...');
+    console.log('� First 10 lines for multi-line analysis:', lines.slice(0, 10));
     const personalInfo = {};
     
     // Look for consecutive capitalized words that could be a name
@@ -2700,7 +2700,7 @@ class EnhancedResumeParser {
         continue;
       }
       
-      console.log(`🔪 Multi-line ${i}: "${line}"`);
+      console.log(`� Multi-line ${i}: "${line}"`);
       
       // Check if this looks like a name part (capitalized, no numbers, reasonable length)
       const isNamePart = /^[A-Z][A-Z]*$/i.test(line) && 
@@ -2709,7 +2709,7 @@ class EnhancedResumeParser {
                         !/\d/.test(line) && 
                         !/@|www\.|http/.test(line);
       
-      console.log(`🔪 Line "${line}" - isNamePart: ${isNamePart}`);
+      console.log(`� Line "${line}" - isNamePart: ${isNamePart}`);
       
       if (isNamePart) {
         // Check if it's not a common non-name word
@@ -2718,13 +2718,13 @@ class EnhancedResumeParser {
         if (!nonNameWords.test(line)) {
           nameWords.push(line);
           consecutiveCapitalizedWords++;
-          console.log(`🔪 Added name part: "${line}" (total: ${nameWords.length})`);
+          console.log(`� Added name part: "${line}" (total: ${nameWords.length})`);
         } else {
-          console.log(`🔪 Skipping non-name word: "${line}"`);
+          console.log(`� Skipping non-name word: "${line}"`);
           if (nameWords.length >= 2) break; // Stop if we have enough and hit a non-name
         }
       } else {
-        console.log(`🔪 Not a name part: "${line}"`);
+        console.log(`� Not a name part: "${line}"`);
         if (nameWords.length >= 2) break; // Stop if we have enough name parts
       }
       
@@ -2738,13 +2738,13 @@ class EnhancedResumeParser {
       personalInfo.firstName = nameWords[0].charAt(0).toUpperCase() + nameWords[0].slice(1).toLowerCase();
       personalInfo.lastName = nameWords[nameWords.length - 1].charAt(0).toUpperCase() + nameWords[nameWords.length - 1].slice(1).toLowerCase();
       
-      console.log('🔪 ✅ Multi-line extraction found name:', {
+      console.log('�  Multi-line extraction found name:', {
         nameWords: nameWords,
         firstName: personalInfo.firstName,
         lastName: personalInfo.lastName
       });
     } else {
-      console.log('🔪 ❌ Multi-line extraction found insufficient name parts:', nameWords);
+      console.log('�  Multi-line extraction found insufficient name parts:', nameWords);
     }
     
     return personalInfo;
@@ -2754,7 +2754,7 @@ class EnhancedResumeParser {
    * Simple fallback name extraction - look for any two capitalized words
    */
   extractNameFallback(lines) {
-    console.log('🔪 Trying fallback name extraction...');
+    console.log('� Trying fallback name extraction...');
     const personalInfo = {};
     
     // Look through first 20 lines for any pattern that could be a name
@@ -2762,23 +2762,23 @@ class EnhancedResumeParser {
       const line = lines[i];
       if (!line || line.length < 3) continue;
       
-      console.log(`🔪 Fallback line ${i}: "${line}"`);
+      console.log(`� Fallback line ${i}: "${line}"`);
       
       // Skip obvious non-name lines (but be more permissive for names)
       if (line.match(/@|www\.|http|\d{3,}|programming|languages|skills|education|experience|projects|contact|phone|email|address|ui\/ux|designer|developer|engineer|objective|motivated|seeking|training/i)) {
-        console.log(`🔪 Skipping obvious non-name: "${line}"`);
+        console.log(`� Skipping obvious non-name: "${line}"`);
         continue;
       }
       
       // Special check: If line starts with what looks like a name pattern, don't skip it
       if (line.match(/^[A-Z][A-Z\s\.]+[A-Z]\s/)) {
-        console.log(`🔪 Potential name detected, processing: "${line.substring(0, 50)}..."`);
+        console.log(`� Potential name detected, processing: "${line.substring(0, 50)}..."`);
         // Continue to name processing below
       }
       
       // Also skip lines that are clearly job titles or roles
       if (line.match(/^(student|intern|developer|designer|engineer|analyst|manager|coordinator|assistant|specialist)$/i)) {
-        console.log(`🔪 Skipping job title: "${line}"`);
+        console.log(`� Skipping job title: "${line}"`);
         continue;
       }
       
@@ -2787,21 +2787,21 @@ class EnhancedResumeParser {
       if (simpleNameMatch) {
         personalInfo.firstName = simpleNameMatch[1].charAt(0).toUpperCase() + simpleNameMatch[1].slice(1).toLowerCase();
         personalInfo.lastName = simpleNameMatch[2].charAt(0).toUpperCase() + simpleNameMatch[2].slice(1).toLowerCase();
-        console.log(`🔪 ✅ Fallback found simple name: ${personalInfo.firstName} ${personalInfo.lastName}`);
+        console.log(`�  Fallback found simple name: ${personalInfo.firstName} ${personalInfo.lastName}`);
         return personalInfo;
       }
       
       // Look for concatenated names at the beginning of long lines
       if (line.length > 50) {
         const firstPart = line.substring(0, 30);
-        console.log(`🔪 Checking first part of long line: "${firstPart}"`);
+        console.log(`� Checking first part of long line: "${firstPart}"`);
         
         // Try concatenated patterns like "HannahNicoleL.Comia"
         const concatMatch = firstPart.match(/^([A-Z][a-z]+)([A-Z][a-z]+)([A-Z]\.?)([A-Z][a-z]+)/);
         if (concatMatch) {
           personalInfo.firstName = (concatMatch[1] + ' ' + concatMatch[2]).charAt(0).toUpperCase() + (concatMatch[1] + ' ' + concatMatch[2]).slice(1).toLowerCase();
           personalInfo.lastName = concatMatch[4].charAt(0).toUpperCase() + concatMatch[4].slice(1).toLowerCase();
-          console.log(`🔪 ✅ Fallback found concatenated name with middle initial: ${personalInfo.firstName} ${personalInfo.lastName}`);
+          console.log(`�  Fallback found concatenated name with middle initial: ${personalInfo.firstName} ${personalInfo.lastName}`);
           return personalInfo;
         }
         
@@ -2810,7 +2810,7 @@ class EnhancedResumeParser {
         if (simpleConcatMatch) {
           personalInfo.firstName = simpleConcatMatch[1].charAt(0).toUpperCase() + simpleConcatMatch[1].slice(1).toLowerCase();
           personalInfo.lastName = simpleConcatMatch[3].charAt(0).toUpperCase() + simpleConcatMatch[3].slice(1).toLowerCase();
-          console.log(`🔪 ✅ Fallback found simple concatenated name: ${personalInfo.firstName} ${personalInfo.lastName}`);
+          console.log(`�  Fallback found simple concatenated name: ${personalInfo.firstName} ${personalInfo.lastName}`);
           return personalInfo;
         }
       }
@@ -2820,7 +2820,7 @@ class EnhancedResumeParser {
       if (fullNameMatch) {
         personalInfo.firstName = fullNameMatch[1].charAt(0).toUpperCase() + fullNameMatch[1].slice(1).toLowerCase();
         personalInfo.lastName = fullNameMatch[3].charAt(0).toUpperCase() + fullNameMatch[3].slice(1).toLowerCase();
-        console.log(`🔪 ✅ Fallback found full name: ${personalInfo.firstName} ${personalInfo.lastName}`);
+        console.log(`�  Fallback found full name: ${personalInfo.firstName} ${personalInfo.lastName}`);
         return personalInfo;
       }
       
@@ -2829,7 +2829,7 @@ class EnhancedResumeParser {
       if (fullNameWithInitialMatch) {
         personalInfo.firstName = fullNameWithInitialMatch[1].charAt(0).toUpperCase() + fullNameWithInitialMatch[1].slice(1).toLowerCase();
         personalInfo.lastName = fullNameWithInitialMatch[4].charAt(0).toUpperCase() + fullNameWithInitialMatch[4].slice(1).toLowerCase();
-        console.log(`🔪 ✅ Fallback found name with initial: ${personalInfo.firstName} ${personalInfo.lastName}`);
+        console.log(`�  Fallback found name with initial: ${personalInfo.firstName} ${personalInfo.lastName}`);
         return personalInfo;
       }
       
@@ -2838,12 +2838,12 @@ class EnhancedResumeParser {
       if (allCapsNameMatch && !line.match(/EDUCATION|EXPERIENCE|SKILLS|PROJECTS|OBJECTIVE|WORK/)) {
         personalInfo.firstName = allCapsNameMatch[1].charAt(0).toUpperCase() + allCapsNameMatch[1].slice(1).toLowerCase();
         personalInfo.lastName = allCapsNameMatch[2].charAt(0).toUpperCase() + allCapsNameMatch[2].slice(1).toLowerCase();
-        console.log(`🔪 ✅ Fallback found all-caps name: ${personalInfo.firstName} ${personalInfo.lastName}`);
+        console.log(`�  Fallback found all-caps name: ${personalInfo.firstName} ${personalInfo.lastName}`);
         return personalInfo;
       }
     }
     
-    console.log('🔪 ❌ Fallback extraction found no name');
+    console.log('�  Fallback extraction found no name');
     return personalInfo;
   }
   
@@ -2903,7 +2903,7 @@ class EnhancedResumeParser {
       return personalInfo;
     }
     
-    console.log('📧 Trying to extract name from email:', email);
+    console.log('� Trying to extract name from email:', email);
     
     // Get the part before @
     const localPart = email.split('@')[0];
@@ -2919,7 +2919,7 @@ class EnhancedResumeParser {
       if (parts.length >= 2) {
         personalInfo.firstName = parts[0].charAt(0).toUpperCase() + parts[0].slice(1).toLowerCase();
         personalInfo.lastName = parts[parts.length - 1].charAt(0).toUpperCase() + parts[parts.length - 1].slice(1).toLowerCase();
-        console.log('📧 ✅ Extracted from dot-separated email:', personalInfo);
+        console.log('�  Extracted from dot-separated email:', personalInfo);
         return personalInfo;
       }
     }
@@ -2929,7 +2929,7 @@ class EnhancedResumeParser {
     if (camelCaseMatch) {
       personalInfo.firstName = camelCaseMatch[1].charAt(0).toUpperCase() + camelCaseMatch[1].slice(1).toLowerCase();
       personalInfo.lastName = camelCaseMatch[2].charAt(0).toUpperCase() + camelCaseMatch[2].slice(1).toLowerCase();
-      console.log('📧 ✅ Extracted from camelCase email:', personalInfo);
+      console.log('�  Extracted from camelCase email:', personalInfo);
       return personalInfo;
     }
     
@@ -2945,13 +2945,13 @@ class EnhancedResumeParser {
         if (firstName.match(/^[a-z]{3,10}$/i) && lastName.match(/^[a-z]{3,10}$/i)) {
           personalInfo.firstName = firstName.charAt(0).toUpperCase() + firstName.slice(1).toLowerCase();
           personalInfo.lastName = lastName.charAt(0).toUpperCase() + lastName.slice(1).toLowerCase();
-          console.log('📧 ✅ Extracted from concatenated email (heuristic):', personalInfo);
+          console.log('�  Extracted from concatenated email (heuristic):', personalInfo);
           return personalInfo;
         }
       }
     }
     
-    console.log('📧 ❌ Could not extract name from email');
+    console.log('�  Could not extract name from email');
     return personalInfo;
   }
 
@@ -2959,7 +2959,7 @@ class EnhancedResumeParser {
    * Parse personal info from entire document (global search)
    */
   parsePersonalInfoFromEntireDocument(fullText) {
-    console.log('🌍 Starting global name extraction from entire document...');
+    console.log('� Starting global name extraction from entire document...');
     
     const personalInfo = {};
     const lines = fullText.split('\n');
@@ -2975,7 +2975,7 @@ class EnhancedResumeParser {
         continue;
       }
       
-      console.log('🌍 Analyzing line for name (global):', `"${trimmedLine}"`);
+      console.log('� Analyzing line for name (global):', `"${trimmedLine}"`);
       
       // Enhanced name patterns for global search - more flexible
       const namePatterns = [
@@ -3022,7 +3022,7 @@ class EnhancedResumeParser {
             personalInfo.lastName = match[2];
           }
           
-          console.log('🌍 ✅ Global extraction found name:', {
+          console.log('�  Global extraction found name:', {
             line: trimmedLine,
             firstName: personalInfo.firstName,
             lastName: personalInfo.lastName
@@ -3033,7 +3033,7 @@ class EnhancedResumeParser {
       }
     }
     
-    console.log('🌍 ❌ Global extraction found no name');
+    console.log('�  Global extraction found no name');
     return personalInfo;
   }
 
@@ -3047,18 +3047,18 @@ class EnhancedResumeParser {
     const personalLines = personalText.split('\n');
     let nameFound = false;
     
-    console.log('👤 Starting name extraction from personal text:', personalText.substring(0, 200));
-    console.log('👤 Personal text lines:', personalLines.slice(0, 10));
+    console.log('� Starting name extraction from personal text:', personalText.substring(0, 200));
+    console.log('� Personal text lines:', personalLines.slice(0, 10));
     
     // Look for the name in the first few lines, avoiding section headers
     for (let i = 0; i < Math.min(personalLines.length, 8); i++) {
       const trimmedLine = personalLines[i].trim().replace(/\r/g, '');
-      console.log('👤 Analyzing line for name:', `"${trimmedLine}"`);
+      console.log('� Analyzing line for name:', `"${trimmedLine}"`);
       
       // Skip obvious non-name lines
       if (trimmedLine.match(/\b(?:UX|UI|DESIGNER|Developer|Engineer|Education|Experience|Skills|Projects|Contact|Phone|Email|Address)\b/i) ||
           trimmedLine.includes('@') || trimmedLine.match(/^\+?\d/) || trimmedLine.length < 3) {
-        console.log('👤 Skipping line (not a name)');
+        console.log('� Skipping line (not a name)');
         continue;
       }
       
@@ -3086,7 +3086,7 @@ class EnhancedResumeParser {
         
         if (matchedPattern) {
           const fullName = trimmedLine;
-          console.log('👤 Found potential name:', fullName);
+          console.log('� Found potential name:', fullName);
           
           // Handle "Last, First Middle" format
           if (fullName.includes(',')) {
@@ -3112,11 +3112,11 @@ class EnhancedResumeParser {
           // Validate that we got both first and last name
           if (personalInfo.firstName && personalInfo.lastName) {
             nameFound = true;
-            console.log('👤 ✅ Successfully detected name from line:', `"${trimmedLine}"`);
-            console.log('👤 ✅ Parsed name:', { firstName: personalInfo.firstName, lastName: personalInfo.lastName });
+            console.log('�  Successfully detected name from line:', `"${trimmedLine}"`);
+            console.log('�  Parsed name:', { firstName: personalInfo.firstName, lastName: personalInfo.lastName });
             break;
           } else {
-            console.log('👤 ❌ Name parsing failed - missing first or last name');
+            console.log('�  Name parsing failed - missing first or last name');
             // Reset for next attempt
             delete personalInfo.firstName;
             delete personalInfo.lastName;
@@ -3127,7 +3127,7 @@ class EnhancedResumeParser {
     
     // If no name found with strict patterns, try a more lenient approach
     if (!nameFound) {
-      console.log('👤 🔄 No name found with strict patterns, trying lenient approach...');
+      console.log('�  No name found with strict patterns, trying lenient approach...');
       for (let i = 0; i < Math.min(personalLines.length, 8); i++) {
         const trimmedLine = personalLines[i].trim().replace(/\r/g, '');
         
@@ -3146,7 +3146,7 @@ class EnhancedResumeParser {
             personalInfo.firstName = words[0];
             personalInfo.lastName = words[words.length - 1];
             nameFound = true;
-            console.log('👤 ✅ Found name with lenient approach:', { firstName: personalInfo.firstName, lastName: personalInfo.lastName });
+            console.log('�  Found name with lenient approach:', { firstName: personalInfo.firstName, lastName: personalInfo.lastName });
             break;
           }
         }
@@ -3154,7 +3154,7 @@ class EnhancedResumeParser {
     }
     
     if (!nameFound) {
-      console.log('👤 ❌ No name could be extracted from personal info section');
+      console.log('�  No name could be extracted from personal info section');
     }
     
     // Email extraction
@@ -3204,7 +3204,7 @@ class EnhancedResumeParser {
    * Parse experience with project handling
    */
   parseExperienceRules(experienceText) {
-    console.log('💼 Parsing experience from text:', experienceText.substring(0, 200));
+    console.log('� Parsing experience from text:', experienceText.substring(0, 200));
     
     // If this section was already detected as something else, it shouldn't be here
     // The section detection should have caught it before reaching this parser
@@ -3223,7 +3223,7 @@ class EnhancedResumeParser {
       .replace(/\s+/g, ' ')
       .trim();
     
-    console.log('💼 Processed experience text:', processedText.substring(0, 300));
+    console.log('� Processed experience text:', processedText.substring(0, 300));
     
     const experienceEntries = [];
     const lines = processedText.split('\n').map(line => line.trim()).filter(line => line.length > 0);
@@ -3232,7 +3232,7 @@ class EnhancedResumeParser {
     
     for (const line of lines) {
       const trimmedLine = line.trim().replace(/\r/g, '');
-      console.log('💼 Processing line:', `"${trimmedLine}"`);
+      console.log('� Processing line:', `"${trimmedLine}"`);
       
       // Enhanced job title and company detection
       const hasJobTitle = trimmedLine.match(/\b(?:Production Manager|Video Editor|Graphic Designer|Software Engineer|Developer|Manager|Editor|Designer|Engineer|Analyst|Coordinator|Assistant|Specialist|Intern|Student|Freelance|Programmer|Consultant|Lead|Senior|Junior|Principal|Architect|Administrator|Supervisor|Director|Executive|President|CEO|CTO|CFO|VP|Vice President)\b/i);
@@ -3242,7 +3242,7 @@ class EnhancedResumeParser {
       // Enhanced job title with company and dates pattern
       const jobTitleMatch = trimmedLine.match(/^(.+?)\s*[-–—]\s*(.+?)\s+((?:January|February|March|April|May|June|July|August|September|October|November|December)\s+\d{4}\s*[-–—]\s*(?:(?:January|February|March|April|May|June|July|August|September|October|November|December)\s+\d{4}|Present|Current))/i);
       
-      console.log('💼 Line analysis:', {
+      console.log('� Line analysis:', {
         hasJobTitle: !!hasJobTitle,
         hasCompanyPattern: !!hasCompanyPattern,
         hasDatePattern: !!hasDatePattern,
@@ -3272,7 +3272,7 @@ class EnhancedResumeParser {
           currentEntry.endDate = dateMatch[2];
         }
         
-        console.log('✅ Created experience entry from pattern:', currentEntry);
+        console.log(' Created experience entry from pattern:', currentEntry);
       } else if (hasJobTitle || hasCompanyPattern || hasDatePattern) {
         // Save previous entry
         if (currentEntry && (currentEntry.position || currentEntry.company)) {
@@ -3311,7 +3311,7 @@ class EnhancedResumeParser {
           }
         }
         
-        console.log('✅ Started new experience entry:', currentEntry);
+        console.log(' Started new experience entry:', currentEntry);
       } else if (currentEntry) {
         // Add to current entry's description
         if (trimmedLine.length > 10 && !trimmedLine.match(/^(EDUCATION|SKILLS|PROJECTS|CERTIFICATIONS)/i)) {
@@ -3320,7 +3320,7 @@ class EnhancedResumeParser {
           } else {
             currentEntry.description = trimmedLine;
           }
-          console.log('💼 Added to description:', trimmedLine.substring(0, 50) + '...');
+          console.log('� Added to description:', trimmedLine.substring(0, 50) + '...');
         }
       }
     }
@@ -3330,9 +3330,9 @@ class EnhancedResumeParser {
       experienceEntries.push(currentEntry);
     }
     
-    console.log('💼 Parsed experience entries:', experienceEntries.length);
+    console.log('� Parsed experience entries:', experienceEntries.length);
     experienceEntries.forEach((entry, index) => {
-      console.log(`💼 Entry ${index + 1}:`, {
+      console.log(`� Entry ${index + 1}:`, {
         position: entry.position,
         company: entry.company,
         dates: `${entry.startDate} - ${entry.endDate}`,
@@ -3347,7 +3347,7 @@ class EnhancedResumeParser {
    * Parse skills with intelligent filtering
    */
   parseSkillsRules(skillsText) {
-    console.log('🔧 Parsing skills from text:', skillsText.substring(0, 200));
+    console.log(' Parsing skills from text:', skillsText.substring(0, 200));
     
     // Enhanced text preprocessing for skills section
     let processedText = skillsText
@@ -3364,7 +3364,7 @@ class EnhancedResumeParser {
       .replace(/\s+/g, ' ')
       .trim();
     
-    console.log('🔧 Processed skills text:', processedText.substring(0, 300));
+    console.log(' Processed skills text:', processedText.substring(0, 300));
     
     // Common technical skills patterns
     const technicalSkills = [
@@ -3434,11 +3434,11 @@ class EnhancedResumeParser {
     // Format 1: Category labels like "Programming Languages: C++, C#, JavaScript"
     const categoryMatches = processedText.match(/[a-zA-Z&\s]+:[a-zA-Z0-9,&\s\-\.\+\/\(\)]+/g);
     if (categoryMatches) {
-      console.log('🔧 Found category matches:', categoryMatches);
+      console.log(' Found category matches:', categoryMatches);
       categoryMatches.forEach(match => {
         const [category, skillsList] = match.split(':');
         if (skillsList && skillsList.trim()) {
-          console.log('🔧 Extracting skills from category "' + category + '":', skillsList.trim());
+          console.log(' Extracting skills from category "' + category + '":', skillsList.trim());
           processedText = processedText.replace(match, skillsList);
         }
       });
@@ -3458,7 +3458,7 @@ class EnhancedResumeParser {
       });
     }
     
-    console.log('🔧 Processed text after category extraction:', processedText.substring(0, 200));
+    console.log(' Processed text after category extraction:', processedText.substring(0, 200));
     
     let rawSkills = processedText
       // First split by clear delimiters (comma, newline, bullet, semicolon, pipe)
@@ -3485,25 +3485,25 @@ class EnhancedResumeParser {
         return [skill];
       });
     
-    console.log('🔧 Raw skills extracted:', rawSkills);
+    console.log(' Raw skills extracted:', rawSkills);
     
     // Filter out non-skills
     const filteredSkills = rawSkills.filter(skill => {
       // Skip if matches non-skill patterns
       if (nonSkillPatterns.some(pattern => pattern.test(skill))) {
-        console.log('🔧 Filtered out (non-skill pattern):', skill);
+        console.log(' Filtered out (non-skill pattern):', skill);
         return false;
       }
       
       // Skip if too short or too long
       if (skill.length < 2 || skill.length > 50) {
-        console.log('🔧 Filtered out (length):', skill);
+        console.log(' Filtered out (length):', skill);
         return false;
       }
       
       // Skip if contains too many numbers
       if ((skill.match(/\d/g) || []).length > skill.length / 2) {
-        console.log('🔧 Filtered out (too many numbers):', skill);
+        console.log(' Filtered out (too many numbers):', skill);
         return false;
       }
       
@@ -3604,7 +3604,7 @@ class EnhancedResumeParser {
           skillsToCheck.splice(Math.max(idx1, idx2, idx3), 1);
           skillsToCheck.splice(Math.max(Math.min(idx1, idx2), Math.min(idx1, idx3), Math.min(idx2, idx3)), 1);
           skillsToCheck.splice(Math.min(idx1, idx2, idx3), 1);
-          console.log('🔧 Reconstructed 3-word skill:', combined);
+          console.log(' Reconstructed 3-word skill:', combined);
         }
       } else {
         // Two-word skill
@@ -3614,7 +3614,7 @@ class EnhancedResumeParser {
           reconstructedSkills.push(combined);
           skillsToCheck.splice(Math.max(idx1, idx2), 1);
           skillsToCheck.splice(Math.min(idx1, idx2), 1);
-          console.log('🔧 Reconstructed 2-word skill:', combined);
+          console.log(' Reconstructed 2-word skill:', combined);
         }
       }
     }
@@ -3631,7 +3631,7 @@ class EnhancedResumeParser {
       
       // Skip empty or very short skills
       if (!skill || skill.trim().length <= 1 || normalizedSkill.length <= 1) {
-        console.log('🔧 Skipping empty/short skill:', skill);
+        console.log(' Skipping empty/short skill:', skill);
         continue;
       }
       
@@ -3656,7 +3656,7 @@ class EnhancedResumeParser {
             const indexToReplace = uniqueSkills.findIndex(s => s === existingOriginal);
             if (indexToReplace !== -1) {
               uniqueSkills[indexToReplace] = skill;
-              console.log('🔧 Replaced shorter skill:', existingOriginal, 'with longer:', skill);
+              console.log(' Replaced shorter skill:', existingOriginal, 'with longer:', skill);
             }
             seenSkills.set(normalizedSkill, skill);
             isDuplicate = true; // Don't add again
@@ -3678,11 +3678,11 @@ class EnhancedResumeParser {
       }
       
       if (isDuplicate) {
-        console.log('🔧 Skipping duplicate/similar skill:', skill, duplicateOf ? `(similar to: ${duplicateOf})` : '');
+        console.log(' Skipping duplicate/similar skill:', skill, duplicateOf ? `(similar to: ${duplicateOf})` : '');
       } else {
         uniqueSkills.push(skill);
         seenSkills.set(normalizedSkill, skill);
-        console.log('🔧 Added unique skill:', skill);
+        console.log(' Added unique skill:', skill);
       }
     }
     
@@ -3701,7 +3701,7 @@ class EnhancedResumeParser {
             normalizedForFinal.includes(seenSkill) ||
             Math.abs(seenSkill.length - normalizedForFinal.length) <= 1) {
           shouldAdd = false;
-          console.log('🔧 Final pass: Skipping duplicate skill:', skill);
+          console.log(' Final pass: Skipping duplicate skill:', skill);
           break;
         }
       }
@@ -3715,8 +3715,8 @@ class EnhancedResumeParser {
     // Limit to 50 skills max
     const finalSkills = finalUniqueSkills.slice(0, 50);
     
-    console.log('🔧 Final skills after all processing:', finalSkills);
-    console.log('🔧 Skills processing summary:', {
+    console.log(' Final skills after all processing:', finalSkills);
+    console.log(' Skills processing summary:', {
       originalTextLength: skillsText.length,
       rawSkillsCount: rawSkills.length,
       filteredSkillsCount: filteredSkills.length,
@@ -3765,8 +3765,8 @@ class EnhancedResumeParser {
    * Parse certificates for optional sections (more detailed structure)
    */
   parseOptionalCertificatesRules(certificationsText) {
-    console.log('🏆 Parsing certificates for optional sections...');
-    console.log('🏆 Raw certification text:', certificationsText.substring(0, 200));
+    console.log(' Parsing certificates for optional sections...');
+    console.log(' Raw certification text:', certificationsText.substring(0, 200));
     
     const certificates = [];
     
@@ -3778,7 +3778,7 @@ class EnhancedResumeParser {
       .filter(entry => !entry.match(/^(certifications?|certificates?|seminars?|trainings?|licenses?):?$/i)) // Remove headers
       .filter(entry => !entry.match(/^(education|experience|skills|projects|personal|contact|phone|email|address|name)/i)); // Remove non-certificate sections
     
-    console.log('🏆 Split into', entries.length, 'potential certificate entries');
+    console.log(' Split into', entries.length, 'potential certificate entries');
     
     // Common issuer patterns (ordered by specificity)
     const issuerPatterns = [
@@ -3804,7 +3804,7 @@ class EnhancedResumeParser {
       
       if (lines.length === 0) continue;
       
-      console.log('🏆 Processing entry lines:', lines);
+      console.log(' Processing entry lines:', lines);
       
       const cert = {
         name: '',
@@ -3819,7 +3819,7 @@ class EnhancedResumeParser {
         cert.name = pipeFormat[1].trim();
         cert.issuer = pipeFormat[2].trim();
         cert.date = pipeFormat[3].trim();
-        console.log('🏆 Parsed pipe format:', cert);
+        console.log(' Parsed pipe format:', cert);
         certificates.push(cert);
         continue;
       }
@@ -3833,7 +3833,7 @@ class EnhancedResumeParser {
         cert.name = pattern1[1].trim();
         cert.issuer = pattern1[2].trim();
         cert.date = pattern1[3].trim();
-        console.log('🏆 Parsed pattern 1:', cert);
+        console.log(' Parsed pattern 1:', cert);
         certificates.push(cert);
         continue;
       }
@@ -3844,7 +3844,7 @@ class EnhancedResumeParser {
         cert.name = pattern2[1].trim();
         cert.issuer = pattern2[2].trim();
         cert.date = pattern2[3] ? pattern2[3].trim() : '';
-        console.log('🏆 Parsed pattern 2:', cert);
+        console.log(' Parsed pattern 2:', cert);
         certificates.push(cert);
         continue;
       }
@@ -3861,7 +3861,7 @@ class EnhancedResumeParser {
         if (pattern.test(entry)) {
           cert.issuer = name;
           issuerFound = true;
-          console.log('🏆 Found issuer:', name);
+          console.log(' Found issuer:', name);
           break;
         }
       }
@@ -3885,13 +3885,13 @@ class EnhancedResumeParser {
         if (!nameSet && line.length > 5) {
           cert.name = line;
           nameSet = true;
-          console.log('🏆 Set certificate name:', line);
+          console.log(' Set certificate name:', line);
         } else if (nameSet && !cert.issuer && line.length > 3 && line.length < 80) {
           // Second line might be issuer if we haven't found one
           // Check if it looks like an organization name
           if (line.match(/^[A-Z][a-zA-Z\s&.,()]+$/) || issuerPatterns.some(({ pattern }) => pattern.test(line))) {
             cert.issuer = line;
-            console.log('🏆 Set issuer from line:', line);
+            console.log(' Set issuer from line:', line);
           } else if (!cert.description) {
             cert.description = line;
           }
@@ -3925,14 +3925,14 @@ class EnhancedResumeParser {
       if (cert.name && cert.name.length > 3 && 
           (cert.name.match(/\b(certificate|certification|course|training|seminar|program|academy|mobility|design|analysis|science|english|cisco|google|coursera|efset)\b/i) ||
            cert.issuer.match(/\b(coursera|cisco|google|microsoft|academy|university|college)\b/i))) {
-        console.log('🏆 Adding certificate:', cert);
+        console.log(' Adding certificate:', cert);
         certificates.push(cert);
       } else {
-        console.log('🏆 Skipping invalid certificate entry:', cert.name);
+        console.log(' Skipping invalid certificate entry:', cert.name);
       }
     }
     
-    console.log('🏆 Final parsed certificates:', certificates);
+    console.log(' Final parsed certificates:', certificates);
     return certificates;
   }
 
@@ -3940,9 +3940,9 @@ class EnhancedResumeParser {
    * Parse projects for optional sections
    */
   parseProjectsRules(projectsText) {
-    console.log('💼 Parsing projects for optional sections...');
-    console.log('💼 Raw projects text length:', projectsText.length);
-    console.log('💼 Raw projects text:', projectsText.substring(0, 500));
+    console.log('� Parsing projects for optional sections...');
+    console.log('� Raw projects text length:', projectsText.length);
+    console.log('� Raw projects text:', projectsText.substring(0, 500));
     
     const projects = [];
     
@@ -3954,17 +3954,17 @@ class EnhancedResumeParser {
       .filter(entry => !entry.match(/^(projects?|personal\s*projects?|academic\s*projects?|portfolio):?$/i)) // Remove headers
       .filter(entry => !entry.match(/^(education|experience|skills|certifications|personal|contact|phone|email|address|name)/i)); // Remove non-project sections
     
-    console.log('💼 After splitting and filtering, entries count:', entries.length);
-    console.log('💼 Entries:', entries);
+    console.log('� After splitting and filtering, entries count:', entries.length);
+    console.log('� Entries:', entries);
     
-    console.log('💼 Split into', entries.length, 'potential project entries');
+    console.log('� Split into', entries.length, 'potential project entries');
     
     for (const entry of entries) {
       const lines = entry.split('\n').map(l => l.trim().replace(/^[•\-\*\d+\.)]\s*/, '')).filter(l => l);
       
       if (lines.length === 0) continue;
       
-      console.log('💼 Processing project entry lines:', lines);
+      console.log('� Processing project entry lines:', lines);
       
       const project = {
         name: '',
@@ -3984,7 +3984,7 @@ class EnhancedResumeParser {
         project.name = pipePattern[1].trim();
         project.technologies = pipePattern[2].trim();
         project.description = pipePattern[3].trim();
-        console.log('💼 Parsed pipe format:', project);
+        console.log('� Parsed pipe format:', project);
         projects.push(project);
         continue;
       }
@@ -3995,7 +3995,7 @@ class EnhancedResumeParser {
         project.name = pattern1[1].trim();
         project.description = pattern1[2].trim();
         project.technologies = pattern1[3].trim();
-        console.log('💼 Parsed pattern 1:', project);
+        console.log('� Parsed pattern 1:', project);
         projects.push(project);
         continue;
       }
@@ -4038,7 +4038,7 @@ class EnhancedResumeParser {
         if (!nameSet && line.length > 3) {
           project.name = line;
           nameSet = true;
-          console.log('💼 Set project name:', line);
+          console.log('� Set project name:', line);
         } else if (nameSet && line.length > 5) {
           // Check if this line contains technologies
           if (line.match(/technologies?|tech\s+stack|built\s+with|using|tools?|frameworks?|languages?/i) || 
@@ -4051,11 +4051,11 @@ class EnhancedResumeParser {
             } else {
               project.technologies = techLine;
             }
-            console.log('💼 Set technologies:', techLine);
+            console.log('� Set technologies:', techLine);
           } else if (!project.description) {
             // This is likely the description
             project.description = line;
-            console.log('💼 Set description:', line);
+            console.log('� Set description:', line);
           } else {
             // Additional description lines
             project.description += ' ' + line;
@@ -4084,14 +4084,14 @@ class EnhancedResumeParser {
       if (project.name && project.name.length > 3 && 
           (project.name.match(/\b(project|system|application|app|website|platform|tool|software|nlp|digital|inventory|grade|recruitment|companion|management|computation)\b/i) ||
            project.description.match(/\b(developed|built|created|designed|implemented|using|react|node|mongodb|javascript|python|web|mobile)\b/i))) {
-        console.log('💼 Adding project:', project);
+        console.log('� Adding project:', project);
         projects.push(project);
       } else {
-        console.log('💼 Skipping invalid project entry:', project.name);
+        console.log('� Skipping invalid project entry:', project.name);
       }
     }
     
-    console.log('💼 Final parsed projects:', projects);
+    console.log('� Final parsed projects:', projects);
     return projects;
   }
 
@@ -4099,7 +4099,7 @@ class EnhancedResumeParser {
    * Parse awards for optional sections
    */
   parseAwardsRules(awardsText) {
-    console.log('🥇 Parsing awards for optional sections...');
+    console.log('� Parsing awards for optional sections...');
     const awards = [];
     const lines = awardsText.split('\n').map(line => line.trim()).filter(line => line);
     
@@ -4150,7 +4150,7 @@ class EnhancedResumeParser {
       awards.push(currentAward);
     }
     
-    console.log('🥇 Parsed awards:', awards);
+    console.log('� Parsed awards:', awards);
     return awards;
   }
 
@@ -4158,7 +4158,7 @@ class EnhancedResumeParser {
    * Parse volunteer experience for optional sections
    */
   parseVolunteerRules(volunteerText) {
-    console.log('❤️ Parsing volunteer experience for optional sections...');
+    console.log('❤ Parsing volunteer experience for optional sections...');
     const volunteer = [];
     const lines = volunteerText.split('\n').map(line => line.trim()).filter(line => line);
     
@@ -4215,7 +4215,7 @@ class EnhancedResumeParser {
       volunteer.push(currentVolunteer);
     }
     
-    console.log('❤️ Parsed volunteer experience:', volunteer);
+    console.log('❤ Parsed volunteer experience:', volunteer);
     return volunteer;
   }
 
@@ -4223,7 +4223,7 @@ class EnhancedResumeParser {
    * Parse languages for optional sections
    */
   parseLanguagesRules(languagesText) {
-    console.log('🗣️ Parsing languages for optional sections...');
+    console.log('� Parsing languages for optional sections...');
     const languages = [];
     const lines = languagesText.split('\n').map(line => line.trim()).filter(line => line);
     
@@ -4268,7 +4268,7 @@ class EnhancedResumeParser {
       }
     }
     
-    console.log('🗣️ Parsed languages:', languages);
+    console.log('� Parsed languages:', languages);
     return languages;
   }
 
@@ -4276,7 +4276,7 @@ class EnhancedResumeParser {
    * Parse references for optional sections
    */
   parseReferencesRules(referencesText) {
-    console.log('📞 Parsing references for optional sections...');
+    console.log('� Parsing references for optional sections...');
     const references = [];
     const lines = referencesText.split('\n').map(line => line.trim()).filter(line => line);
     
@@ -4324,7 +4324,7 @@ class EnhancedResumeParser {
       references.push(currentReference);
     }
     
-    console.log('📞 Parsed references:', references);
+    console.log('� Parsed references:', references);
     return references;
   }
 

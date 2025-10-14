@@ -53,9 +53,7 @@ const ResetPasswordPage: React.FC = () => {
         toast.error(response.error || 'Failed to reset password');
       }
     } catch (err) {
-      const error = err as Error;
-      console.error('Password reset error:', error);
-      setError(error.message || 'An unknown error occurred');
+      const error = err as Error;      setError(error.message || 'An unknown error occurred');
       toast.error(error.message || 'Failed to reset password');
     } finally {
       setIsLoading(false);

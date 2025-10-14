@@ -119,12 +119,7 @@ This is typically done when:
 
 ⚠️ IMPORTANT: This deletion is irreversible and complete. The user will be able to register again with the same email address since their account will no longer exist in our system. The user will be automatically notified via email about this action.`,
       action: async () => {
-        try {
-          console.log(`🗑️ Completely removing jobseeker: ${jobseekerId}`);
-          const response = await adminService.completelyDeleteJobseeker(jobseekerId);
-          console.log('✅ Jobseeker complete removal response:', response);
-          
-          await fetchAllData();
+        try {          const response = await adminService.completelyDeleteJobseeker(jobseekerId);          await fetchAllData();
           setConfirmModal(prev => ({ ...prev, show: false }));
           
           // Show success message
@@ -134,9 +129,7 @@ This is typically done when:
             message: 'The jobseeker has been permanently and completely deleted from the entire system including Firebase Authentication and all database records. The user can now register again with the same email if they choose to. An email notification has been sent to the user.',
             icon: '✅'
           });
-        } catch (error) {
-          console.error('❌ Error completely removing jobseeker:', error);
-          setConfirmModal(prev => ({ ...prev, show: false }));
+        } catch (error) {          setConfirmModal(prev => ({ ...prev, show: false }));
           alert('❌ Failed to completely remove jobseeker. Please try again.');
         }
       },
@@ -159,12 +152,7 @@ The system will:
 
 This helps maintain database hygiene by managing inactive accounts while giving users a chance to reactivate if needed.`,
       action: async () => {
-        try {
-          console.log(`🔧 Suspending jobseeker: ${jobseekerId}`);
-          const response = await adminService.updateUser(jobseekerId, { status: 'inactive' });
-          console.log('✅ Jobseeker suspension response:', response);
-          
-          await fetchAllData();
+        try {          const response = await adminService.updateUser(jobseekerId, { status: 'inactive' });          await fetchAllData();
           setConfirmModal(prev => ({ ...prev, show: false }));
           
           // Show success message
@@ -174,9 +162,7 @@ This helps maintain database hygiene by managing inactive accounts while giving 
             message: 'The inactive account has been suspended. An email notification has been sent to the user with instructions to reactivate by logging in within 30 days.',
             icon: '⏸️'
           });
-        } catch (error) {
-          console.error('❌ Error suspending jobseeker:', error);
-          setConfirmModal(prev => ({ ...prev, show: false }));
+        } catch (error) {          setConfirmModal(prev => ({ ...prev, show: false }));
           alert('❌ Failed to suspend jobseeker account. Please try again.');
         }
       },
@@ -223,9 +209,7 @@ This helps maintain database hygiene by managing inactive accounts while giving 
         jobseeker: enhancedJobseeker,
         loading: false
       });
-    } catch (error) {
-      console.error('Error fetching jobseeker details:', error);
-      setViewModal({
+    } catch (error) {      setViewModal({
         show: true,
         jobseeker: jobseeker,
         loading: false
@@ -408,9 +392,7 @@ This helps maintain database hygiene by managing inactive accounts while giving 
       setJobseekers(transformedJobseekers);
       setTotalJobseekers(transformedJobseekers.length);
       
-    } catch (error) {
-      console.error('Error fetching jobseekers data:', error);
-      setJobseekers([]);
+    } catch (error) {      setJobseekers([]);
       setTotalUsers(0);
       setTotalJobs(0);
       setTotalApplications(0);

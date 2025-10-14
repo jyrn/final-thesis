@@ -291,9 +291,7 @@ class AdminService {
         return data.jobseekers || [];
       }
       return [];
-    } catch (error) {
-      console.error('Error fetching jobseekers:', error);
-      return [];
+    } catch (error) {      return [];
     }
   }
 
@@ -309,9 +307,7 @@ class AdminService {
         return data.users || [];
       }
       return [];
-    } catch (error) {
-      console.error('Error fetching jobseeker users:', error);
-      return [];
+    } catch (error) {      return [];
     }
   }
 
@@ -374,9 +370,7 @@ class AdminService {
       
       return extractedResumes;
       
-    } catch (error) {
-      console.error('Error fetching resumes:', error);
-      return [];
+    } catch (error) {      return [];
     }
   }
 

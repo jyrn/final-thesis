@@ -168,10 +168,7 @@ class GeneralizableTextCleaner {
   /**
    * Clean text for any resume format
    */
-  cleanAnyResumeFormat(text) {
-    console.log('🌐 Applying generalizable cleaning patterns...');
-    
-    let cleaned = text;
+  cleanAnyResumeFormat(text) {    let cleaned = text;
     
     // Apply intelligent word splitting
     cleaned = this.intelligentWordSplit(cleaned);

@@ -61,9 +61,7 @@ export class JobService {
 
       this.jobs = jobsWithMatching
       return jobsWithMatching
-    } catch (error) {
-      console.error('Error fetching jobs:', error)
-      return []
+    } catch (error) {      return []
     }
   }
 
