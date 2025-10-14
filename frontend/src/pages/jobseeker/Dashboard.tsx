@@ -228,86 +228,96 @@ const Dashboard: React.FC = () => {
   // Extract loadAuthData function for reusability
   const loadAuthData = async () => {
     try {
-      // Wait for Firebase auth to be ready
+      // Get current Firebase user directly (faster than onAuthStateChanged)
       const { auth } = await import('../../config/firebase');
+      const user = auth.currentUser;
       
-      return new Promise((resolve) => {
-        const unsubscribe = auth.onAuthStateChanged(async (user) => {
-          unsubscribe(); // Clean up listener
+      if (!user) {
+        return;
+      }
+      
+      // Load user's saved jobs
+      const savedJobsResponse = await apiService.getSavedJobs();
+      if (savedJobsResponse.success && savedJobsResponse.data) {
+        const userSavedJobs = savedJobsResponse.data.savedJobs || [];
+        setSavedJobs(new Set(userSavedJobs));
+      }
+      
+      // Load user's applications to mark applied jobs
+      const applicationsResponse = await apiService.getUserApplications();
+      if (applicationsResponse.success && applicationsResponse.data) {
+        const userApplications = applicationsResponse.data;
+        setApplications(userApplications);
+        
+        // Mark jobs as applied based on user's applications
+        const appliedJobIds = new Set<string | number>();
+        
+        userApplications.forEach((app: any) => {
+          const jobId = app.jobId;
           
-          if (!user) {
-            resolve(null);
-            return;
-          }
-          
-          try {
-            // Load user's saved jobs
-            const savedJobsResponse = await apiService.getSavedJobs();
-            if (savedJobsResponse.success && savedJobsResponse.data) {
-              const userSavedJobs = savedJobsResponse.data.savedJobs || [];
-              setSavedJobs(new Set(userSavedJobs));
-            }
+          // Handle MongoDB ObjectId format
+          if (typeof jobId === 'string') {
+            appliedJobIds.add(jobId);
+          } else if (typeof jobId === 'object' && jobId) {
+            // MongoDB ObjectId object - convert to string
+            const objectIdString = jobId.toString();
+            appliedJobIds.add(objectIdString);
             
-            // Load user's applications to mark applied jobs
-            const applicationsResponse = await apiService.getUserApplications();
-            if (applicationsResponse.success && applicationsResponse.data) {
-              const userApplications = applicationsResponse.data;
-              setApplications(userApplications);
-              
-              // Mark jobs as applied based on user's applications
-              const appliedJobIds = new Set<string | number>();
-              
-              userApplications.forEach((app: any) => {
-                const jobId = app.jobId;
-                
-                // Handle MongoDB ObjectId format
-                if (typeof jobId === 'string') {
-                  appliedJobIds.add(jobId);
-                } else if (typeof jobId === 'object' && jobId) {
-                  // MongoDB ObjectId object - convert to string
-                  const objectIdString = jobId.toString();
-                  appliedJobIds.add(objectIdString);
-                  
-                  // Also try extracting the hex string if it's a proper ObjectId
-                  if (jobId.$oid) {
-                    appliedJobIds.add(jobId.$oid);
-                  }
-                } else if (typeof jobId === 'number') {
-                  appliedJobIds.add(jobId);
-                  appliedJobIds.add(jobId.toString());
-                }
-              });
-              
-              setAppliedJobs(appliedJobIds);
-              
-              // Update existing jobs with applied state
-              setJobs(prev => prev.map(job => {
-                const jobIdStr = job.id?.toString() || job._id?.toString() || '';
-                return {
-                  ...job,
-                  applied: appliedJobIds.has(job.id) || appliedJobIds.has(job._id) || appliedJobIds.has(jobIdStr)
-                };
-              }));
+            // Also try extracting the hex string if it's a proper ObjectId
+            if (jobId.$oid) {
+              appliedJobIds.add(jobId.$oid);
             }
-            
-            // Load user profile
-            const profileResponse = await apiService.getUserProfile();
-            if (profileResponse.success && profileResponse.user) {
-              setUserProfile(profileResponse.user);
-            }
-            
-            // Load current resume
-            const resumeResponse = await apiService.getCurrentResume();
-            if (resumeResponse.success && resumeResponse.data) {
-              setCurrentResume(resumeResponse.data);
-            }
-            
-            resolve(user);
-          } catch (error) {
-            resolve(null);
+          } else if (typeof jobId === 'number') {
+            appliedJobIds.add(jobId);
+            appliedJobIds.add(jobId.toString());
           }
         });
-      });
+        
+        setAppliedJobs(appliedJobIds);
+        
+        // Update existing jobs with applied state
+        setJobs(prev => prev.map(job => {
+          const jobIdStr = job.id?.toString() || job._id?.toString() || '';
+          return {
+            ...job,
+            applied: appliedJobIds.has(job.id) || appliedJobIds.has(job._id) || appliedJobIds.has(jobIdStr)
+          };
+        }));
+      }
+      
+      // Load user profile
+      const profileResponse = await apiService.getUserProfile();
+      if (profileResponse.success && profileResponse.data) {
+        // The API returns data nested in a 'user' object
+        const userData = profileResponse.data.user || profileResponse.data;
+        setUserProfile(userData);
+      }
+      
+      // Load current resume
+      const resumeResponse = await apiService.getCurrentResume();
+      if (resumeResponse.success && resumeResponse.data) {
+        setCurrentResume(resumeResponse.data);
+        
+        const dbResume = resumeResponse.data;
+        const resumeData = {
+          personalInfo: {
+            name: dbResume.personalInfo?.fullName || dbResume.personalInfo?.name || '',
+            email: dbResume.personalInfo?.email || '',
+            phone: dbResume.personalInfo?.phone || '',
+            address: dbResume.personalInfo?.fullAddress || dbResume.personalInfo?.address || ''
+          },
+          summary: dbResume.summary || '',
+          skills: dbResume.skills || [],
+          experience: dbResume.workExperience || [],
+          education: dbResume.education || [],
+          certifications: []
+        };
+        
+        setResume(resumeData);
+        const jobService = JobService.getInstance();
+        jobService.setUserResume(resumeData);
+        localStorage.setItem('userResume', JSON.stringify(resumeData));
+      }
     } catch (error) {
       // Silent fail for auth errors
     }
@@ -319,11 +329,12 @@ const Dashboard: React.FC = () => {
   };
 
   // Auto-refresh hook - refreshes every 30 seconds
+  // Only enable after initial data has loaded
   const { refresh: manualRefresh, isRefreshing, lastRefreshTime } = useAutoRefresh(
     refreshAllData,
     {
       interval: 30000, // 30 seconds
-      enabled: true,
+      enabled: !!userProfile, // Only enable after user profile is loaded
       refreshOnMount: false,
       refreshOnFocus: true
     }
@@ -373,7 +384,25 @@ const Dashboard: React.FC = () => {
 
   // Separate effect for auth-dependent data loading
   useEffect(() => {
-    loadAuthData();
+    const initAuthData = async () => {
+      // Wait a bit for Firebase auth to initialize
+      const { auth } = await import('../../config/firebase');
+      
+      // Wait for auth to be ready
+      const checkAuth = () => {
+        return new Promise((resolve) => {
+          const unsubscribe = auth.onAuthStateChanged((user) => {
+            unsubscribe();
+            resolve(user);
+          });
+        });
+      };
+      
+      await checkAuth();
+      await loadAuthData();
+    };
+    
+    initAuthData();
   }, [])
 
 
