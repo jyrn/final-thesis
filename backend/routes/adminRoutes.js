@@ -2025,16 +2025,44 @@ router.post('/reports/generate-all', verifyToken, superAdminMiddleware, async (r
 // Get all jobseekers for admin dashboard
 router.get('/jobseekers/all', verifyToken, adminMiddleware, async (req, res) => {
   try {
+    // Get all jobseekers with populated user data
     const jobseekers = await JobSeeker.find({})
+      .populate('userId', 'email uid status isActive lastLoginAt createdAt updatedAt')
       .sort({ createdAt: -1 });
+
+    // Format jobseekers with consistent data structure
+    const formattedJobseekers = jobseekers.map(js => {
+      const user = js.userId;
+      return {
+        _id: js._id,
+        uid: js.uid,
+        firstName: js.firstName,
+        lastName: js.lastName,
+        email: js.email || user?.email,
+        phoneNumber: js.phoneNumber,
+        skills: js.skills || [],
+        status: user?.status || (js.isActive ? 'active' : 'inactive'),
+        isActive: js.isActive && user?.isActive,
+        profileComplete: js.profileComplete,
+        createdAt: js.createdAt,
+        updatedAt: js.updatedAt,
+        lastActive: user?.lastLoginAt || user?.updatedAt || js.updatedAt,
+        // Ensure data consistency
+        userStatus: user?.status,
+        jobSeekerActive: js.isActive,
+        userActive: user?.isActive
+      };
+    });
 
     res.json({
       success: true,
-      jobseekers: jobseekers,
-      total: jobseekers.length
+      jobseekers: formattedJobseekers,
+      total: formattedJobseekers.length
     });
 
-  } catch (error) {    res.status(500).json({ 
+  } catch (error) {
+    console.error('Error fetching jobseekers:', error);
+    res.status(500).json({ 
       success: false, 
       message: 'Error fetching jobseekers',
       error: error.message
@@ -2045,20 +2073,38 @@ router.get('/jobseekers/all', verifyToken, adminMiddleware, async (req, res) => 
 // Get jobseeker users for admin dashboard (admin-accessible alternative to /users endpoint)
 router.get('/jobseekers/users', verifyToken, adminMiddleware, async (req, res) => {
   try {
-    // Get users with jobseeker role from User collection
+    // Get users with jobseeker role from User collection with consistent data
     const jobseekerUsers = await User.find({ 
       role: 'jobseeker' 
     })
     .select('uid firstName lastName email phone createdAt updatedAt lastLoginAt isActive disabled status')
     .sort({ createdAt: -1 });
 
+    // Format users with consistent status mapping
+    const formattedUsers = jobseekerUsers.map(user => ({
+      _id: user._id,
+      uid: user.uid,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      email: user.email,
+      phone: user.phone,
+      status: user.status || (user.isActive ? 'active' : 'inactive'),
+      isActive: user.isActive && !user.disabled,
+      disabled: user.disabled,
+      createdAt: user.createdAt,
+      updatedAt: user.updatedAt,
+      lastLoginAt: user.lastLoginAt
+    }));
+
     res.json({
       success: true,
-      users: jobseekerUsers,
-      total: jobseekerUsers.length
+      users: formattedUsers,
+      total: formattedUsers.length
     });
 
-  } catch (error) {    res.status(500).json({ 
+  } catch (error) {
+    console.error('Error fetching jobseeker users:', error);
+    res.status(500).json({ 
       success: false, 
       message: 'Error fetching jobseeker users',
       error: error.message
@@ -2768,6 +2814,154 @@ router.get('/view-document/:documentId', async (req, res) => {
   } catch (error) {    res.status(500).json({
       success: false,
       message: 'Error fetching document',
+      error: error.message
+    });
+  }
+});
+
+// Data validation endpoint for jobseekers consistency
+router.get('/jobseekers/validate', verifyToken, adminMiddleware, async (req, res) => {
+  try {
+    const validationReport = {
+      timestamp: new Date(),
+      summary: {
+        totalJobSeekers: 0,
+        totalUsers: 0,
+        totalResumes: 0,
+        inconsistencies: 0,
+        orphanedRecords: 0
+      },
+      issues: [],
+      recommendations: []
+    };
+
+    // Get all data sources
+    const [jobSeekers, users, resumes, applications] = await Promise.all([
+      JobSeeker.find({}).select('uid firstName lastName email phoneNumber isActive createdAt'),
+      User.find({ role: 'jobseeker' }).select('uid firstName lastName email phone status isActive createdAt'),
+      Resume.find({}).select('jobSeekerUid personalInfo skills isActive createdAt'),
+      Application.find({}).select('jobSeekerUid createdAt')
+    ]);
+
+    validationReport.summary.totalJobSeekers = jobSeekers.length;
+    validationReport.summary.totalUsers = users.length;
+    validationReport.summary.totalResumes = resumes.length;
+
+    // Create lookup maps
+    const jobSeekerMap = new Map(jobSeekers.map(js => [js.uid, js]));
+    const userMap = new Map(users.map(u => [u.uid, u]));
+    const resumeMap = new Map(resumes.map(r => [r.jobSeekerUid, r]));
+
+    // Check for orphaned JobSeeker records (no corresponding User)
+    jobSeekers.forEach(js => {
+      if (!userMap.has(js.uid)) {
+        validationReport.issues.push({
+          type: 'orphaned_jobseeker',
+          severity: 'high',
+          uid: js.uid,
+          message: `JobSeeker record exists without corresponding User record`,
+          data: { firstName: js.firstName, lastName: js.lastName, email: js.email }
+        });
+        validationReport.summary.orphanedRecords++;
+      }
+    });
+
+    // Check for orphaned User records (no corresponding JobSeeker)
+    users.forEach(user => {
+      if (!jobSeekerMap.has(user.uid)) {
+        validationReport.issues.push({
+          type: 'orphaned_user',
+          severity: 'medium',
+          uid: user.uid,
+          message: `User record exists without corresponding JobSeeker record`,
+          data: { firstName: user.firstName, lastName: user.lastName, email: user.email }
+        });
+        validationReport.summary.orphanedRecords++;
+      }
+    });
+
+    // Check for data inconsistencies between JobSeeker and User records
+    jobSeekers.forEach(js => {
+      const user = userMap.get(js.uid);
+      if (user) {
+        const inconsistencies = [];
+        
+        if (js.firstName !== user.firstName) {
+          inconsistencies.push(`firstName mismatch: JobSeeker="${js.firstName}" vs User="${user.firstName}"`);
+        }
+        
+        if (js.lastName !== user.lastName) {
+          inconsistencies.push(`lastName mismatch: JobSeeker="${js.lastName}" vs User="${user.lastName}"`);
+        }
+        
+        if (js.email !== user.email) {
+          inconsistencies.push(`email mismatch: JobSeeker="${js.email}" vs User="${user.email}"`);
+        }
+
+        if (inconsistencies.length > 0) {
+          validationReport.issues.push({
+            type: 'data_mismatch',
+            severity: 'medium',
+            uid: js.uid,
+            message: `Data inconsistency between JobSeeker and User records`,
+            data: { inconsistencies }
+          });
+          validationReport.summary.inconsistencies++;
+        }
+      }
+    });
+
+    // Check for resumes without corresponding JobSeeker records
+    resumes.forEach(resume => {
+      if (!jobSeekerMap.has(resume.jobSeekerUid) && !userMap.has(resume.jobSeekerUid)) {
+        validationReport.issues.push({
+          type: 'orphaned_resume',
+          severity: 'low',
+          uid: resume.jobSeekerUid,
+          message: `Resume exists without corresponding JobSeeker or User record`,
+          data: { personalInfo: resume.personalInfo }
+        });
+        validationReport.summary.orphanedRecords++;
+      }
+    });
+
+    // Generate recommendations based on issues found
+    if (validationReport.summary.orphanedRecords > 0) {
+      validationReport.recommendations.push({
+        priority: 'high',
+        action: 'cleanup_orphaned_records',
+        description: `Clean up ${validationReport.summary.orphanedRecords} orphaned records to maintain data integrity`
+      });
+    }
+
+    if (validationReport.summary.inconsistencies > 0) {
+      validationReport.recommendations.push({
+        priority: 'medium',
+        action: 'sync_data_fields',
+        description: `Synchronize ${validationReport.summary.inconsistencies} inconsistent data fields between collections`
+      });
+    }
+
+    // Overall health score
+    const totalIssues = validationReport.issues.length;
+    const totalRecords = Math.max(validationReport.summary.totalJobSeekers, validationReport.summary.totalUsers);
+    const healthScore = totalRecords > 0 ? Math.max(0, 100 - (totalIssues / totalRecords * 100)) : 100;
+    
+    validationReport.summary.healthScore = Math.round(healthScore);
+    validationReport.summary.status = healthScore >= 95 ? 'excellent' : 
+                                     healthScore >= 85 ? 'good' : 
+                                     healthScore >= 70 ? 'fair' : 'poor';
+
+    res.json({
+      success: true,
+      validation: validationReport
+    });
+
+  } catch (error) {
+    console.error('Error validating jobseekers data:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error validating jobseekers data',
       error: error.message
     });
   }

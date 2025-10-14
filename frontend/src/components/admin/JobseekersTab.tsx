@@ -217,6 +217,7 @@ This helps maintain database hygiene by managing inactive accounts while giving 
     }
   };
 
+
   const formatDateTime = (dateString: string) => {
     const date = new Date(dateString);
     const now = new Date();
@@ -279,109 +280,120 @@ This helps maintain database hygiene by managing inactive accounts while giving 
       const allJobSeekers = jobseekersResponse || [];
       const allJobseekerUsers = jobseekerUsersResponse || [];
 
-      // Create maps for quick lookup
-      const resumeMap = new Map();
-      allResumes.forEach((resume: any) => {
-        resumeMap.set(resume.jobSeekerUid, resume);
+      console.log('Data fetched:', {
+        jobSeekers: allJobSeekers.length,
+        users: allJobseekerUsers.length,
+        resumes: allResumes.length,
+        applications: allApplications.length
       });
 
-      const jobSeekerMap = new Map();
-      allJobSeekers.forEach((js: any) => {
-        jobSeekerMap.set(js.uid, js);
-      });
-
-      // Create a map of jobseeker users for additional data
-      const jobseekerUserMap = new Map();
-      allJobseekerUsers.forEach((user: any) => {
-        jobseekerUserMap.set(user.uid, user);
-      });
-
-      // Create a map of applications by jobSeekerUid for counting
-      const applicationCountMap = new Map();
-      allApplications.forEach((app: any) => {
-        const uid = app.jobSeekerUid;
-        applicationCountMap.set(uid, (applicationCountMap.get(uid) || 0) + 1);
-      });
-
-      // Transform jobseekers using JobSeeker collection as primary source
-      const transformedJobseekers: Jobseeker[] = [];
-
-      // Create a combined set of all unique jobseeker UIDs
-      const allJobseekerUIDs = new Set([
-        ...allJobSeekers.map((js: any) => js.uid),
-        ...allJobseekerUsers.map((user: any) => user.uid),
-        ...allResumes.map((resume: any) => resume.jobSeekerUid).filter(Boolean)
-      ]);
-
-      allJobseekerUIDs.forEach((uid: string) => {
-        const jobSeekerProfile = jobSeekerMap.get(uid);
-        const userProfile = jobseekerUserMap.get(uid);
-        const resume = resumeMap.get(uid);
+      // Use JobSeeker collection as primary source of truth
+      const transformedJobseekers: Jobseeker[] = allJobSeekers.map((js: any) => {
+        // Find corresponding user data
+        const userProfile = allJobseekerUsers.find((user: any) => user.uid === js.uid);
         
-        // If no resume found by uid, try to find by email
-        let fallbackResume = null;
-        const email = jobSeekerProfile?.email || userProfile?.email;
-        if (!resume && email) {
-          fallbackResume = allResumes.find((r: any) => 
-            r.personalInfo?.email === email || 
-            r.applicantEmail === email
-          );
+        // Find resume data
+        const resume = allResumes.find((r: any) => r.jobSeekerUid === js.uid);
+        
+        // Count applications for this jobseeker
+        const applicationCount = allApplications.filter((app: any) => app.jobSeekerUid === js.uid).length;
+
+        // Determine consistent status - prioritize User collection status
+        let status = 'active';
+        if (userProfile?.status) {
+          status = userProfile.status;
+        } else if (!js.isActive || userProfile?.disabled || !userProfile?.isActive) {
+          status = 'inactive';
         }
-        
-        const finalResume = resume || fallbackResume;
-        const applicationCount = applicationCountMap.get(uid) || 0;
 
-        // Prioritize resume name data, then fallback to local profile data
-        let firstName = 'Unknown';
-        let lastName = '';
+        // Prioritize skills from resume collection, then JobSeeker collection
+        let skillsArray: string[] = [];
+        if (resume?.skills && Array.isArray(resume.skills)) {
+          // Resume skills are the primary source
+          skillsArray = resume.skills.map((skill: any) => {
+            if (typeof skill === 'string') return skill;
+            if (skill.name) return skill.name;
+            if (skill.skill) return skill.skill;
+            return String(skill);
+          }).filter(Boolean);
+        } else if (js.skills && Array.isArray(js.skills)) {
+          // Fallback to JobSeeker skills
+          skillsArray = js.skills.map((s: any) => s.name || s).filter(Boolean);
+        }
+
+        // Use JobSeeker data as primary, with User data as fallback
+        const jobseekerData: Jobseeker = {
+          _id: js._id || js.uid,
+          firstName: js.firstName || userProfile?.firstName || 'Unknown',
+          lastName: js.lastName || userProfile?.lastName || '',
+          email: js.email || userProfile?.email || 'No email provided',
+          phone: js.phoneNumber || userProfile?.phone,
+          skills: skillsArray,
+          applications: applicationCount,
+          status: status as 'active' | 'inactive' | 'removed',
+          createdAt: js.createdAt || userProfile?.createdAt || new Date().toISOString(),
+          lastActive: userProfile?.lastLoginAt || userProfile?.updatedAt || js.updatedAt,
+          resume: resume ? {
+            personalInfo: {
+              phone: resume.personalInfo?.phone,
+              birthday: resume.personalInfo?.birthday,
+              age: resume.personalInfo?.age,
+              name: resume.personalInfo?.name || resume.personalInfo?.fullName,
+              email: resume.personalInfo?.email,
+              address: resume.personalInfo?.address
+            }
+          } : undefined
+        };
         
-        if (finalResume?.personalInfo?.fullName) {
-          const nameParts = finalResume.personalInfo.fullName.split(' ');
-          firstName = nameParts[0] || 'Unknown';
-          lastName = nameParts.slice(1).join(' ') || '';
-        } else if (finalResume?.personalInfo?.name) {
-          const nameParts = finalResume.personalInfo.name.split(' ');
-          firstName = nameParts[0] || 'Unknown';
-          lastName = nameParts.slice(1).join(' ') || '';
-        } else {
-          // Fallback to local profile data
-          firstName = jobSeekerProfile?.firstName || userProfile?.firstName || 'Unknown';
-          lastName = jobSeekerProfile?.lastName || userProfile?.lastName || '';
+        return jobseekerData;
+      });
+
+      // Add any users who exist in User collection but not in JobSeeker collection
+      const existingUIDs = new Set(allJobSeekers.map((js: any) => js.uid));
+      const orphanedUsers = allJobseekerUsers.filter((user: any) => !existingUIDs.has(user.uid));
+      
+      orphanedUsers.forEach((user: any) => {
+        const resume = allResumes.find((r: any) => r.jobSeekerUid === user.uid);
+        const applicationCount = allApplications.filter((app: any) => app.jobSeekerUid === user.uid).length;
+
+        // Prioritize skills from resume collection for orphaned users too
+        let orphanSkillsArray: string[] = [];
+        if (resume?.skills && Array.isArray(resume.skills)) {
+          orphanSkillsArray = resume.skills.map((skill: any) => {
+            if (typeof skill === 'string') return skill;
+            if (skill.name) return skill.name;
+            if (skill.skill) return skill.skill;
+            return String(skill);
+          }).filter(Boolean);
         }
 
         const jobseekerData: Jobseeker = {
-          _id: uid,
-          firstName: firstName,
-          lastName: lastName,
-          email: finalResume?.personalInfo?.email || 
-                 jobSeekerProfile?.email || 
-                 userProfile?.email ||
-                 'No email provided',
-          phone: finalResume?.personalInfo?.phone || jobSeekerProfile?.phoneNumber || userProfile?.phone,
-          skills: finalResume?.skills || jobSeekerProfile?.skills?.map((s: any) => s.name || s) || [],
+          _id: user._id || user.uid,
+          firstName: user.firstName || 'Unknown',
+          lastName: user.lastName || '',
+          email: user.email || 'No email provided',
+          phone: user.phone,
+          skills: orphanSkillsArray,
           applications: applicationCount,
-          status: userProfile?.status || jobSeekerProfile?.status || ((jobSeekerProfile?.isActive === false || userProfile?.disabled || userProfile?.isActive === false) ? 'inactive' : 'active'),
-          createdAt: jobSeekerProfile?.createdAt || userProfile?.createdAt || finalResume?.createdAt || new Date().toISOString(),
-          lastActive: finalResume?.updatedAt || 
-                     jobSeekerProfile?.updatedAt || 
-                     userProfile?.lastLoginAt ||
-                     userProfile?.updatedAt ||
-                     jobSeekerProfile?.createdAt ||
-                     userProfile?.createdAt,
-          resume: finalResume ? {
+          status: user.status || (user.isActive ? 'active' : 'inactive'),
+          createdAt: user.createdAt || new Date().toISOString(),
+          lastActive: user.lastLoginAt || user.updatedAt,
+          resume: resume ? {
             personalInfo: {
-              phone: finalResume.personalInfo?.phone,
-              birthday: finalResume.personalInfo?.birthday,
-              age: finalResume.personalInfo?.age,
-              name: finalResume.personalInfo?.name,
-              email: finalResume.personalInfo?.email,
-              address: finalResume.personalInfo?.address
+              phone: resume.personalInfo?.phone,
+              birthday: resume.personalInfo?.birthday,
+              age: resume.personalInfo?.age,
+              name: resume.personalInfo?.name || resume.personalInfo?.fullName,
+              email: resume.personalInfo?.email,
+              address: resume.personalInfo?.address
             }
           } : undefined
         };
         
         transformedJobseekers.push(jobseekerData);
       });
+      
+      console.log('Transformed jobseekers:', transformedJobseekers.length);
       
       // Set individual stats using real API data
       setTotalUsers(dashboardStats.totalJobSeekers || transformedJobseekers.length || 0);
@@ -392,7 +404,9 @@ This helps maintain database hygiene by managing inactive accounts while giving 
       setJobseekers(transformedJobseekers);
       setTotalJobseekers(transformedJobseekers.length);
       
-    } catch (error) {      setJobseekers([]);
+    } catch (error) {
+      console.error('Error fetching jobseekers data:', error);
+      setJobseekers([]);
       setTotalUsers(0);
       setTotalJobs(0);
       setTotalApplications(0);
@@ -512,41 +526,41 @@ This helps maintain database hygiene by managing inactive accounts while giving 
         {/* Header Container */}
         <div className="jobseekers-header-container">
           <div className="jobseekers-header">
-          <div className="header-left">
-            <h2 className="section-title">Jobseekers ({totalJobseekers} total)</h2>
-            <p className="view-info">Showing {indexOfFirstJobseeker + 1}-{Math.min(indexOfLastJobseeker, filteredJobseekers.length)} of {filteredJobseekers.length} jobseekers</p>
-          </div>
-          
-          <div className="jobseekers-controls">
-            <div className="search-controls">
-              <div className="search-input-wrapper">
-                <FiSearch className="search-icon" />
-                <input
-                  type="text"
-                  placeholder="Search jobseekers and companies..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="search-input-modern"
-                />
-              </div>
+            <div className="header-left">
+              <h2 className="section-title">Jobseekers ({totalJobseekers} total)</h2>
+              <p className="view-info">Showing {indexOfFirstJobseeker + 1}-{Math.min(indexOfLastJobseeker, filteredJobseekers.length)} of {filteredJobseekers.length} jobseekers</p>
             </div>
             
-            <select
-              value={filterStatus}
-              onChange={(e) => handleStatusFilter(e.target.value)}
-              className="status-filter-control"
-            >
-              <option value="all">All Status</option>
-              <option value="active">Active</option>
-              <option value="inactive">Inactive</option>
-              <option value="removed">Removed</option>
-            </select>
-          </div>
+            <div className="jobseekers-controls">
+              <div className="search-controls">
+                <div className="search-input-wrapper">
+                  <FiSearch className="search-icon" />
+                  <input
+                    type="text"
+                    placeholder="Search jobseekers and companies..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="search-input-modern"
+                  />
+                </div>
+              </div>
+              
+              <select
+                value={filterStatus}
+                onChange={(e) => handleStatusFilter(e.target.value)}
+                className="status-filter-control"
+              >
+                <option value="all">All Status</option>
+                <option value="active">Active</option>
+                <option value="inactive">Inactive</option>
+                <option value="removed">Removed</option>
+              </select>
+              
+            </div>
           </div>
         </div>
-
-        {/* Table Section */}
-        {jobseekers.length > 0 ? (
+        
+        {filteredJobseekers.length > 0 ? (
           <div className="admin-jobseekers-table-container">
             <div className="admin-jobseekers-table-wrapper">
               <table className="admin-jobseekers-table">
@@ -961,6 +975,7 @@ This helps maintain database hygiene by managing inactive accounts while giving 
         </div>,
         document.body
       )}
+
 
     </div>
   );
