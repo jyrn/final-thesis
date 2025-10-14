@@ -87,7 +87,6 @@ type SidebarProps = {
   onTabChange: (tab: string) => void;
   isSidebarOpen: boolean;
   onToggleSidebar: () => void;
-  notifications?: number;
   isCollapsed?: boolean;
   onToggleCollapse?: () => void;
 };
@@ -97,7 +96,6 @@ const Sidebar: React.FC<SidebarProps> = ({
   onTabChange, 
   isSidebarOpen, 
   onToggleSidebar,
-  notifications = 0,
   isCollapsed = false,
   onToggleCollapse
 }) => {
@@ -132,7 +130,7 @@ const Sidebar: React.FC<SidebarProps> = ({
     { id: 'dashboard', label: 'Dashboard', shortLabel: 'Dashboard', icon: <DashboardIcon /> },
     { id: 'jobs', label: 'Find Jobs', shortLabel: 'Find Jobs', icon: <JobsIcon /> },
     { id: 'create-resume', label: 'Create Resume', shortLabel: 'Create\nResume', icon: <CreateResumeIcon /> },
-    { id: 'applications', label: 'Applications', shortLabel: 'Applications', icon: <ApplicationsIcon />, hasNotification: notifications > 0 },
+    { id: 'applications', label: 'Applications', shortLabel: 'Applications', icon: <ApplicationsIcon /> },
     { id: 'saved', label: 'Saved Jobs', shortLabel: 'Saved\nJobs', icon: <SavedJobsIcon /> },
     { id: 'profile', label: 'Settings', shortLabel: 'Settings', icon: <ProfileIcon /> },
   ];
@@ -208,11 +206,6 @@ const Sidebar: React.FC<SidebarProps> = ({
               >
                 <span className={styles.navIcon}>
                   {item.icon}
-                  {item.hasNotification && (
-                    <span className={styles.notificationDot}>
-                      {notifications > 9 ? '9+' : notifications}
-                    </span>
-                  )}
                 </span>
                 
                 <span className={`${styles.navLabel} ${

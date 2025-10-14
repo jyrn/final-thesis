@@ -2,10 +2,14 @@ const express = require('express');
 const router = express.Router();
 const JobSeeker = require('../models/JobSeeker');
 const User = require('../models/User');
+const Resume = require('../models/Resume');
+const Application = require('../models/Application');
 const { verifyToken, requireRole } = require('../middleware/authMiddleware');
 const multer = require('multer');
 const path = require('path');
 const cloudStorageService = require('../services/cloudStorageService');
+const admin = require('firebase-admin');
+const emailService = require('../services/emailService');
 
 // Configure multer for resume uploads
 const storage = multer.diskStorage({
@@ -715,6 +719,122 @@ router.post('/upload-original-resume', verifyToken, resumePdfUpload.single('orig
       success: false,
       message: error.message || 'Failed to upload original resume',
       error: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    });
+  }
+});
+
+// @route   PUT /api/jobseekers/deactivate-account
+// @desc    Deactivate jobseeker account (soft delete)
+// @access  Private
+router.put('/deactivate-account', verifyToken, async (req, res) => {
+  try {
+    const { uid } = req.user;
+
+    // Find user and jobseeker profile
+    const user = await User.findOne({ uid });
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        error: 'User not found'
+      });
+    }
+
+    const jobseeker = await JobSeeker.findOne({ uid });
+    if (!jobseeker) {
+      return res.status(404).json({
+        success: false,
+        error: 'Jobseeker profile not found'
+      });
+    }
+
+    // Deactivate user account (soft delete)
+    user.isActive = false;
+    user.deactivatedAt = new Date();
+    await user.save();
+
+    // Deactivate jobseeker profile
+    jobseeker.isActive = false;
+    jobseeker.deactivatedAt = new Date();
+    await jobseeker.save();
+
+    // Send deactivation email
+    try {
+      await emailService.sendAccountDeactivationEmail(user.email, user.firstName);
+    } catch (emailError) {
+      console.error('Failed to send deactivation email:', emailError);
+      // Continue with deactivation even if email fails
+    }
+
+    res.json({
+      success: true,
+      message: 'Account deactivated successfully. You can reactivate by signing in again.'
+    });
+
+  } catch (error) {
+    console.error('Deactivate account error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to deactivate account'
+    });
+  }
+});
+
+// @route   DELETE /api/jobseekers/delete-account
+// @desc    Permanently delete jobseeker account and all data
+// @access  Private
+router.delete('/delete-account', verifyToken, async (req, res) => {
+  try {
+    const { uid } = req.user;
+
+    // Find user and jobseeker profile
+    const user = await User.findOne({ uid });
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        error: 'User not found'
+      });
+    }
+
+    const jobseeker = await JobSeeker.findOne({ uid });
+
+    // Send deletion email before deleting data
+    try {
+      await emailService.sendAccountDeletionEmail(user.email, user.firstName);
+    } catch (emailError) {
+      console.error('Failed to send deletion email:', emailError);
+      // Continue with deletion even if email fails
+    }
+
+    // Delete from Firebase Authentication
+    try {
+      await admin.auth().deleteUser(uid);
+    } catch (firebaseError) {
+      console.error('Failed to delete Firebase user:', firebaseError);
+      // Continue with database cleanup even if Firebase deletion fails
+    }
+
+    // Delete all related data from MongoDB
+    await Promise.all([
+      // Delete user record
+      User.deleteOne({ uid }),
+      // Delete jobseeker profile
+      jobseeker ? JobSeeker.deleteOne({ uid }) : Promise.resolve(),
+      // Delete resumes
+      Resume.deleteMany({ userId: user._id }),
+      // Delete applications
+      Application.deleteMany({ userId: user._id })
+    ]);
+
+    res.json({
+      success: true,
+      message: 'Account and all associated data have been permanently deleted.'
+    });
+
+  } catch (error) {
+    console.error('Delete account error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to delete account'
     });
   }
 });

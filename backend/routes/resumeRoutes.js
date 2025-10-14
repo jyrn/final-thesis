@@ -934,6 +934,14 @@ router.get('/download/:applicationId', verifyToken, async (req, res) => {
     const JobSeeker = require('../models/JobSeeker');
     const jobSeeker = await JobSeeker.findOne({ uid: application.jobSeekerUid });
     
+    // Check if jobseeker account is deactivated
+    if (!jobSeeker || !jobSeeker.isActive) {
+      return res.status(404).json({
+        success: false,
+        error: 'Resume not available - jobseeker account is deactivated'
+      });
+    }
+    
     let resumeData = null;
     
     // Try to get resume data from JobSeeker's current resume

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { FiUser, FiFileText, FiSave, FiX, FiUpload, FiDownload, FiTrash2, FiEye, FiMail, FiPhone, FiMapPin, FiGlobe, FiDollarSign, FiStar, FiPlus, FiMinus, FiLogOut, FiBell, FiSettings, FiEdit2, FiCheck } from 'react-icons/fi';
+import { FiUser, FiFileText, FiSave, FiX, FiUpload, FiDownload, FiTrash2, FiEye, FiMail, FiPhone, FiMapPin, FiGlobe, FiDollarSign, FiStar, FiPlus, FiMinus, FiLogOut, FiSettings, FiEdit2, FiCheck } from 'react-icons/fi';
 import styles from './SettingsTab.module.css';
 import firebaseAuthService from '../../../services/firebaseAuthService';
 import { apiService } from '../../../services/apiService';
@@ -61,20 +61,13 @@ const SettingsTab: React.FC<SettingsTabProps> = ({ onNavigate }) => {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
-  const [activeSection, setActiveSection] = useState<'profile' | 'resume' | 'privacy'>('profile');
+  const [activeSection, setActiveSection] = useState<'profile' | 'resume' | 'account'>('profile');
   const [resumeFile, setResumeFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
   const [profilePicture, setProfilePicture] = useState<File | null>(null);
   const [uploadingPicture, setUploadingPicture] = useState(false);
   const [newSkill, setNewSkill] = useState({ name: '', level: 'beginner' });
   const [darkMode, setDarkMode] = useState(false);
-  const [notifications, setNotifications] = useState({
-    emailAlerts: true,
-    smsAlerts: false,
-    inAppAlerts: true,
-    jobMatches: true,
-    applicationUpdates: true
-  });
   const [passwordData, setPasswordData] = useState({
     currentPassword: '',
     newPassword: '',
@@ -102,6 +95,10 @@ const SettingsTab: React.FC<SettingsTabProps> = ({ onNavigate }) => {
   }>({});
   const [activeResumeType, setActiveResumeType] = useState<'generated' | 'uploaded'>('generated');
   const [resumePreviewUrl, setResumePreviewUrl] = useState<string | null>(null);
+  const [showDeactivateModal, setShowDeactivateModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deactivating, setDeactivating] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     fetchProfile();
@@ -486,6 +483,53 @@ const SettingsTab: React.FC<SettingsTabProps> = ({ onNavigate }) => {
     }
   };
 
+  const handleDeactivateAccount = async () => {
+    try {
+      setDeactivating(true);
+      setError(null);
+      
+      const response = await apiService.deactivateAccount();
+      
+      if (response.success) {
+        setSuccess('Account deactivated successfully. You will be signed out.');
+        setTimeout(async () => {
+          await firebaseAuthService.signOut();
+          navigate('/auth/jobseeker');
+        }, 2000);
+      } else {
+        setError(response.error || 'Failed to deactivate account');
+      }
+    } catch (err: any) {
+      setError(err.message || 'Failed to deactivate account');
+    } finally {
+      setDeactivating(false);
+      setShowDeactivateModal(false);
+    }
+  };
+
+  const handleDeleteAccount = async () => {
+    try {
+      setDeleting(true);
+      setError(null);
+      
+      const response = await apiService.deleteAccount();
+      
+      if (response.success) {
+        setSuccess('Account deleted successfully. You will be redirected to the registration page.');
+        setTimeout(() => {
+          navigate('/auth/jobseeker');
+        }, 2000);
+      } else {
+        setError(response.error || 'Failed to delete account');
+      }
+    } catch (err: any) {
+      setError(err.message || 'Failed to delete account');
+    } finally {
+      setDeleting(false);
+      setShowDeleteModal(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className={styles.settingsTab}>
@@ -560,14 +604,6 @@ const SettingsTab: React.FC<SettingsTabProps> = ({ onNavigate }) => {
             <FiFileText />
             Resume & Documents
           </button>
-          <button
-            className={`${styles.navButton} ${activeSection === 'privacy' ? styles.active : ''}`}
-            onClick={() => setActiveSection('privacy')}
-          >
-            <FiBell />
-            Notifications
-          </button>
-          
           <div className={styles.navDivider}></div>
           
           <button
@@ -837,9 +873,13 @@ const SettingsTab: React.FC<SettingsTabProps> = ({ onNavigate }) => {
                         </div>
                         <p>Temporarily deactivate your account. You can reactivate it anytime by signing in.</p>
                       </div>
-                      <button className={styles.deactivateButton}>
+                      <button 
+                        className={styles.deactivateButton}
+                        onClick={() => setShowDeactivateModal(true)}
+                        disabled={deactivating}
+                      >
                         <FiEye />
-                        Deactivate
+                        {deactivating ? 'Deactivating...' : 'Deactivate'}
                       </button>
                     </div>
                     
@@ -851,9 +891,13 @@ const SettingsTab: React.FC<SettingsTabProps> = ({ onNavigate }) => {
                         </div>
                         <p>Permanently delete your account and all associated data. This action cannot be undone.</p>
                       </div>
-                      <button className={styles.deleteButton}>
+                      <button 
+                        className={styles.deleteButton}
+                        onClick={() => setShowDeleteModal(true)}
+                        disabled={deleting}
+                      >
                         <FiTrash2 />
-                        Delete Account
+                        {deleting ? 'Deleting...' : 'Delete Account'}
                       </button>
                     </div>
                   </div>
@@ -1084,103 +1128,6 @@ const SettingsTab: React.FC<SettingsTabProps> = ({ onNavigate }) => {
             </div>
           )}
 
-          {activeSection === 'privacy' && (
-            <div className={styles.privacySection}>
-              <div className={styles.sectionHeader}>
-                <h2>Notifications</h2>
-                <p className={styles.sectionDescription}>Manage your notification preferences</p>
-              </div>
-
-              <div className={styles.preferencesContent}>
-                {/* Job Alerts & Notifications */}
-                <div className={styles.preferenceGroup}>
-                  <div className={styles.groupHeader}>
-                    <FiBell className={styles.groupIcon} />
-                    <h3>Job Alerts & Notifications</h3>
-                  </div>
-                  
-                  <div className={styles.alertsGrid}>
-                    <div className={styles.alertCard}>
-                      <div className={styles.alertInfo}>
-                        <h4 className={styles.alertTitle}>Job Match Alerts</h4>
-                        <p className={styles.alertDescription}>Get notified when jobs match your skills and preferences</p>
-                      </div>
-                      <label className={styles.toggle}>
-                        <input
-                          type="checkbox"
-                          checked={notifications.jobMatches}
-                          onChange={(e) => setNotifications({...notifications, jobMatches: e.target.checked})}
-                        />
-                        <span className={styles.slider}></span>
-                      </label>
-                    </div>
-
-                    <div className={styles.alertCard}>
-                      <div className={styles.alertInfo}>
-                        <h4 className={styles.alertTitle}>Application Updates</h4>
-                        <p className={styles.alertDescription}>Receive updates on your job applications</p>
-                      </div>
-                      <label className={styles.toggle}>
-                        <input
-                          type="checkbox"
-                          checked={notifications.applicationUpdates}
-                          onChange={(e) => setNotifications({...notifications, applicationUpdates: e.target.checked})}
-                        />
-                        <span className={styles.slider}></span>
-                      </label>
-                    </div>
-
-                    <div className={styles.alertCard}>
-                      <div className={styles.alertInfo}>
-                        <h4 className={styles.alertTitle}>Email Notifications</h4>
-                        <p className={styles.alertDescription}>Receive job alerts via email</p>
-                      </div>
-                      <label className={styles.toggle}>
-                        <input
-                          type="checkbox"
-                          checked={notifications.emailAlerts}
-                          onChange={(e) => setNotifications({...notifications, emailAlerts: e.target.checked})}
-                        />
-                        <span className={styles.slider}></span>
-                      </label>
-                    </div>
-
-                    <div className={styles.alertCard}>
-                      <div className={styles.alertInfo}>
-                        <h4 className={styles.alertTitle}>SMS Alerts</h4>
-                        <p className={styles.alertDescription}>Get urgent job notifications via SMS</p>
-                      </div>
-                      <label className={styles.toggle}>
-                        <input
-                          type="checkbox"
-                          checked={notifications.smsAlerts}
-                          onChange={(e) => setNotifications({...notifications, smsAlerts: e.target.checked})}
-                        />
-                        <span className={styles.slider}></span>
-                      </label>
-                    </div>
-
-                    <div className={styles.alertCard}>
-                      <div className={styles.alertInfo}>
-                        <h4 className={styles.alertTitle}>In-App Notifications</h4>
-                        <p className={styles.alertDescription}>Show notifications within the app</p>
-                      </div>
-                      <label className={styles.toggle}>
-                        <input
-                          type="checkbox"
-                          checked={notifications.inAppAlerts}
-                          onChange={(e) => setNotifications({...notifications, inAppAlerts: e.target.checked})}
-                        />
-                        <span className={styles.slider}></span>
-                      </label>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Save functionality is handled by the main save button in the header */}
-              </div>
-            </div>
-          )}
         </div>
       </div>
 
@@ -1192,6 +1139,91 @@ const SettingsTab: React.FC<SettingsTabProps> = ({ onNavigate }) => {
           initialData={parsedResumeData}
           fileName={resumeFile?.name || 'resume.pdf'}
         />
+      )}
+
+      {/* Deactivate Account Confirmation Modal */}
+      {showDeactivateModal && (
+        <div className={styles.modalOverlay}>
+          <div className={styles.confirmationModal}>
+            <div className={styles.modalHeader}>
+              <FiEye className={styles.modalIcon} />
+              <h3>Deactivate Account</h3>
+            </div>
+            <div className={styles.modalContent}>
+              <p>Are you sure you want to deactivate your account?</p>
+              <div className={styles.warningBox}>
+                <h4>What happens when you deactivate:</h4>
+                <ul>
+                  <li>Your profile will be hidden from employers</li>
+                  <li>You won't receive job match notifications</li>
+                  <li>Your applications remain active but you can't apply to new jobs</li>
+                  <li>You can reactivate anytime by signing in</li>
+                </ul>
+              </div>
+            </div>
+            <div className={styles.modalActions}>
+              <button 
+                className={styles.cancelButton}
+                onClick={() => setShowDeactivateModal(false)}
+                disabled={deactivating}
+              >
+                Cancel
+              </button>
+              <button 
+                className={styles.deactivateButton}
+                onClick={handleDeactivateAccount}
+                disabled={deactivating}
+              >
+                <FiEye />
+                {deactivating ? 'Deactivating...' : 'Deactivate Account'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Account Confirmation Modal */}
+      {showDeleteModal && (
+        <div className={styles.modalOverlay}>
+          <div className={styles.confirmationModal}>
+            <div className={styles.modalHeader}>
+              <FiTrash2 className={styles.modalIcon} style={{ color: '#dc2626' }} />
+              <h3>Delete Account</h3>
+            </div>
+            <div className={styles.modalContent}>
+              <p>Are you sure you want to permanently delete your account?</p>
+              <div className={styles.dangerBox}>
+                <h4>⚠️ This action cannot be undone!</h4>
+                <p>What will be permanently deleted:</p>
+                <ul>
+                  <li>Your complete user account and login credentials</li>
+                  <li>Your jobseeker profile and resume data</li>
+                  <li>All job applications and application history</li>
+                  <li>All saved jobs and preferences</li>
+                  <li>Your authentication data</li>
+                </ul>
+                <p><strong>You will be able to register again with the same email address after deletion.</strong></p>
+              </div>
+            </div>
+            <div className={styles.modalActions}>
+              <button 
+                className={styles.cancelButton}
+                onClick={() => setShowDeleteModal(false)}
+                disabled={deleting}
+              >
+                Cancel
+              </button>
+              <button 
+                className={styles.deleteButton}
+                onClick={handleDeleteAccount}
+                disabled={deleting}
+              >
+                <FiTrash2 />
+                {deleting ? 'Deleting...' : 'Delete Account'}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
