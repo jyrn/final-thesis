@@ -18,7 +18,7 @@ interface Application {
   workplaceType?: string;
   salary: string;
   description?: string;
-  status: 'pending' | 'approved' | 'rejected';
+  status: 'pending' | 'interview' | 'approved' | 'rejected';
   appliedDate: string;
   updatedAt: string;
 }
@@ -31,11 +31,14 @@ const ApplicationsTab: React.FC<any> = ({
   onOpenFilters,
 }) => {
   const [applications, setApplications] = useState<Application[]>([]);
+  const [filteredApplications, setFilteredApplications] = useState<Application[]>([]);
+  const [statusFilter, setStatusFilter] = useState<'all' | 'pending' | 'interview' | 'approved' | 'rejected'>('all');
   const [jobDetails, setJobDetails] = useState<{[key: string]: Job}>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedApplication, setSelectedApplication] = useState<Application | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [showFilters, setShowFilters] = useState(false);
 
   useEffect(() => {
     fetchApplications();
@@ -65,6 +68,7 @@ const ApplicationsTab: React.FC<any> = ({
       const data = await response.json();
       if (data.success) {
         setApplications(data.data);
+        setFilteredApplications(data.data);
         // Fetch job details for each application
         await fetchJobDetails(data.data);
       } else {
@@ -141,13 +145,30 @@ const ApplicationsTab: React.FC<any> = ({
 
       // Refresh applications list
       await fetchApplications();
-    } catch (error) {      throw error; // Re-throw to let the modal handle the error
+    } catch (error) {      throw error; // Re-throw to let the modal handle the error
     }
+  };
+
+  // Filter applications by status
+  useEffect(() => {
+    if (statusFilter === 'all') {
+      setFilteredApplications(applications);
+    } else {
+      setFilteredApplications(applications.filter(app => app.status === statusFilter));
+    }
+  }, [applications, statusFilter]);
+
+  const handleOpenFilters = () => {
+    setShowFilters(!showFilters);
+  };
+
+  const handleStatusFilterChange = (status: 'all' | 'pending' | 'interview' | 'approved' | 'rejected') => {
+    setStatusFilter(status);
   };
 
   // Convert applications to Job format for JobsList component
   const convertApplicationsToJobs = (): Job[] => {
-    return applications.map(app => {
+    return filteredApplications.map(app => {
       const jobDetail = jobDetails[app.jobId];
       return {
         id: app.jobId,
@@ -214,6 +235,40 @@ const ApplicationsTab: React.FC<any> = ({
 
   return (
     <div className={styles.tabContent}>
+      {/* Inline Status Filter Tabs */}
+      <div className={styles.statusTabs}>
+        <button
+          className={`${styles.statusTab} ${statusFilter === 'all' ? styles.activeTab : ''}`}
+          onClick={() => handleStatusFilterChange('all')}
+        >
+          All ({applications.length})
+        </button>
+        <button
+          className={`${styles.statusTab} ${statusFilter === 'pending' ? styles.activeTab : ''}`}
+          onClick={() => handleStatusFilterChange('pending')}
+        >
+          Pending ({applications.filter(app => app.status === 'pending').length})
+        </button>
+        <button
+          className={`${styles.statusTab} ${statusFilter === 'interview' ? styles.activeTab : ''}`}
+          onClick={() => handleStatusFilterChange('interview')}
+        >
+          Interview ({applications.filter(app => app.status === 'interview').length})
+        </button>
+        <button
+          className={`${styles.statusTab} ${statusFilter === 'approved' ? styles.activeTab : ''}`}
+          onClick={() => handleStatusFilterChange('approved')}
+        >
+          Approved ({applications.filter(app => app.status === 'approved').length})
+        </button>
+        <button
+          className={`${styles.statusTab} ${statusFilter === 'rejected' ? styles.activeTab : ''}`}
+          onClick={() => handleStatusFilterChange('rejected')}
+        >
+          Rejected ({applications.filter(app => app.status === 'rejected').length})
+        </button>
+      </div>
+
       <JobsList
         jobs={convertApplicationsToJobs()}
         title=""
@@ -222,7 +277,7 @@ const ApplicationsTab: React.FC<any> = ({
         onJobClick={handleViewApplication}
         onViewApplication={handleViewApplication}
         savedJobs={savedJobs}
-        onOpenFilters={onOpenFilters}
+        onOpenFilters={null}
       />
       
       {selectedApplication && isModalOpen && createPortal(

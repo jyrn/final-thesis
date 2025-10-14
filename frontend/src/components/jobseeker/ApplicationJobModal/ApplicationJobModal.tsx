@@ -17,7 +17,7 @@ interface Application {
   workplaceType?: string;
   salary: string;
   description?: string;
-  status: 'pending' | 'approved' | 'rejected' | 'interview' | 'hired';
+  status: 'pending' | 'interview' | 'approved' | 'rejected' | 'hired';
   appliedDate: string;
   updatedAt: string;
 }
