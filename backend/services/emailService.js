@@ -53,10 +53,10 @@ class EmailService {
             <div style="background-color: white; padding: 20px; border-radius: 8px; margin: 20px 0;">
               <h3>What's Next?</h3>
               <ul>
-                <li>✅ You can now access your employer dashboard</li>
-                <li>✅ Post job openings for job seekers</li>
-                <li>✅ Review and manage job applications</li>
-                <li>✅ Access all employer features</li>
+                <li> You can now access your employer dashboard</li>
+                <li> Post job openings for job seekers</li>
+                <li> Review and manage job applications</li>
+                <li> Access all employer features</li>
               </ul>
             </div>
             
@@ -116,10 +116,10 @@ class EmailService {
             <div style="background-color: white; padding: 20px; border-radius: 8px; margin: 20px 0;">
               <h3>What You Can Do:</h3>
               <ul>
-                <li>📧 Contact our support team for clarification</li>
-                <li>📋 Address the issues mentioned above</li>
-                <li>🔄 Reapply with updated information/documents</li>
-                <li>📞 Schedule a consultation with our team</li>
+                <li> Contact our support team for clarification</li>
+                <li> Address the issues mentioned above</li>
+                <li> Reapply with updated information/documents</li>
+                <li> Schedule a consultation with our team</li>
               </ul>
             </div>
             
@@ -193,9 +193,9 @@ class EmailService {
             <div style="background-color: white; padding: 20px; border-radius: 8px; margin: 20px 0;">
               <h3>Security Tips:</h3>
               <ul>
-                <li>🔒 Never share this code with anyone</li>
-                <li>🚫 PESO staff will never ask for your verification code</li>
-                <li>⚠️ If you didn't request this code, please ignore this email</li>
+                <li> Never share this code with anyone</li>
+                <li> PESO staff will never ask for your verification code</li>
+                <li> If you didn't request this code, please ignore this email</li>
               </ul>
             </div>
             
@@ -225,7 +225,7 @@ class EmailService {
   async sendJobRemovalEmail(employerEmail, companyName, jobTitle, reason) {
     // If email service is not configured, just log the action
     if (!this.isConfigured) {
-      console.log(`📧 Email service not configured. Job removal notification for ${employerEmail}: Job "${jobTitle}" has been removed.`);
+      console.log(`Email service not configured. Job removal notification for ${employerEmail}: Job "${jobTitle}" has been removed.`);
       return { success: true, message: 'Email service not configured - notification logged to console' };
     }
 
@@ -270,10 +270,10 @@ class EmailService {
             <div style="background-color: white; padding: 20px; border-radius: 8px; margin: 20px 0;">
               <h3>What You Can Do:</h3>
               <ul>
-                <li>📧 Contact our support team for clarification</li>
-                <li>📋 Review our posting guidelines</li>
-                <li>🔄 Create a new job posting that complies with our policies</li>
-                <li>📞 Schedule a consultation with our team</li>
+                <li> Contact our support team for clarification</li>
+                <li> Review our posting guidelines</li>
+                <li> Create a new job posting that complies with our policies</li>
+                <li> Schedule a consultation with our team</li>
               </ul>
             </div>
             
@@ -354,9 +354,9 @@ class EmailService {
             <div style="background-color: white; padding: 20px; border-radius: 8px; margin: 20px 0;">
               <h3>What This Means:</h3>
               <ul>
-                <li>📋 Your job posting is temporarily hidden from jobseekers</li>
-                <li>🔄 You can still manage existing applications</li>
-                <li>✅ The posting can be reactivated once issues are resolved</li>
+                <li> Your job posting is temporarily hidden from jobseekers</li>
+                <li> You can still manage existing applications</li>
+                <li> The posting can be reactivated once issues are resolved</li>
                 <li>📞 Contact our team for assistance or clarification</li>
               </ul>
             </div>
@@ -438,10 +438,10 @@ class EmailService {
             <div style="background-color: white; padding: 20px; border-radius: 8px; margin: 20px 0;">
               <h3>What This Means:</h3>
               <ul>
-                <li>🔍 Your job posting is under administrative review</li>
-                <li>⏸️ The posting may be temporarily hidden during review</li>
-                <li>📞 Our team may contact you for additional information</li>
-                <li>✅ The posting will be restored if no issues are found</li>
+                <li> Your job posting is under administrative review</li>
+                <li> The posting may be temporarily hidden during review</li>
+                <li> Our team may contact you for additional information</li>
+                <li> The posting will be restored if no issues are found</li>
               </ul>
             </div>
             
@@ -493,7 +493,7 @@ class EmailService {
           </div>
           
           <div style="background-color: #fff3cd; border: 1px solid #ffeaa7; border-radius: 8px; padding: 20px; margin-bottom: 20px;">
-            <h2 style="color: #856404; margin: 0 0 15px 0;">⏸️ Account Suspended Due to Inactivity</h2>
+            <h2 style="color: #856404; margin: 0 0 15px 0;">Account Suspended Due to Inactivity</h2>
             <p style="color: #856404; margin: 0;">Your PESO job portal account has been suspended due to extended inactivity.</p>
           </div>
           
@@ -505,7 +505,7 @@ class EmailService {
             </p>
             
             <div style="background-color: #d1ecf1; border-left: 4px solid #17a2b8; padding: 15px; margin: 15px 0;">
-              <h4 style="margin: 0 0 10px 0; color: #0c5460;">✅ Easy Reactivation Process</h4>
+              <h4 style="margin: 0 0 10px 0; color: #0c5460;">Easy Reactivation Process</h4>
               <p style="margin: 0; color: #0c5460;">
                 <strong>Simply log in to your account to reactivate it immediately!</strong><br>
                 No additional steps or verification required.
@@ -595,10 +595,10 @@ class EmailService {
             <div style="background-color: white; padding: 20px; border-radius: 8px; margin: 20px 0;">
               <h3>What This Means:</h3>
               <ul>
-                <li>🚫 Your account and all associated data have been permanently deleted</li>
-                <li>📋 All job applications and saved jobs have been removed</li>
-                <li>🔒 You will no longer be able to access your previous account</li>
-                <li>📧 You will no longer receive notifications from our platform</li>
+                <li> Your account and all associated data have been permanently deleted</li>
+                <li> All job applications and saved jobs have been removed</li>
+                <li> You will no longer be able to access your previous account</li>
+                <li> You will no longer receive notifications from our platform</li>
               </ul>
             </div>
             
@@ -671,12 +671,12 @@ class EmailService {
             <div style="background-color: white; padding: 20px; border-radius: 8px; margin: 20px 0;">
               <h3>What Has Been Permanently Deleted:</h3>
               <ul>
-                <li>🗑️ Your user account and login credentials</li>
-                <li>📋 Your complete jobseeker profile and resume data</li>
-                <li>📝 All job applications and application history</li>
-                <li>💾 All saved jobs and preferences</li>
-                <li>🔐 Your authentication data from Firebase</li>
-                <li>📊 All associated analytics and activity data</li>
+                <li> Your user account and login credentials</li>
+                <li> Your complete jobseeker profile and resume data</li>
+                <li> All job applications and application history</li>
+                <li> All saved jobs and preferences</li>
+                <li> Your authentication data from Firebase</li>
+                <li> All associated analytics and activity data</li>
               </ul>
             </div>
             
