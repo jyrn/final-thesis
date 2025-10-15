@@ -694,35 +694,57 @@ div.admin-content div.analytics-card.chart-card.full-width-charts.no-hover-effec
   background: linear-gradient(to bottom, #10b981, #34d399);
 }
 
-/* Four Chart Visualizations Styles */
-.full-width-charts {
-  width: 100%;
-  margin-bottom: 2rem;
-}
-
-.charts-grid {
+/* Enhanced Chart Grid Layout */
+.charts-grid-improved {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  grid-template-rows: 1fr 1.5fr;
+  grid-template-columns: 1fr;
+  grid-template-rows: auto auto;
   gap: 1.5rem;
-  height: 900px;
-  margin-bottom: 2rem;
+  margin-bottom: 1.5rem;
+  align-items: start;
 }
 
-.chart-section {
+.chart-section-enhanced {
   background: white;
-  border-radius: 12px;
+  border-radius: 16px;
   padding: 1.5rem;
   border: 1px solid #e5e7eb;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
   display: flex;
   flex-direction: column;
-  min-height: 0;
-  overflow: hidden; /* Prevent content overflow */
+  min-height: 280px;
+  transition: all 0.2s ease;
 }
 
-.chart-section.full-width {
+.chart-section-enhanced:hover {
+  box-shadow: 0 8px 25px -5px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  transform: translateY(-2px);
+}
+
+.chart-section-enhanced.full-width-enhanced {
   grid-column: 1 / -1;
+  min-height: 340px;
+}
+
+.chart-header {
+  margin-bottom: 1rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 2px solid #f1f5f9;
+}
+
+.chart-title-enhanced {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #1e293b;
+  margin: 0 0 0.5rem 0;
+  letter-spacing: -0.025em;
+}
+
+.chart-subtitle-text {
+  font-size: 0.875rem;
+  color: #64748b;
+  margin: 0;
+  font-weight: 400;
 }
 
 
@@ -734,6 +756,143 @@ div.admin-content div.analytics-card.chart-card.full-width-charts.no-hover-effec
   padding-bottom: 0;
   border-bottom: none;
   flex-shrink: 0; /* Don't shrink the title */
+}
+
+/* Enhanced Category Bar Chart Styles */
+.category-bar-chart-container {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 0.5rem 0;
+  flex: 1;
+  overflow: hidden;
+}
+
+.category-bar-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.5rem 0.75rem;
+  background: #f8fafc;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+  transition: all 0.2s ease;
+}
+
+.category-bar-item:hover {
+  background: #f1f5f9;
+  border-color: #cbd5e1;
+  transform: translateX(4px);
+}
+
+.category-info {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  min-width: 180px;
+  flex-shrink: 0;
+}
+
+.category-rank {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+  color: white;
+  border-radius: 50%;
+  font-size: 0.75rem;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.category-details {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  flex: 1;
+}
+
+.category-name {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #1e293b;
+  text-transform: capitalize;
+}
+
+.category-stats {
+  font-size: 0.75rem;
+  color: #64748b;
+  font-weight: 500;
+}
+
+.category-bar-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex: 1;
+  min-width: 0;
+}
+
+.category-bar-track {
+  flex: 1;
+  height: 12px;
+  background: #e2e8f0;
+  border-radius: 6px;
+  overflow: hidden;
+  position: relative;
+}
+
+.category-bar-fill {
+  height: 100%;
+  border-radius: 6px;
+  transition: all 0.3s ease;
+  position: relative;
+  background: linear-gradient(90deg, var(--bar-color, #3b82f6), var(--bar-color-dark, #1d4ed8));
+}
+
+.category-bar-fill::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.2) 50%, transparent 100%);
+  animation: shimmer 2s infinite;
+}
+
+@keyframes shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+.category-percentage {
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: #475569;
+  min-width: 40px;
+  text-align: right;
+}
+
+.no-data-message-enhanced {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem 1rem;
+  text-align: center;
+  color: #64748b;
+  background: #f8fafc;
+  border-radius: 12px;
+  border: 2px dashed #cbd5e1;
+}
+
+.no-data-icon {
+  font-size: 2rem;
+  margin-bottom: 0.5rem;
+  opacity: 0.7;
 }
 
 /* 1. Bar Chart Styles - Horizontal Bars */
@@ -959,9 +1118,9 @@ div.admin-content div.analytics-card.chart-card.full-width-charts.no-hover-effec
   flex: 1;
   gap: 0.5rem;
   overflow: hidden;
-  padding: 0.5rem;
-  height: 100%;
-  max-height: 100%;
+  padding: 0.25rem;
+  height: 280px;
+  max-height: 280px;
 }
 
 .line-graph {
@@ -995,6 +1154,18 @@ div.admin-content div.analytics-card.chart-card.full-width-charts.no-hover-effec
   width: 12px;
   height: 12px;
   border-radius: 50%;
+}
+
+/* Hover effects for line chart data points */
+.hover-circle {
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.hover-circle:hover {
+  fill: rgba(59, 130, 246, 0.1);
+  stroke: rgba(59, 130, 246, 0.3);
+  stroke-width: 1;
 }
 
 /* Simple Pie Chart */
@@ -1171,25 +1342,59 @@ div.admin-content div.analytics-card.chart-card.full-width-charts.no-hover-effec
   border-radius: 2px;
 }
 
-/* Responsive Design for Charts */
+/* Enhanced Responsive Design for Charts */
 @media (max-width: 1200px) {
-  .charts-grid {
+  .charts-grid-improved {
     grid-template-columns: 1fr;
-    grid-template-rows: repeat(3, auto);
-    height: auto;
     gap: 1.5rem;
   }
   
-  .chart-section.full-width {
-    grid-column: 1;
+  .chart-section-enhanced {
+    min-height: 350px;
   }
   
-  .chart-section {
-    min-height: 400px;
+  .chart-section-enhanced.full-width-enhanced {
+    min-height: 450px;
   }
   
-  .chart-section.full-width {
-    grid-column: 1;
+  .category-info {
+    min-width: 160px;
+  }
+  
+  .category-bar-item {
+    padding: 0.625rem;
+  }
+}
+
+@media (max-width: 900px) {
+  .charts-grid-improved {
+    gap: 1rem;
+  }
+  
+  .chart-section-enhanced {
+    padding: 1.5rem;
+    min-height: 320px;
+  }
+  
+  .category-bar-item {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.75rem;
+    padding: 1rem;
+  }
+  
+  .category-info {
+    min-width: auto;
+    width: 100%;
+    justify-content: space-between;
+  }
+  
+  .category-bar-wrapper {
+    width: 100%;
+  }
+  
+  .category-percentage {
+    min-width: 50px;
   }
 }
 
