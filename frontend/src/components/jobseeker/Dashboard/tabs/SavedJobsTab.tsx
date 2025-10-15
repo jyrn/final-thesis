@@ -12,8 +12,7 @@ const SavedJobsTab: React.FC<any> = ({
   onJobClick,
 }) => {
   const savedJobsList = jobs.filter((job: Job) => {
-    const jobId = typeof job.id === 'string' && job.id.length > 10 ? job.id : (typeof job.id === 'string' ? parseInt(job.id) : job.id);
-    return savedJobs.has(jobId);
+    return savedJobs.has(job.id);
   });
 
   return (

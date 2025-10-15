@@ -7,12 +7,12 @@
 
 .listHeader {
   display: grid;
-  grid-template-columns: 60px 1.5fr 1.3fr 1.3fr 1fr 200px;
+  grid-template-columns: 50px 1.5fr 1fr 1fr 0.8fr 170px;
   background: #f9fafb;
   color: #374151;
-  padding: 16px 0;
+  padding: 12px 0;
   font-weight: 600;
-  font-size: 14px;
+  font-size: 13px;
   border-bottom: 1px solid #e5e7eb;
 }
 
@@ -20,7 +20,7 @@
   display: flex;
   align-items: center;
   border-right: 1px solid #e5e7eb;
-  padding: 0 16px;
+  padding: 0 12px;
 }
 
 .headerCell:first-child {
@@ -42,8 +42,8 @@
 
 .listRow {
   display: grid;
-  grid-template-columns: 60px 1.5fr 1.3fr 1.3fr 1fr 200px;
-  padding: 16px 0;
+  grid-template-columns: 50px 1.5fr 1fr 1fr 0.8fr 170px;
+  padding: 12px 0;
   border-bottom: 1px solid #f3f4f6;
   align-items: center;
   transition: background-color 0.2s;
@@ -62,12 +62,12 @@
   align-items: center;
   justify-content: center;
   border-right: 1px solid #d1d5db;
-  padding: 0 16px;
+  padding: 0 8px;
 }
 
 .rowNumber {
-  width: 24px;
-  height: 24px;
+  width: 22px;
+  height: 22px;
   background: #6b7280;
   color: white;
   border-radius: 50%;
@@ -75,27 +75,27 @@
   align-items: center;
   justify-content: center;
   font-weight: 600;
-  font-size: 12px;
+  font-size: 11px;
 }
 
 .companyCell {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
   border-right: 1px solid #d1d5db;
-  padding: 0 16px;
+  padding: 0 12px;
 }
 
 .skillsCell {
   display: flex;
   align-items: center;
-  padding: 0 16px;
+  padding: 0 10px;
   border-right: 1px solid #d1d5db;
 }
 
 .avatar {
-  width: 40px;
-  height: 40px;
+  width: 36px;
+  height: 36px;
   border-radius: 50%;
   background: #3b82f6;
   color: white;
@@ -103,7 +103,7 @@
   align-items: center;
   justify-content: center;
   font-weight: 600;
-  font-size: 14px;
+  font-size: 13px;
   flex-shrink: 0;
   overflow: hidden;
 }
@@ -130,8 +130,11 @@
 .companyName {
   font-weight: 600;
   color: #111827;
-  font-size: 14px;
+  font-size: 13px;
   margin-bottom: 2px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .companyMeta {
@@ -199,7 +202,7 @@
 .matchCell {
   display: flex;
   align-items: center;
-  padding: 0 16px;
+  padding: 0 10px;
   border-right: 1px solid #d1d5db;
 }
 
@@ -210,7 +213,7 @@
 }
 
 .matchBar {
-  width: 60px;
+  width: 50px;
   height: 6px;
   background: #f3f4f6;
   border-radius: 3px;
@@ -227,38 +230,45 @@
 .matchText {
   font-weight: 600;
   color: #374151;
-  font-size: 13px;
-  min-width: 35px;
+  font-size: 12px;
+  min-width: 32px;
 }
 
 .actionsCell {
   display: flex;
   align-items: center;
   justify-content: flex-start;
-  gap: 8px;
-  padding: 0 16px;
+  gap: 4px;
+  padding: 0 8px;
 }
 
 .viewButton {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 4px;
+  gap: 3px;
   padding: 6px 8px;
-  min-width: 60px;
-  height: 32px;
-  background: #3b82f6;
+  min-width: 32px;
+  height: 30px;
+  background: linear-gradient(135deg, #5550b1 0%, #6b66c7 100%);
   color: white;
   border: none;
-  border-radius: 4px;
-  font-size: 10px;
-  font-weight: 500;
+  border-radius: 5px;
+  font-size: 0;
+  font-weight: 600;
   cursor: pointer;
-  transition: background-color 0.2s;
+  transition: all 0.25s ease;
+  box-shadow: 0 2px 4px rgba(85, 80, 177, 0.15);
 }
 
 .viewButton:hover {
-  background: #2563eb;
+  background: linear-gradient(135deg, #4a45a0 0%, #5a4fcf 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(85, 80, 177, 0.25);
+}
+
+.viewButton:active {
+  transform: translateY(0);
 }
 
 .saveButton {
@@ -266,29 +276,51 @@
   align-items: center;
   justify-content: center;
   gap: 3px;
-  padding: 6px 8px;
-  min-width: 32px;
-  height: 32px;
-  background: #3b82f6;
-  color: white;
-  border: none;
-  border-radius: 4px;
+  padding: 0;
+  min-width: 30px;
+  width: 30px;
+  height: 30px;
+  background: #ffffff;
+  color: #64748b;
+  border: 2px solid #e2e8f0;
+  border-radius: 5px;
   font-size: 10px;
   font-weight: 500;
   cursor: pointer;
-  transition: background-color 0.2s;
+  transition: all 0.25s ease;
+  flex-shrink: 0;
 }
 
 .saveButton:hover {
-  background: #2563eb;
+  background: #f8fafc;
+  border-color: #cbd5e1;
+  color: #475569;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.saveButton:active {
+  transform: translateY(0);
 }
 
 .saveButton.saved {
-  background: #059669;
+  background: linear-gradient(135deg, #5550b1 0%, #6b66c7 100%);
+  border-color: #5550b1;
+  color: #ffffff;
 }
 
 .saveButton.saved:hover {
-  background: #047857;
+  background: linear-gradient(135deg, #4a45a0 0%, #5a4fcf 100%);
+  border-color: #4a45a0;
+  box-shadow: 0 4px 8px rgba(85, 80, 177, 0.25);
+}
+
+.saveButton .icon {
+  stroke-width: 2px;
+}
+
+.saveButton .icon.iconFilled {
+  fill: currentColor;
 }
 
 .applyButton {
@@ -297,34 +329,46 @@
   justify-content: center;
   gap: 3px;
   padding: 6px 8px;
-  min-width: 60px;
-  height: 32px;
-  background: #10b981;
+  min-width: 70px;
+  width: 70px;
+  height: 30px;
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
   color: white;
   border: none;
-  border-radius: 4px;
+  border-radius: 5px;
   font-size: 10px;
-  font-weight: 500;
+  font-weight: 600;
   cursor: pointer;
-  transition: background-color 0.2s;
+  transition: all 0.25s ease;
+  box-shadow: 0 2px 4px rgba(16, 185, 129, 0.15);
 }
 
 .applyButton:hover {
-  background: #059669;
+  background: linear-gradient(135deg, #059669 0%, #047857 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(16, 185, 129, 0.25);
+}
+
+.applyButton:active {
+  transform: translateY(0);
 }
 
 .applyButton.applied {
-  background: #6b7280;
+  background: linear-gradient(135deg, #6b7280 0%, #4b5563 100%);
   cursor: not-allowed;
+  box-shadow: 0 2px 4px rgba(107, 114, 128, 0.15);
 }
 
 .applyButton.applied:hover {
-  background: #6b7280;
+  background: linear-gradient(135deg, #6b7280 0%, #4b5563 100%);
+  transform: none;
+  box-shadow: 0 2px 4px rgba(107, 114, 128, 0.15);
 }
 
 .icon {
-  width: 14px;
-  height: 14px;
+  width: 13px;
+  height: 13px;
+  flex-shrink: 0;
 }
 
 .emptyState {
@@ -349,16 +393,16 @@
 .skillTag {
   background: #eff6ff;
   color: #1d4ed8;
-  padding: 4px 8px;
-  border-radius: 12px;
-  font-size: 11px;
+  padding: 3px 6px;
+  border-radius: 10px;
+  font-size: 10px;
   font-weight: 500;
   white-space: nowrap;
 }
 
 .moreSkills {
   color: #6b7280;
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 500;
 }
 

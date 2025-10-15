@@ -236,10 +236,9 @@ export const JobsListView: React.FC<JobsListViewProps> = ({
           .sort((a, b) => b.matchScore - a.matchScore)
           .map((job, index) => {
           const matchScore = job.matchScore;
-          // Use the full string ID for MongoDB ObjectIds, or convert to number for numeric IDs
-          const jobId = typeof job.id === 'string' && job.id.length > 10 ? job.id : (typeof job.id === 'string' ? parseInt(job.id) : job.id);
-          const isSaved = savedJobs.has(jobId);
-          const isApplied = appliedJobs.has(jobId);
+          // Use the original job.id for consistency with savedJobs Set
+          const isSaved = savedJobs.has(job.id);
+          const isApplied = appliedJobs.has(job.id);
 
           return (
             <div key={job.id} className={styles.listRow}>
@@ -310,25 +309,25 @@ export const JobsListView: React.FC<JobsListViewProps> = ({
               <div className={styles.actionsCell}>
               {onSaveJob && (
                   <button
-                    onClick={() => onSaveJob(jobId)}
+                    onClick={() => onSaveJob(job.id)}
                     className={`${styles.saveButton} ${isSaved ? styles.saved : ''}`}
                     title={isSaved ? "Remove from saved" : "Save job"}
                   >
-                    <FiBookmark className={styles.icon} />
+                    <FiBookmark className={`${styles.icon} ${isSaved ? styles.iconFilled : ''}`} />
                   </button>
                 )}
                 
                 <button
                   className={styles.viewButton}
                   onClick={() => onJobClick(job)}
+                  title="View job details"
                 >
                   <FiEye className={styles.icon} />
-                  View Details
                 </button>
                
                 {onApplyJob && (
                   <button
-                    onClick={() => !isApplied && onApplyJob(jobId)}
+                    onClick={() => !isApplied && onApplyJob(job.id)}
                     className={`${styles.applyButton} ${isApplied ? styles.applied : ''}`}
                     title={isApplied ? "Already applied" : "Apply to this job"}
                     disabled={isApplied}

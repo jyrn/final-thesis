@@ -100,52 +100,67 @@
 
 /* Save job button */
 .saveJobButton {
-  width: 32px;
-  height: 32px;
-  border: none;
-  background: #f8fafc;
+  width: 36px;
+  height: 36px;
+  border: 2px solid #e2e8f0;
+  background: #ffffff;
   border-radius: 8px;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.25s ease;
   z-index: 10;
   position: relative;
-  color: #94a3b8;
   padding: 0;
   flex-shrink: 0;
 }
 
 .saveJobButton:hover {
-  background: #f1f5f9;
-  color: #64748b;
+  background: #f8fafc;
+  border-color: #cbd5e1;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.saveJobButton:active {
+  transform: translateY(0);
 }
 
 .saveJobButton.saved {
-  color: #3b82f6;
-  background: #eff6ff;
+  background: linear-gradient(135deg, #5550b1 0%, #6b66c7 100%);
+  border-color: #5550b1;
 }
 
 .saveJobButton.saved:hover {
-  color: #2563eb;
-  background: #dbeafe;
-}
-
-.saveJobButton.saved .icon {
-  fill: currentColor;
-  stroke: currentColor;
-  stroke-width: 2px;
+  background: linear-gradient(135deg, #4a45a0 0%, #5a4fcf 100%);
+  border-color: #4a45a0;
+  box-shadow: 0 4px 8px rgba(85, 80, 177, 0.25);
 }
 
 .saveJobButton .icon {
-  width: 16px;
-  height: 16px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 0.875rem;
-  color: #4a5568;
+  width: 18px;
+  height: 18px;
+  color: #64748b;
+  transition: all 0.25s ease;
+  stroke-width: 2px;
+}
+
+.saveJobButton:hover .icon {
+  color: #475569;
+}
+
+.saveJobButton.saved .icon {
+  color: #ffffff;
+  fill: #ffffff;
+}
+
+.saveJobButton .icon.iconFilled {
+  fill: currentColor;
+}
+
+.saveJobButton.saved .icon.iconFilled {
+  fill: #ffffff;
 }
 
 /* Job Details */
@@ -303,27 +318,39 @@
   color: white;
   border: none;
   border-radius: 8px;
-  padding: 0.5rem 1rem;
+  padding: 0.5rem 1.25rem;
   font-weight: 600;
   font-size: 0.875rem;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.25s ease;
   display: flex;
   align-items: center;
   justify-content: center;
-  min-width: 100px;
-  height: 32px;
+  min-width: 110px;
+  height: 36px;
+  box-shadow: 0 2px 4px rgba(85, 80, 177, 0.15);
 }
 
 .applyButton:hover {
   background: linear-gradient(135deg, #4a45a0 0%, #5a4fcf 100%);
-  transform: translateY(-1px);
-  box-shadow: 0 2px 8px rgba(85, 80, 177, 0.3);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(85, 80, 177, 0.35);
+}
+
+.applyButton:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 4px rgba(85, 80, 177, 0.2);
 }
 
 .applyButton.applied {
-  background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
   cursor: default;
+  box-shadow: 0 2px 4px rgba(16, 185, 129, 0.2);
+}
+
+.applyButton.applied:hover {
+  transform: none;
+  box-shadow: 0 2px 4px rgba(16, 185, 129, 0.2);
 }
 
 .applyButton:disabled {
@@ -336,21 +363,6 @@
   justify-content: center;
 }
 
-.saveJobButton {
-  background: none;
-  border: 2px solid #e5e7eb;
-  border-radius: 8px;
-  padding: 8px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  color: #9ca3af;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 40px;
-  height: 40px;
-  flex-shrink: 0;
-}
 
 .statusBadge {
   display: flex;
@@ -464,35 +476,6 @@
   cursor: pointer;
 }
 
-.applyButton:hover {
-  background: linear-gradient(90deg, #1d4ed8, #1e40af);
-  transform: translateY(-1px);
-  box-shadow: 0 2px 8px rgba(29, 78, 216, 0.2);
-}
-
-.applyButton.applied {
-  background: linear-gradient(135deg, #22c55e 0%, #16a34a 50%, #15803d 100%);
-  cursor: default;
-  box-shadow: 0 2px 8px rgba(34, 197, 94, 0.3);
-  height: 36px;
-  min-width: 120px;
-  padding: 0.75rem 1.5rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.applyButton:disabled {
-  opacity: 0.9;
-}
-
-
-.applyButton .buttonContent {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
 /* Education Requirements Section */
 .educationSection {
   margin-bottom: 16px;
@@ -569,14 +552,14 @@
   }
   
   .saveJobButton {
-    width: 28px;
-    height: 28px;
+    width: 32px;
+    height: 32px;
+    border-width: 1.5px;
   }
   
   .saveJobButton .icon {
-    width: 14px;
-    height: 14px;
-    font-size: 0.75rem;
+    width: 16px;
+    height: 16px;
   }
   
   .jobDetails {
@@ -677,8 +660,14 @@
   }
   
   .saveJobButton {
-    width: 26px;
-    height: 26px;
+    width: 30px;
+    height: 30px;
+    border-width: 1.5px;
+  }
+  
+  .saveJobButton .icon {
+    width: 15px;
+    height: 15px;
   }
   
   .jobDetails {

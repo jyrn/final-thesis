@@ -7,11 +7,11 @@ import { Job } from '../../../types/Job'
 interface JobsListProps {
   jobs: Job[]
   title?: string
-  onSaveJob?: (jobId: number) => void
-  onApplyJob?: (jobId: number) => void
+  onSaveJob?: (jobId: string | number) => void
+  onApplyJob?: (jobId: string | number) => void
   onJobClick?: (job: Job) => void
   onViewApplication?: (job: Job) => void
-  savedJobs?: Set<number>
+  savedJobs?: Set<string | number>
   onOpenFilters?: () => void
 }
 
@@ -52,7 +52,7 @@ const JobsList: React.FC<JobsListProps> = ({
             onApply={onApplyJob}
             onJobClick={onJobClick}
             onViewApplication={onViewApplication}
-            isSaved={savedJobs.has(Number(job.id))}
+            isSaved={savedJobs.has(job.id)}
             companyLogo={job.companyLogo}
           />
         ))}

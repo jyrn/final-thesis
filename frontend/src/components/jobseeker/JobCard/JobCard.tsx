@@ -181,10 +181,9 @@ const JobCard: React.FC<JobCardProps> = ({
                 onSave?.(job.id);
               }}
               aria-label={isSaved ? 'Unsave job' : 'Save job'}
+              title={isSaved ? 'Remove from saved jobs' : 'Save this job'}
             >
-              <span className={styles.buttonContent}>
-                <FiBookmark className={styles.icon} />
-              </span>
+              <FiBookmark className={`${styles.icon} ${isSaved ? styles.iconFilled : ''}`} />
             </button>
           )}
         </div>
