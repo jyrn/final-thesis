@@ -18,7 +18,7 @@ interface Application {
   workplaceType?: string;
   salary: string;
   description?: string;
-  status: 'pending' | 'interview' | 'approved' | 'rejected';
+  status: 'pending' | 'initial_interview' | 'final_interview' | 'hired' | 'rejected';
   appliedDate: string;
   updatedAt: string;
 }
@@ -32,7 +32,7 @@ const ApplicationsTab: React.FC<any> = ({
 }) => {
   const [applications, setApplications] = useState<Application[]>([]);
   const [filteredApplications, setFilteredApplications] = useState<Application[]>([]);
-  const [statusFilter, setStatusFilter] = useState<'all' | 'pending' | 'interview' | 'approved' | 'rejected'>('all');
+  const [statusFilter, setStatusFilter] = useState<'all' | 'pending' | 'initial_interview' | 'final_interview' | 'hired' | 'rejected'>('all');
   const [jobDetails, setJobDetails] = useState<{[key: string]: Job}>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -162,7 +162,7 @@ const ApplicationsTab: React.FC<any> = ({
     setShowFilters(!showFilters);
   };
 
-  const handleStatusFilterChange = (status: 'all' | 'pending' | 'interview' | 'approved' | 'rejected') => {
+  const handleStatusFilterChange = (status: 'all' | 'pending' | 'initial_interview' | 'final_interview' | 'hired' | 'rejected') => {
     setStatusFilter(status);
   };
 
@@ -250,16 +250,22 @@ const ApplicationsTab: React.FC<any> = ({
           Pending ({applications.filter(app => app.status === 'pending').length})
         </button>
         <button
-          className={`${styles.statusTab} ${statusFilter === 'interview' ? styles.activeTab : ''}`}
-          onClick={() => handleStatusFilterChange('interview')}
+          className={`${styles.statusTab} ${statusFilter === 'initial_interview' ? styles.activeTab : ''}`}
+          onClick={() => handleStatusFilterChange('initial_interview')}
         >
-          Interview ({applications.filter(app => app.status === 'interview').length})
+          Initial Interview ({applications.filter(app => app.status === 'initial_interview').length})
         </button>
         <button
-          className={`${styles.statusTab} ${statusFilter === 'approved' ? styles.activeTab : ''}`}
-          onClick={() => handleStatusFilterChange('approved')}
+          className={`${styles.statusTab} ${statusFilter === 'final_interview' ? styles.activeTab : ''}`}
+          onClick={() => handleStatusFilterChange('final_interview')}
         >
-          Approved ({applications.filter(app => app.status === 'approved').length})
+          Final Interview ({applications.filter(app => app.status === 'final_interview').length})
+        </button>
+        <button
+          className={`${styles.statusTab} ${statusFilter === 'hired' ? styles.activeTab : ''}`}
+          onClick={() => handleStatusFilterChange('hired')}
+        >
+          Hired ({applications.filter(app => app.status === 'hired').length})
         </button>
         <button
           className={`${styles.statusTab} ${statusFilter === 'rejected' ? styles.activeTab : ''}`}

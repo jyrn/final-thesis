@@ -78,8 +78,10 @@ interface ApplicantDetailsModalProps {
   applicant: Applicant;
   isOpen: boolean;
   onClose: () => void;
-  onApprove: (applicantId: string) => void;
+  onMoveToInitialInterview: (applicantId: string) => void;
+  onMoveToFinalInterview: (applicantId: string) => void;
   onReject: (applicantId: string) => void;
+  onHire: (applicantId: string) => void;
   onViewResume: (applicantId: string) => void;
   onDownloadResume: (applicantId: string) => void;
 }
@@ -88,8 +90,10 @@ export const ApplicantDetailsModal: React.FC<ApplicantDetailsModalProps> = ({
   applicant,
   isOpen,
   onClose,
-  onApprove,
+  onMoveToInitialInterview,
+  onMoveToFinalInterview,
   onReject,
+  onHire,
   onViewResume,
   onDownloadResume,
 }) => {
@@ -584,25 +588,64 @@ export const ApplicantDetailsModal: React.FC<ApplicantDetailsModalProps> = ({
                 onClick={() => onReject(applicant.id)}
               >
                 <FiX size={20} />
-                <span>Reject Application</span>
+                <span>Reject</span>
               </button>
               <button 
                 className={`${styles.primaryActionButton} ${styles.approveButton}`}
-                onClick={() => onApprove(applicant.id)}
+                onClick={() => onMoveToInitialInterview(applicant.id)}
               >
                 <FiCheck size={20} />
                 <span>Move to Interview</span>
               </button>
             </>
+          ) : applicant.status === 'initial_interview' ? (
+            <>
+              <button 
+                className={`${styles.primaryActionButton} ${styles.rejectButton}`}
+                onClick={() => onReject(applicant.id)}
+              >
+                <FiX size={20} />
+                <span>Reject</span>
+              </button>
+              <button 
+                className={`${styles.primaryActionButton} ${styles.approveButton}`}
+                onClick={() => onMoveToFinalInterview(applicant.id)}
+              >
+                <FiCheck size={20} />
+                <span>Additional Interview</span>
+              </button>
+              <button 
+                className={`${styles.primaryActionButton} ${styles.hireButton}`}
+                onClick={() => onHire(applicant.id)}
+              >
+                <FiCheck size={20} />
+                <span>Hire</span>
+              </button>
+            </>
+          ) : applicant.status === 'final_interview' ? (
+            <>
+              <button 
+                className={`${styles.primaryActionButton} ${styles.rejectButton}`}
+                onClick={() => onReject(applicant.id)}
+              >
+                <FiX size={20} />
+                <span>Reject</span>
+              </button>
+              <button 
+                className={`${styles.primaryActionButton} ${styles.hireButton}`}
+                onClick={() => onHire(applicant.id)}
+              >
+                <FiCheck size={20} />
+                <span>Hire</span>
+              </button>
+            </>
           ) : (
             <div className={styles.statusDisplay}>
               <div className={`${styles.statusBadge} ${styles[applicant.status]}`}>
-                {applicant.status === 'interview' && <FiCheck size={16} />}
                 {applicant.status === 'rejected' && <FiX size={16} />}
                 {applicant.status === 'hired' && <FiCheck size={16} />}
                 <span className={styles.statusText}>
-                  {applicant.status === 'interview' ? 'Moved to Interview' :
-                   applicant.status === 'rejected' ? 'Application Rejected' :
+                  {applicant.status === 'rejected' ? 'Application Rejected' :
                    applicant.status === 'hired' ? 'Hired' :
                    applicant.status.charAt(0).toUpperCase() + applicant.status.slice(1)}
                 </span>

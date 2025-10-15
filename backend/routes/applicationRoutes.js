@@ -401,6 +401,210 @@ router.post('/:id/send-interview-email', verifyToken, async (req, res) => {
   }
 });
 
+// ------------------ SEND INITIAL INTERVIEW EMAIL ------------------
+router.post('/:id/send-initial-interview-email', verifyToken, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { customMessage, interviewDetails } = req.body;
+    const { uid } = req.user;
+
+    const application = await Application.findOne({ _id: id, employerUid: uid });
+    if (!application) {
+      return res.status(404).json({ success: false, error: 'Application not found' });
+    }
+
+    const Job = require('../models/Job');
+    const job = await Job.findById(application.jobId);
+    if (!job) {
+      return res.status(404).json({ success: false, error: 'Job not found' });
+    }
+
+    const Employer = require('../models/Employer');
+    const employer = await Employer.findOne({ uid });
+    if (!employer) {
+      return res.status(404).json({ success: false, error: 'Employer not found' });
+    }
+
+    const JobSeeker = require('../models/JobSeeker');
+    const jobSeeker = await JobSeeker.findOne({ uid: application.jobSeekerUid });
+    if (!jobSeeker) {
+      return res.status(404).json({ success: false, error: 'Job seeker not found' });
+    }
+
+    const User = require('../models/User');
+    const user = await User.findOne({ uid: application.jobSeekerUid });
+    if (!user || !user.email) {
+      return res.status(404).json({ success: false, error: 'Job seeker email not found' });
+    }
+
+    const emailService = require('../services/emailService');
+    const emailResult = await emailService.sendInitialInterviewEmail(
+      user.email,
+      jobSeeker.fullName || user.email,
+      job.title,
+      employer.companyName,
+      customMessage,
+      interviewDetails,
+      employer.email
+    );
+
+    if (emailResult.success) {
+      res.json({
+        success: true,
+        message: 'Initial interview invitation sent successfully',
+        data: { emailSent: true, messageId: emailResult.messageId }
+      });
+    } else {
+      res.status(500).json({
+        success: false,
+        error: 'Failed to send email',
+        details: emailResult.error
+      });
+    }
+  } catch (error) {
+    console.error('Error sending initial interview email:', error);
+    res.status(500).json({ success: false, error: 'Failed to send initial interview email' });
+  }
+});
+
+// ------------------ SEND FINAL INTERVIEW EMAIL ------------------
+router.post('/:id/send-final-interview-email', verifyToken, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { customMessage, interviewDetails } = req.body;
+    const { uid } = req.user;
+
+    const application = await Application.findOne({ _id: id, employerUid: uid });
+    if (!application) {
+      return res.status(404).json({ success: false, error: 'Application not found' });
+    }
+
+    const Job = require('../models/Job');
+    const job = await Job.findById(application.jobId);
+    if (!job) {
+      return res.status(404).json({ success: false, error: 'Job not found' });
+    }
+
+    const Employer = require('../models/Employer');
+    const employer = await Employer.findOne({ uid });
+    if (!employer) {
+      return res.status(404).json({ success: false, error: 'Employer not found' });
+    }
+
+    const JobSeeker = require('../models/JobSeeker');
+    const jobSeeker = await JobSeeker.findOne({ uid: application.jobSeekerUid });
+    if (!jobSeeker) {
+      return res.status(404).json({ success: false, error: 'Job seeker not found' });
+    }
+
+    const User = require('../models/User');
+    const user = await User.findOne({ uid: application.jobSeekerUid });
+    if (!user || !user.email) {
+      return res.status(404).json({ success: false, error: 'Job seeker email not found' });
+    }
+
+    const emailService = require('../services/emailService');
+    const emailResult = await emailService.sendFinalInterviewEmail(
+      user.email,
+      jobSeeker.fullName || user.email,
+      job.title,
+      employer.companyName,
+      customMessage,
+      interviewDetails,
+      employer.email
+    );
+
+    if (emailResult.success) {
+      res.json({
+        success: true,
+        message: 'Final interview invitation sent successfully',
+        data: { emailSent: true, messageId: emailResult.messageId }
+      });
+    } else {
+      res.status(500).json({
+        success: false,
+        error: 'Failed to send email',
+        details: emailResult.error
+      });
+    }
+  } catch (error) {
+    console.error('Error sending final interview email:', error);
+    res.status(500).json({ success: false, error: 'Failed to send final interview email' });
+  }
+});
+
+// ------------------ SEND HIRE CONFIRMATION EMAIL ------------------
+router.post('/:id/send-hire-email', verifyToken, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { customMessage, hireDetails } = req.body;
+    const { uid } = req.user;
+
+    // Find the application
+    const application = await Application.findOne({ _id: id, employerUid: uid });
+    if (!application) {
+      return res.status(404).json({ success: false, error: 'Application not found' });
+    }
+
+    // Get job details
+    const Job = require('../models/Job');
+    const job = await Job.findById(application.jobId);
+    if (!job) {
+      return res.status(404).json({ success: false, error: 'Job not found' });
+    }
+
+    // Get employer details
+    const Employer = require('../models/Employer');
+    const employer = await Employer.findOne({ uid });
+    if (!employer) {
+      return res.status(404).json({ success: false, error: 'Employer not found' });
+    }
+
+    // Get jobseeker details
+    const JobSeeker = require('../models/JobSeeker');
+    const jobSeeker = await JobSeeker.findOne({ uid: application.jobSeekerUid });
+    if (!jobSeeker) {
+      return res.status(404).json({ success: false, error: 'Job seeker not found' });
+    }
+
+    // Get user email
+    const User = require('../models/User');
+    const user = await User.findOne({ uid: application.jobSeekerUid });
+    if (!user || !user.email) {
+      return res.status(404).json({ success: false, error: 'Job seeker email not found' });
+    }
+
+    // Send hire confirmation email
+    const emailService = require('../services/emailService');
+    const emailResult = await emailService.sendHireConfirmationEmail(
+      user.email,
+      jobSeeker.fullName || user.email,
+      job.title,
+      employer.companyName,
+      customMessage,
+      hireDetails,
+      employer.email // Pass employer email for BCC and reply-to
+    );
+
+    if (emailResult.success) {
+      res.json({
+        success: true,
+        message: 'Hire confirmation email sent successfully',
+        data: { emailSent: true, messageId: emailResult.messageId }
+      });
+    } else {
+      res.status(500).json({
+        success: false,
+        error: 'Failed to send email',
+        details: emailResult.error
+      });
+    }
+  } catch (error) {
+    console.error('Error sending hire confirmation email:', error);
+    res.status(500).json({ success: false, error: 'Failed to send hire confirmation email' });
+  }
+});
+
 // ------------------ JOB SEEKER GET APPLICATIONS ------------------
 router.get('/jobseeker', verifyToken, async (req, res) => {
   try {

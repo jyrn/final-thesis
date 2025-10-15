@@ -197,10 +197,16 @@
   border-color: #fbbf24;
 }
 
-.statusBadge.interview {
+.statusBadge.initial_interview {
   background-color: #dbeafe;
   color: #2563eb;
   border-color: #3b82f6;
+}
+
+.statusBadge.final_interview {
+  background-color: #e0e7ff;
+  color: #4f46e5;
+  border-color: #6366f1;
 }
 
 .statusBadge.rejected {

@@ -221,6 +221,13 @@
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
+.statusFinalInterview {
+  background: #6366f1;
+  color: white;
+  border-color: #4f46e5;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
 .statusHired {
   background: #10b981;
   color: white;
@@ -435,6 +442,11 @@
   border: 1px solid #3b82f6;
 }
 
+.statusDisplay.statusFinalInterview {
+  background: #e0e7ff;
+  border: 1px solid #6366f1;
+}
+
 .statusDisplay.statusHired {
   background: #d1fae5;
   border: 1px solid #10b981;
@@ -467,6 +479,10 @@
   color: #1d4ed8;
 }
 
+.statusDisplay.statusFinalInterview .statusLabel {
+  color: #4f46e5;
+}
+
 .statusDisplay.statusHired .statusLabel {
   color: #065f46;
 }
@@ -493,6 +509,10 @@
   color: #1d4ed8;
 }
 
+.statusDisplay.statusFinalInterview .statusDate {
+  color: #4f46e5;
+}
+
 .statusDisplay.statusHired .statusDate {
   color: #065f46;
 }
@@ -511,6 +531,10 @@
 
 .statusDisplay.statusInterview .statusIcon {
   color: #1d4ed8;
+}
+
+.statusDisplay.statusFinalInterview .statusIcon {
+  color: #4f46e5;
 }
 
 .statusDisplay.statusHired .statusIcon {

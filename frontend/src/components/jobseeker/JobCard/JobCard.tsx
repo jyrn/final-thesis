@@ -115,8 +115,8 @@ const JobCard: React.FC<JobCardProps> = ({
     switch (status) {
       case 'pending':
         return <FiClock className={styles.statusIcon} />;
-      case 'approved':
-      case 'interview':
+      case 'initial_interview':
+      case 'final_interview':
         return <FiCheck className={styles.statusIcon} />;
       case 'rejected':
         return <FiX className={styles.statusIcon} />;
@@ -130,17 +130,17 @@ const JobCard: React.FC<JobCardProps> = ({
   const getStatusText = (status: string) => {
     switch (status) {
       case 'pending':
-        return 'Under Review';
-      case 'approved':
-        return 'Approved';
-      case 'interview':
-        return 'Interview Stage';
+        return 'Pending';
+      case 'initial_interview':
+        return 'Initial Interview';
+      case 'final_interview':
+        return 'Final Interview';
       case 'rejected':
-        return 'Not Selected';
+        return 'Rejected';
       case 'hired':
         return 'Hired';
       default:
-        return 'Under Review';
+        return 'Pending';
     }
   };
 

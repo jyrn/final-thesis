@@ -736,20 +736,21 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 0.75rem;
-  padding: 1.25rem 2.5rem;
-  border-radius: 12px;
-  font-size: 1rem;
-  font-weight: 700;
+  gap: 0.5rem;
+  padding: 1rem 1.5rem;
+  border-radius: 10px;
+  font-size: 0.95rem;
+  font-weight: 600;
   cursor: pointer;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   border: none;
-  min-width: 200px;
+  flex: 1;
+  min-width: 0;
   position: relative;
   overflow: hidden;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+  letter-spacing: 0.3px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  white-space: nowrap;
 }
 
 .primaryActionButton:disabled {
@@ -1070,27 +1071,38 @@
 .rejectButton {
   background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
   color: white;
-  border: 1px solid rgba(220, 38, 38, 0.3);
-  box-shadow: 0 4px 12px rgba(220, 38, 38, 0.15);
+  border: none;
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
 }
 
 .rejectButton:hover {
-  background: linear-gradient(135deg, #fecaca 0%, #fca5a5 50%, #f87171 100%);
-  transform: translateY(-3px) scale(1.02);
-  box-shadow: 0 12px 32px rgba(220, 38, 38, 0.4);
-  border-color: #f87171;
+  background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(239, 68, 68, 0.4);
 }
 
 .approveButton {
-  background: linear-gradient(135deg, #10b981 0%, #059669 50%, #047857 100%);
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
   color: white;
-  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.25);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
 }
 
 .approveButton:hover {
-  background: linear-gradient(135deg, #059669 0%, #047857 50%, #065f46 100%);
-  transform: translateY(-3px) scale(1.02);
-  box-shadow: 0 8px 24px rgba(16, 185, 129, 0.4);
+  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(59, 130, 246, 0.4);
+}
+
+.hireButton {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: white;
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+}
+
+.hireButton:hover {
+  background: linear-gradient(135deg, #059669 0%, #047857 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(16, 185, 129, 0.4);
 }
 
 /* Responsive Design */
@@ -1291,8 +1303,13 @@
   color: white;
 }
 
-.statusBadge.interview {
+.statusBadge.initial_interview {
   background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  color: white;
+}
+
+.statusBadge.final_interview {
+  background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
   color: white;
 }
 

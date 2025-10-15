@@ -273,7 +273,8 @@ export const ApplicantListView: React.FC<ApplicantListViewProps> = ({
                 <div className={`${styles.statusBadge} ${styles[applicant.status || 'pending']}`}>
                   <span className={styles.statusText}>
                     {applicant.status === 'pending' ? 'Pending' :
-                     applicant.status === 'interview' ? 'Interview' :
+                     applicant.status === 'initial_interview' ? 'Initial Interview' :
+                     applicant.status === 'final_interview' ? 'Final Interview' :
                      applicant.status === 'rejected' ? 'Rejected' :
                      applicant.status === 'hired' ? 'Hired' :
                      (applicant.status || 'Pending').charAt(0).toUpperCase() + (applicant.status || 'pending').slice(1)}

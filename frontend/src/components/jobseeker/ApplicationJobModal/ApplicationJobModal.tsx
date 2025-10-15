@@ -17,7 +17,7 @@ interface Application {
   workplaceType?: string;
   salary: string;
   description?: string;
-  status: 'pending' | 'interview' | 'approved' | 'rejected' | 'hired';
+  status: 'pending' | 'initial_interview' | 'final_interview' | 'hired' | 'rejected';
   appliedDate: string;
   updatedAt: string;
 }
@@ -82,9 +82,9 @@ const ApplicationJobModal: React.FC<ApplicationJobModalProps> = ({
     switch (status) {
       case 'pending':
         return <FiClock className={styles.statusIcon} />;
-      case 'approved':
-        return <FiCheck className={styles.statusIcon} />;
-      case 'interview':
+      case 'initial_interview':
+        return <FiUsers className={styles.statusIcon} />;
+      case 'final_interview':
         return <FiUsers className={styles.statusIcon} />;
       case 'rejected':
         return <FiXCircle className={styles.statusIcon} />;
@@ -98,17 +98,17 @@ const ApplicationJobModal: React.FC<ApplicationJobModalProps> = ({
   const getStatusText = (status: string) => {
     switch (status) {
       case 'pending':
-        return 'Under Review';
-      case 'approved':
-        return 'Approved';
-      case 'interview':
-        return 'Interview Stage';
+        return 'Pending';
+      case 'initial_interview':
+        return 'Initial Interview';
+      case 'final_interview':
+        return 'Final Interview';
       case 'rejected':
-        return 'Not Selected';
+        return 'Rejected';
       case 'hired':
         return 'Hired';
       default:
-        return 'Under Review';
+        return 'Pending';
     }
   };
 
@@ -116,10 +116,10 @@ const ApplicationJobModal: React.FC<ApplicationJobModalProps> = ({
     switch (status) {
       case 'pending':
         return styles.statusPending;
-      case 'approved':
-        return styles.statusApproved;
-      case 'interview':
+      case 'initial_interview':
         return styles.statusInterview;
+      case 'final_interview':
+        return styles.statusFinalInterview;
       case 'rejected':
         return styles.statusRejected;
       case 'hired':
@@ -389,7 +389,7 @@ const ApplicationJobModal: React.FC<ApplicationJobModalProps> = ({
                     Your application is currently under review. We'll notify you once there's an update.
                   </p>
                 )}
-                {application.status === 'interview' && (
+                {(application.status === 'initial_interview' || application.status === 'final_interview') && (
                   <p className={styles.statusMessage}>
                     Congratulations! You've been selected for an interview. The employer will contact you soon with details.
                   </p>
@@ -402,11 +402,6 @@ const ApplicationJobModal: React.FC<ApplicationJobModalProps> = ({
                 {application.status === 'rejected' && (
                   <p className={styles.statusMessage}>
                     Unfortunately, your application was not selected for this position. Keep applying to other opportunities!
-                  </p>
-                )}
-                {application.status === 'approved' && (
-                  <p className={styles.statusMessage}>
-                    Your application has been approved. The employer will contact you with next steps.
                   </p>
                 )}
               </div>

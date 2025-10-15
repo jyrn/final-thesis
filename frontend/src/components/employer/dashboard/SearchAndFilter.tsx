@@ -23,9 +23,8 @@ const filterOptions = {
   status: [
     { value: '', label: 'All Status' },
     { value: 'pending', label: 'Pending' },
-    { value: 'interview', label: 'Interview' },
-    { value: 'interviewed', label: 'Interviewed' },
-    { value: 'accepted', label: 'Accepted' },
+    { value: 'initial_interview', label: 'Initial Interview' },
+    { value: 'final_interview', label: 'Final Interview' },
     { value: 'rejected', label: 'Rejected' },
     { value: 'hired', label: 'Hired' }
   ]

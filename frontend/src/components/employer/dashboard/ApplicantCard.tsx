@@ -109,11 +109,12 @@ export const ApplicantCard: React.FC<ApplicantCardProps> = ({
         ) : (
           <div className={styles.statusDisplay}>
             <div className={`${styles.statusBadge} ${styles[applicant.status]}`}>
-              {applicant.status === 'interview' && <FiCheck className={styles.icon} />}
+              {(applicant.status === 'initial_interview' || applicant.status === 'final_interview') && <FiCheck className={styles.icon} />}
               {applicant.status === 'rejected' && <FiX className={styles.icon} />}
               {applicant.status === 'hired' && <FiCheck className={styles.icon} />}
               <span>
-                {applicant.status === 'interview' ? 'Interview' :
+                {applicant.status === 'initial_interview' ? 'Initial Interview' :
+                 applicant.status === 'final_interview' ? 'Final Interview' :
                  applicant.status === 'rejected' ? 'Rejected' :
                  applicant.status === 'hired' ? 'Hired' :
                  applicant.status.charAt(0).toUpperCase() + applicant.status.slice(1)}

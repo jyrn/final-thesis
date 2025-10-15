@@ -270,26 +270,31 @@
 .statusPending {
   background: #fef3c7;
   color: #92400e;
+  border: 1px solid #fbbf24;
 }
 
-.statusApproved {
-  background: #d1fae5;
-  color: #065f46;
+.statusInitial_interview {
+  background: #dbeafe;
+  color: #2563eb;
+  border: 1px solid #3b82f6;
+}
+
+.statusFinal_interview {
+  background: #e0e7ff;
+  color: #4f46e5;
+  border: 1px solid #6366f1;
 }
 
 .statusRejected {
   background: #fee2e2;
-  color: #991b1b;
-}
-
-.statusInterview {
-  background: #dbeafe;
-  color: #1d4ed8;
+  color: #dc2626;
+  border: 1px solid #ef4444;
 }
 
 .statusHired {
   background: #d1fae5;
-  color: #065f46;
+  color: #059669;
+  border: 1px solid #10b981;
 }
 
 /* Apply button */
@@ -373,16 +378,31 @@
 .statusPending {
   background: #fef3c7;
   color: #92400e;
+  border: 1px solid #fbbf24;
 }
 
-.statusApproved {
-  background: #d1fae5;
-  color: #065f46;
+.statusInitial_interview {
+  background: #dbeafe;
+  color: #2563eb;
+  border: 1px solid #3b82f6;
+}
+
+.statusFinal_interview {
+  background: #e0e7ff;
+  color: #4f46e5;
+  border: 1px solid #6366f1;
 }
 
 .statusRejected {
   background: #fee2e2;
-  color: #991b1b;
+  color: #dc2626;
+  border: 1px solid #ef4444;
+}
+
+.statusHired {
+  background: #d1fae5;
+  color: #059669;
+  border: 1px solid #10b981;
 }
 
 /* Job Cards Grid */

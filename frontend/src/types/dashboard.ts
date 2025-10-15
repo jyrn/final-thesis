@@ -30,7 +30,7 @@ export interface Applicant {
   phone?: string;
   address?: string;
   appliedDate: string;
-  status: 'pending' | 'reviewed' | 'interview' | 'hired' | 'rejected';
+  status: 'pending' | 'reviewed' | 'initial_interview' | 'final_interview' | 'hired' | 'rejected';
   resumeData?: {
     personalInfo?: {
       name?: string;

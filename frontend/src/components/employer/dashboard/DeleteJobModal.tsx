@@ -33,7 +33,7 @@ export const DeleteJobModal: React.FC<DeleteJobModalProps> = ({
   // Filter applicants for this specific job
   const jobApplicants = applicants.filter(applicant => 
     applicant.position === job.title && 
-    (applicant.status === 'pending' || applicant.status === 'interview')
+    (applicant.status === 'pending' || applicant.status === 'initial_interview' || applicant.status === 'final_interview')
   );
 
   const handleNext = () => {
