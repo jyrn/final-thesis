@@ -49,6 +49,57 @@
   }
 }
 
+/* Tab Container Styles */
+.tabContainer {
+  width: 100%;
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 0;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.tabHeader {
+  padding: 2rem;
+  border-bottom: 1px solid #e5e7eb;
+  background: linear-gradient(135deg, #2a2968 0%, #343386 50%, #4c46a3 100%);
+  border-radius: 12px 12px 0 0;
+  box-shadow: 0 8px 32px rgba(52, 51, 134, 0.25);
+}
+
+.tabHeader .headerContent {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.tabHeader .jobIcon {
+  width: 56px;
+  height: 56px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  flex-shrink: 0;
+}
+
+.tabHeader .headerText {
+  flex: 1;
+}
+
+.tabHeader .title {
+  color: white;
+  margin: 0 0 0.5rem 0;
+}
+
+.tabHeader .subtitle {
+  color: rgba(255, 255, 255, 0.9);
+  margin: 0;
+}
+
 .header {
   display: flex;
   align-items: center;

@@ -50,7 +50,8 @@ import { Job } from '../../types/Job';
 import { jobApiService } from '../../services/jobApiService';
 import { ApplicantDetailsModal } from '../../components/employer/dashboard/ApplicantDetailsModal';
 import { JobDetailsModal } from '../../components/employer/dashboard/JobDetailsModal';
-import { JobFormModal } from '../../components/employer/dashboard/JobFormModal';
+import { PostJobTab } from '../../components/employer/dashboard/PostJobTab';
+import { SuccessModal } from '../../components/employer/dashboard/SuccessModal';
 import { CompanyProfileModal } from '../../components/employer/dashboard/CompanyProfileModal';
 import { DocumentsModal } from '../../components/employer/dashboard/DocumentsModal';
 import { InterviewEmailModal } from '../../components/employer/dashboard/InterviewEmailModal';
@@ -104,7 +105,7 @@ interface UserProfile {
 }
 
 // Tab types
-type TabType = 'overview' | 'applicants' | 'jobs' | 'settings';
+type TabType = 'overview' | 'applicants' | 'jobs' | 'post-job' | 'settings';
 
 const EmployerDashboard: React.FC = () => {
   const navigate = useNavigate();
@@ -136,9 +137,12 @@ const EmployerDashboard: React.FC = () => {
   const [companyProfileData, setCompanyProfileData] = useState<CompanyProfileData | null>(null);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   
-  // Job form modal states
-  const [isJobFormModalOpen, setIsJobFormModalOpen] = useState(false);
+  // Job form tab state
   const [jobToEdit, setJobToEdit] = useState<Job | null>(null);
+  
+  // Success modal state
+  const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
+  const [successMessage, setSuccessMessage] = useState({ title: '', message: '' });
 
   // Initial interview email modal states
   const [isInitialInterviewModalOpen, setIsInitialInterviewModalOpen] = useState(false);
@@ -601,8 +605,8 @@ const EmployerDashboard: React.FC = () => {
 
   // Handle editing a job
   const handleEditJob = (job: Job) => {
-    setSelectedJob(job);
-    // In a real implementation, you would open an edit form modal here
+    setJobToEdit(job);
+    setActiveTab('post-job');
   };
 
   const handleApplicantFilter = (status: string) => {
@@ -985,24 +989,42 @@ const EmployerDashboard: React.FC = () => {
   };
 
 
-  // Function to open the job form modal (for quick actions)
+  // Function to open the job form (navigate to tab)
   const handleOpenJobForm = () => {
     setJobToEdit(null);
-    setIsJobFormModalOpen(true);
+    setActiveTab('post-job');
   };
 
-  // Function to handle saving job from modal
-  const handleSaveJobFromModal = (jobData: Partial<Job>) => {
-    if (jobToEdit) {
-      handleUpdateJob(jobData);
+  // Function to handle saving job from tab
+  const handleSaveJobFromTab = async (jobData: Partial<Job>) => {
+    const isEditing = !!jobToEdit;
+    
+    if (isEditing) {
+      await handleUpdateJob(jobData);
+      setSuccessMessage({
+        title: 'Job Updated Successfully!',
+        message: `"${jobData.title}" has been updated and is now live.`
+      });
     } else {
-      handleCreateJob(jobData);
+      await handleCreateJob(jobData);
+      setSuccessMessage({
+        title: 'Job Posted Successfully!',
+        message: `"${jobData.title}" has been posted and is now visible to job seekers.`
+      });
     }
-    setIsJobFormModalOpen(false);
+    
     setJobToEdit(null);
+    setActiveTab('jobs');
+    setIsSuccessModalOpen(true);
   };
 
-  const handleCreateJob = async (jobData: Partial<Job>) => {
+  // Function to handle canceling job creation/edit
+  const handleCancelJobForm = () => {
+    setJobToEdit(null);
+    setActiveTab('jobs');
+  };
+
+  const handleCreateJob = async (jobData: Partial<Job>): Promise<void> => {
     try {
       setIsLoadingJobs(true);
       
@@ -1084,7 +1106,7 @@ const EmployerDashboard: React.FC = () => {
   const [showEditConfirm, setShowEditConfirm] = useState(false);
   const [pendingJobUpdate, setPendingJobUpdate] = useState<Partial<Job> | null>(null);
 
-  const handleUpdateJob = async (jobData: Partial<Job>) => {
+  const handleUpdateJob = async (jobData: Partial<Job>): Promise<void> => {
     if (!jobData.id) return;
     
     try {
@@ -1299,6 +1321,8 @@ const EmployerDashboard: React.FC = () => {
         return 'Applicants';
       case 'jobs':
         return 'Job Posts';
+      case 'post-job':
+        return 'Post a Job';
       case 'settings':
         return 'Settings';
       default:
@@ -1482,10 +1506,18 @@ const EmployerDashboard: React.FC = () => {
               onViewJob={handleViewJobApplicants}
               onEditJob={handleEditJob}
               onDeleteJob={handleDeleteJob}
-              onCreateJob={handleCreateJob}
-              onUpdateJob={handleUpdateJob}
+              onCreateJob={handleOpenJobForm}
               isLoading={isLoadingJobs}
               profilePicture={userProfile?.profilePicture}
+            />
+          )}
+
+          {activeTab === 'post-job' && (
+            <PostJobTab
+              job={jobToEdit}
+              onSave={handleSaveJobFromTab}
+              onCancel={handleCancelJobForm}
+              isEditing={!!jobToEdit}
             />
           )}
 
@@ -1605,16 +1637,6 @@ const EmployerDashboard: React.FC = () => {
         />
       )}
 
-      <JobFormModal
-        job={jobToEdit}
-        isOpen={isJobFormModalOpen}
-        onClose={() => {
-          setIsJobFormModalOpen(false);
-          setJobToEdit(null);
-        }}
-        onSave={handleSaveJobFromModal}
-        isEditing={!!jobToEdit}
-      />
       {showEditConfirm && (
         <div style={{
           position: 'fixed',
@@ -1687,6 +1709,15 @@ const EmployerDashboard: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* Success Modal */}
+      <SuccessModal
+        isOpen={isSuccessModalOpen}
+        onClose={() => setIsSuccessModalOpen(false)}
+        title={successMessage.title}
+        message={successMessage.message}
+        autoCloseDuration={3000}
+      />
     </div>
   );
 };

@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { JobDetailsModal } from './JobDetailsModal';
 import { DeleteJobModal } from './DeleteJobModal';
-import { JobFormModal } from './JobFormModal';
 import { FiPlus, FiBriefcase, FiMapPin, FiClock, FiTrendingUp, FiUsers, FiEdit3, FiTrash2, FiEye, FiDollarSign } from 'react-icons/fi';
 import { Job } from '../../../types/Job';
 import { Applicant } from '../../../types/dashboard';
@@ -24,8 +23,7 @@ interface JobsTabProps {
   onViewJob: (job: Job) => void;
   onEditJob: (job: Job) => void;
   onDeleteJob: (jobId: string | number, hiredApplicantIds?: string[]) => void;
-  onCreateJob: (jobData: Partial<Job>) => void;
-  onUpdateJob: (jobData: Partial<Job>) => void;
+  onCreateJob: () => void;
   isLoading?: boolean;
   profilePicture?: string;
 }
@@ -38,9 +36,9 @@ export const JobsTab: React.FC<JobsTabProps> = ({
   onSearchChange,
   onFilterChange,
   onViewJob,
+  onEditJob,
   onDeleteJob,
   onCreateJob,
-  onUpdateJob,
   isLoading = false,
   profilePicture
 }) => {
@@ -48,8 +46,6 @@ export const JobsTab: React.FC<JobsTabProps> = ({
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [jobToDelete, setJobToDelete] = useState<Job | null>(null);
-  const [isFormModalOpen, setIsFormModalOpen] = useState(false);
-  const [jobToEdit, setJobToEdit] = useState<Job | null>(null);
 
   const filteredJobs = jobs
     .filter(job => {
@@ -95,9 +91,9 @@ export const JobsTab: React.FC<JobsTabProps> = ({
   };
 
   const handleEditJob = (job: Job) => {
-    setJobToEdit(job);
+    // Edit functionality handled in parent Dashboard component
+    onEditJob(job);
     setIsDetailsModalOpen(false);
-    setIsFormModalOpen(true);
   };
 
   const handleDeleteJob = (job: Job) => {
@@ -113,27 +109,16 @@ export const JobsTab: React.FC<JobsTabProps> = ({
   };
 
   const handleCreateJob = () => {
-    setJobToEdit(null);
-    setIsFormModalOpen(true);
+    // Navigate to Post Job tab
+    onCreateJob();
   };
 
-  const handleSaveJob = (jobData: Partial<Job>) => {
-    if (jobToEdit) {
-      onUpdateJob(jobData);
-    } else {
-      onCreateJob(jobData);
-    }
-    setIsFormModalOpen(false);
-    setJobToEdit(null);
-  };
 
   const closeModals = () => {
     setIsDetailsModalOpen(false);
     setIsDeleteModalOpen(false);
-    setIsFormModalOpen(false);
     setSelectedJob(null);
     setJobToDelete(null);
-    setJobToEdit(null);
   };
 
   const getCompanyInitials = (company: string) => {
@@ -515,14 +500,6 @@ export const JobsTab: React.FC<JobsTabProps> = ({
         isOpen={isDeleteModalOpen}
         onClose={closeModals}
         onConfirmDelete={handleConfirmDelete}
-      />
-      
-      <JobFormModal
-        job={jobToEdit}
-        isOpen={isFormModalOpen}
-        onClose={closeModals}
-        onSave={handleSaveJob}
-        isEditing={!!jobToEdit}
       />
     </div>
   );
