@@ -52,7 +52,6 @@ import { ApplicantDetailsModal } from '../../components/employer/dashboard/Appli
 import { JobDetailsModal } from '../../components/employer/dashboard/JobDetailsModal';
 import { JobFormModal } from '../../components/employer/dashboard/JobFormModal';
 import { CompanyProfileModal } from '../../components/employer/dashboard/CompanyProfileModal';
-import { TeamManagementModal } from '../../components/employer/dashboard/TeamManagementModal';
 import { DocumentsModal } from '../../components/employer/dashboard/DocumentsModal';
 import { InterviewEmailModal } from '../../components/employer/dashboard/InterviewEmailModal';
 import { HireEmailModal } from '../../components/employer/dashboard/HireEmailModal';
@@ -128,7 +127,6 @@ const EmployerDashboard: React.FC = () => {
   
   // Settings modal states
   const [isCompanyProfileModalOpen, setIsCompanyProfileModalOpen] = useState(false);
-  const [isTeamManagementModalOpen, setIsTeamManagementModalOpen] = useState(false);
   const [isDocumentsModalOpen, setIsDocumentsModalOpen] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -182,11 +180,13 @@ const EmployerDashboard: React.FC = () => {
               navigate('/auth/verification-pending');
               return;
             }
-          } else {            // If we can't verify status, redirect to auth
+          } else {
+            // If we can't verify status, redirect to auth
             navigate('/auth');
             return;
           }
-        } catch (error) {          navigate('/auth');
+        } catch (error) {
+          navigate('/auth');
           return;
         }
       } else {
@@ -248,13 +248,16 @@ const EmployerDashboard: React.FC = () => {
 
         if (userResponse.ok) {
           const userData = await userResponse.json();
-          console.log('Dashboard user profile data:', userData); // Debug log          // Set user profile for welcome header
+          console.log('Dashboard user profile data:', userData); // Debug log
+          // Set user profile for welcome header
           const newUserProfile = {
             companyName: companyName,
             profilePicture: userData.user.profilePicture || ''
-          };          setUserProfile(newUserProfile);
+          };
+          setUserProfile(newUserProfile);
         }
-      } catch (error) {      }
+      } catch (error) {
+      }
     };
 
     loadCompanyProfile();
@@ -262,11 +265,13 @@ const EmployerDashboard: React.FC = () => {
 
   // Listen for profile picture updates
   useEffect(() => {
-    const handleProfilePictureUpdate = (event: CustomEvent) => {      setUserProfile(prev => {
+    const handleProfilePictureUpdate = (event: CustomEvent) => {
+      setUserProfile(prev => {
         const updated = prev ? {
           ...prev,
           profilePicture: event.detail.profilePicture
-        } : null;        return updated;
+        } : null;
+        return updated;
       });
     };
 
@@ -278,7 +283,8 @@ const EmployerDashboard: React.FC = () => {
   }, []);
 
   // Add a useEffect to debug userProfile state changes
-  useEffect(() => {  }, [userProfile]);
+  useEffect(() => {
+  }, [userProfile]);
 
   // Extracted loadJobs function for reusability
   const loadJobs = useCallback(async () => {
@@ -375,7 +381,8 @@ const EmployerDashboard: React.FC = () => {
       } else {
         throw new Error('Failed to update company profile');
       }
-    } catch (error) {      alert('Error updating company profile. Please try again.');
+    } catch (error) {
+      alert('Error updating company profile. Please try again.');
     }
   };
 
@@ -877,7 +884,8 @@ const EmployerDashboard: React.FC = () => {
       } else {
         throw new Error('Failed to update application status');
       }
-    } catch (error) {      alert('Failed to update applicant status. Please try again.');
+    } catch (error) {
+      alert('Failed to update applicant status. Please try again.');
     }
   };
 
@@ -916,7 +924,8 @@ const EmployerDashboard: React.FC = () => {
         const errorData = await response.json();
         alert(errorData.error || 'Resume not available for this applicant.');
       }
-    } catch (error) {      alert('Failed to load resume. Please try again.');
+    } catch (error) {
+      alert('Failed to load resume. Please try again.');
     }
   };
 
@@ -970,7 +979,8 @@ const EmployerDashboard: React.FC = () => {
         const errorData = await response.json();
         alert(errorData.error || 'Resume not available for download.');
       }
-    } catch (error) {      alert('Failed to download resume. Please try again.');
+    } catch (error) {
+      alert('Failed to download resume. Please try again.');
     }
   };
 
@@ -1064,7 +1074,8 @@ const EmployerDashboard: React.FC = () => {
       };
 
       setJobPostings(prev => [...prev, newJob]);
-    } catch (error) {      alert('Failed to create job. Please try again.');
+    } catch (error) {
+      alert('Failed to create job. Please try again.');
     } finally {
       setIsLoadingJobs(false);
     }
@@ -1134,7 +1145,8 @@ const EmployerDashboard: React.FC = () => {
         }
         return job;
       }));
-    } catch (error) {      alert('Failed to update job. Please try again.');
+    } catch (error) {
+      alert('Failed to update job. Please try again.');
     } finally {
       setIsLoadingJobs(false);
     }
@@ -1189,7 +1201,8 @@ const EmployerDashboard: React.FC = () => {
       }
       
       // In a real app, you would also update applicant statuses based on hiredApplicantIds
-    } catch (error) {      alert('Failed to delete job. Please try again.');
+    } catch (error) {
+      alert('Failed to delete job. Please try again.');
     } finally {
       setIsLoadingJobs(false);
     }
@@ -1206,7 +1219,8 @@ const EmployerDashboard: React.FC = () => {
     setIsJobDetailsModalOpen(true);
   };
 
-  const handleViewJobDetails = (job: Job) => {    setSelectedJob(job);
+  const handleViewJobDetails = (job: Job) => {
+    setSelectedJob(job);
     setIsJobDetailsModalOpen(true);
   };
 
@@ -1478,7 +1492,6 @@ const EmployerDashboard: React.FC = () => {
           {activeTab === 'settings' && (
             <SettingsTab 
               onOpenCompanyProfile={() => setIsCompanyProfileModalOpen(true)}
-              onOpenTeamManagement={() => setIsTeamManagementModalOpen(true)}
               onOpenDocuments={() => setIsDocumentsModalOpen(true)}
               onLogout={() => {
                 // Clear any stored authentication data
@@ -1538,14 +1551,6 @@ const EmployerDashboard: React.FC = () => {
         initialData={companyProfileData || undefined}
       />
 
-
-      <TeamManagementModal
-        isOpen={isTeamManagementModalOpen}
-        onClose={() => setIsTeamManagementModalOpen(false)}
-        onSave={(teamData: TeamData) => {
-          // Handle save team data
-        }}
-      />
 
       <DocumentsModal
         isOpen={isDocumentsModalOpen}

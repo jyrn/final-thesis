@@ -1,17 +1,15 @@
 import React from 'react';
-import { FiSettings, FiHome, FiUsers, FiLogOut, FiFileText } from 'react-icons/fi';
+import { FiSettings, FiHome, FiLogOut, FiFileText } from 'react-icons/fi';
 import styles from './SettingsTab.module.css';
 
 interface SettingsTabProps {
   onOpenCompanyProfile: () => void;
-  onOpenTeamManagement: () => void;
   onOpenDocuments?: () => void;
   onLogout?: () => void;
 }
 
 export const SettingsTab: React.FC<SettingsTabProps> = ({
   onOpenCompanyProfile,
-  onOpenTeamManagement,
   onOpenDocuments,
   onLogout,
 }) => {
@@ -23,14 +21,6 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({
       icon: FiHome,
       action: onOpenCompanyProfile,
       buttonText: 'Edit Profile'
-    },
-    {
-      id: 'team-management',
-      title: 'Team Management',
-      description: 'Add or remove team members and set permissions',
-      icon: FiUsers,
-      action: onOpenTeamManagement,
-      buttonText: 'Manage Team'
     },
     {
       id: 'documents',
