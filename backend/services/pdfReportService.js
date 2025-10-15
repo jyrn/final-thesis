@@ -110,8 +110,8 @@ class PDFReportService {
         break;
     }
 
-    // Detailed Data Section
-    if (data.details && data.details.length > 0) {
+    // Detailed Data Section (skip for employers as they have custom cards)
+    if (data.details && data.details.length > 0 && reportType !== 'employers-companies') {
       this.addDetailsSection(doc, data.details);
     }
   }
@@ -348,10 +348,20 @@ class PDFReportService {
     } else if (sampleItem.companyName && (sampleItem.industry !== undefined || sampleItem.accountStatus !== undefined)) {
       // Employer data - has companyName and employer-specific fields
       return [
-        { key: 'email', label: 'Email' },
         { key: 'companyName', label: 'Company Name' },
+        { key: 'contactPerson.firstName', label: 'Contact First Name' },
+        { key: 'contactPerson.lastName', label: 'Contact Last Name' },
+        { key: 'contactPerson.position', label: 'Contact Position' },
+        { key: 'contactPerson.email', label: 'Contact Email' },
+        { key: 'contactPerson.phoneNumber', label: 'Contact Phone' },
         { key: 'industry', label: 'Industry' },
+        { key: 'companySize', label: 'Company Size' },
+        { key: 'address.city', label: 'City' },
+        { key: 'address.province', label: 'Province' },
+        { key: 'website', label: 'Website' },
         { key: 'accountStatus', label: 'Status' },
+        { key: 'totalJobPostings', label: 'Total Jobs' },
+        { key: 'activeJobPostings', label: 'Active Jobs' },
         { key: 'createdAt', label: 'Registration Date' }
       ];
     } else {
@@ -487,7 +497,21 @@ class PDFReportService {
       'status': 70,
       'accountStatus': 70,
       'isActive': 60,
-      'createdAt': 90
+      'createdAt': 90,
+      // Employer-specific fields
+      'contactPerson.firstName': 85,
+      'contactPerson.lastName': 85,
+      'contactPerson.position': 95,
+      'contactPerson.email': 130,
+      'contactPerson.phoneNumber': 105,
+      'companySize': 80,
+      'address.city': 85,
+      'address.province': 85,
+      'address.street': 120,
+      'website': 120,
+      'totalJobPostings': 75,
+      'activeJobPostings': 75,
+      'expiredJobPostings': 75
     };
     
     const calculatedWidths = headers.map(header => {
@@ -763,6 +787,143 @@ class PDFReportService {
     if (data.industryDistribution) {
       this.addIndustryDistributionSection(doc, data.industryDistribution);
     }
+    
+    // Add detailed employer cards instead of table
+    if (data.details && data.details.length > 0) {
+      this.addEmployerDetailCards(doc, data.details);
+    }
+  }
+  
+  addEmployerDetailCards(doc, employers) {
+    const startY = doc.y + 20;
+    
+    doc.fontSize(16)
+       .font('Helvetica-Bold')
+       .fill(this.colors.primary)
+       .text('Detailed Company Information', 50, startY);
+
+    doc.y = startY + 30;
+
+    const maxEmployers = 15; // Show up to 15 employers in detail
+    employers.slice(0, maxEmployers).forEach((employer, index) => {
+      // Check if we need a new page
+      if (doc.y > doc.page.height - 280) {
+        doc.addPage();
+        doc.y = 50;
+      }
+      
+      const cardY = doc.y;
+      const cardHeight = 250;
+      const cardWidth = doc.page.width - 100;
+      
+      // Card background
+      doc.rect(50, cardY, cardWidth, cardHeight)
+         .fill('#f9fafb')
+         .stroke('#e5e7eb')
+         .lineWidth(1);
+      
+      // Company name header
+      doc.fontSize(12)
+         .font('Helvetica-Bold')
+         .fill(this.colors.primary)
+         .text(employer.companyName || 'N/A', 60, cardY + 10, { width: cardWidth - 20, ellipsis: true });
+      
+      doc.fontSize(9)
+         .font('Helvetica')
+         .fill(this.colors.text);
+      
+      let currentY = cardY + 35;
+      const leftCol = 60;
+      const rightCol = 310;
+      const labelWidth = 75;
+      const valueWidth = 160;
+      
+      // Left column - Company Info
+      doc.font('Helvetica-Bold').text('Industry:', leftCol, currentY, { width: labelWidth });
+      doc.font('Helvetica').text(employer.industry || 'N/A', leftCol + labelWidth, currentY, { width: valueWidth, ellipsis: true });
+      currentY += 18;
+      
+      doc.font('Helvetica-Bold').text('Company Size:', leftCol, currentY, { width: labelWidth });
+      doc.font('Helvetica').text(employer.companySize || 'N/A', leftCol + labelWidth, currentY, { width: valueWidth });
+      currentY += 18;
+      
+      doc.font('Helvetica-Bold').text('Status:', leftCol, currentY, { width: labelWidth });
+      doc.font('Helvetica').text(employer.accountStatus || 'N/A', leftCol + labelWidth, currentY, { width: valueWidth });
+      currentY += 18;
+      
+      doc.font('Helvetica-Bold').text('Website:', leftCol, currentY, { width: labelWidth });
+      const website = employer.website || 'N/A';
+      doc.font('Helvetica').text(website, leftCol + labelWidth, currentY, { width: valueWidth, ellipsis: true });
+      currentY += 18;
+      
+      doc.font('Helvetica-Bold').text('Location:', leftCol, currentY, { width: labelWidth });
+      const location = [employer.address?.city, employer.address?.province].filter(Boolean).join(', ') || 'N/A';
+      doc.font('Helvetica').text(location, leftCol + labelWidth, currentY, { width: valueWidth, ellipsis: true });
+      currentY += 18;
+      
+      doc.font('Helvetica-Bold').text('Email:', leftCol, currentY, { width: labelWidth });
+      doc.font('Helvetica').text(employer.email || 'N/A', leftCol + labelWidth, currentY, { width: valueWidth, ellipsis: true });
+      
+      // Right column - Contact Person
+      currentY = cardY + 35;
+      doc.font('Helvetica-Bold').text('Contact Person:', rightCol, currentY, { width: 240 });
+      currentY += 18;
+      
+      const contactName = [employer.contactPerson?.firstName, employer.contactPerson?.lastName].filter(Boolean).join(' ') || 'N/A';
+      doc.font('Helvetica-Bold').text('Name:', rightCol, currentY, { width: 50 });
+      doc.font('Helvetica').text(contactName, rightCol + 50, currentY, { width: 190, ellipsis: true });
+      currentY += 18;
+      
+      doc.font('Helvetica-Bold').text('Position:', rightCol, currentY, { width: 50 });
+      doc.font('Helvetica').text(employer.contactPerson?.position || 'N/A', rightCol + 50, currentY, { width: 190, ellipsis: true });
+      currentY += 18;
+      
+      doc.font('Helvetica-Bold').text('Email:', rightCol, currentY, { width: 50 });
+      const contactEmail = employer.contactPerson?.email || 'N/A';
+      doc.font('Helvetica').text(contactEmail, rightCol + 50, currentY, { width: 190, ellipsis: true });
+      currentY += 18;
+      
+      doc.font('Helvetica-Bold').text('Phone:', rightCol, currentY, { width: 50 });
+      doc.font('Helvetica').text(employer.contactPerson?.phoneNumber || 'N/A', rightCol + 50, currentY, { width: 190 });
+      currentY += 18;
+      
+      // Business Registration (if available)
+      if (employer.businessRegistrationNumber) {
+        doc.font('Helvetica-Bold').text('Bus. Reg:', rightCol, currentY, { width: 50 });
+        doc.font('Helvetica').text(employer.businessRegistrationNumber, rightCol + 50, currentY, { width: 190, ellipsis: true });
+      }
+      
+      // Bottom row - Job Statistics
+      currentY = cardY + cardHeight - 60;
+      doc.font('Helvetica-Bold').fontSize(9).fill(this.colors.text).text('Job Postings:', leftCol, currentY);
+      doc.font('Helvetica').text(`Total: ${employer.totalJobPostings || 0} | Active: ${employer.activeJobPostings || 0} | Expired: ${employer.expiredJobPostings || 0}`, leftCol + 75, currentY);
+      
+      currentY += 15;
+      doc.font('Helvetica-Bold').text('Hired Applicants:', leftCol, currentY);
+      doc.font('Helvetica').fill(this.colors.accent).text(`${employer.hiredApplicantsCount || 0} applicants hired`, leftCol + 95, currentY);
+      
+      currentY += 15;
+      doc.font('Helvetica-Oblique').fontSize(8).fill(this.colors.secondary);
+      const regDate = employer.createdAt ? new Date(employer.createdAt).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }) : 'N/A';
+      doc.text(`Registered: ${regDate}`, leftCol, currentY);
+      
+      // Verification status
+      if (employer.verifiedAt) {
+        const verDate = new Date(employer.verifiedAt).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+        doc.text(`Verified: ${verDate}`, rightCol, currentY);
+      }
+      
+      doc.y = cardY + cardHeight + 15;
+    });
+    
+    if (employers.length > maxEmployers) {
+      doc.fontSize(10)
+         .font('Helvetica-Oblique')
+         .fill(this.colors.secondary)
+         .text(`... and ${employers.length - maxEmployers} more companies (showing first ${maxEmployers})`, 50, doc.y + 10);
+    }
+
+    doc.y += 40;
   }
 
   addJobPostingSpecificSections(doc, data) {

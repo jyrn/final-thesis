@@ -1482,9 +1482,126 @@ router.post('/reports/generate', verifyToken, superAdminMiddleware, async (req, 
             },
             { $sort: { '_id.year': 1, '_id.month': 1, '_id.day': 1 } }
           ]),
-          details: includeDetails ? await Employer.find({
-            createdAt: { $gte: start, $lte: end }
-          }).populate('userId', 'email isActive lastLoginAt').select('companyName industry accountStatus verifiedAt createdAt') : []
+          details: includeDetails ? await Employer.aggregate([
+            { $match: { createdAt: { $gte: start, $lte: end } } },
+            {
+              $lookup: {
+                from: 'users',
+                localField: 'userId',
+                foreignField: '_id',
+                as: 'userInfo'
+              }
+            },
+            { $unwind: { path: '$userInfo', preserveNullAndEmptyArrays: true } },
+            {
+              $lookup: {
+                from: 'jobs',
+                localField: '_id',
+                foreignField: 'employerId',
+                as: 'jobPostings'
+              }
+            },
+            {
+              $lookup: {
+                from: 'applications',
+                let: { employerId: '$_id' },
+                pipeline: [
+                  {
+                    $lookup: {
+                      from: 'jobs',
+                      localField: 'jobId',
+                      foreignField: '_id',
+                      as: 'job'
+                    }
+                  },
+                  { $unwind: '$job' },
+                  {
+                    $match: {
+                      $expr: { $eq: ['$job.employerId', '$$employerId'] },
+                      status: 'hired'
+                    }
+                  }
+                ],
+                as: 'hiredApplicants'
+              }
+            },
+            {
+              $project: {
+                // Company Basic Info
+                companyName: 1,
+                companyDescription: 1,
+                industry: 1,
+                companySize: 1,
+                foundedYear: 1,
+                website: 1,
+                
+                // Contact Person Details
+                'contactPerson.firstName': 1,
+                'contactPerson.lastName': 1,
+                'contactPerson.position': 1,
+                'contactPerson.email': 1,
+                'contactPerson.phoneNumber': 1,
+                
+                // Full Address
+                'address.street': 1,
+                'address.city': 1,
+                'address.province': 1,
+                'address.zipCode': 1,
+                'address.country': 1,
+                
+                // Business Registration
+                businessRegistrationNumber: 1,
+                taxIdentificationNumber: 1,
+                
+                // Social Media
+                'socialMedia.linkedin': 1,
+                'socialMedia.facebook': 1,
+                'socialMedia.twitter': 1,
+                'socialMedia.instagram': 1,
+                
+                // Company Culture
+                benefits: 1,
+                companyValues: 1,
+                workEnvironment: 1,
+                
+                // Account Status
+                accountStatus: 1,
+                documentVerificationStatus: 1,
+                isVerified: 1,
+                profileComplete: 1,
+                verifiedAt: 1,
+                createdAt: 1,
+                
+                // User Info
+                email: '$userInfo.email',
+                isActive: '$userInfo.isActive',
+                lastLoginAt: '$userInfo.lastLoginAt',
+                
+                // Job Posting Statistics
+                totalJobPostings: { $size: '$jobPostings' },
+                activeJobPostings: {
+                  $size: {
+                    $filter: {
+                      input: '$jobPostings',
+                      cond: { $eq: ['$$this.status', 'active'] }
+                    }
+                  }
+                },
+                expiredJobPostings: {
+                  $size: {
+                    $filter: {
+                      input: '$jobPostings',
+                      cond: { $eq: ['$$this.status', 'expired'] }
+                    }
+                  }
+                },
+                
+                // Hiring Statistics
+                hiredApplicantsCount: { $size: '$hiredApplicants' }
+              }
+            },
+            { $sort: { createdAt: -1 } }
+          ]) : []
         };
         break;
 
