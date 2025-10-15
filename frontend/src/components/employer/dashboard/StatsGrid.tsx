@@ -8,6 +8,7 @@ interface StatsGridProps {
     pendingReviews: number;
     openPositions: number;
     hiredThisMonth: number;
+    interviewsThisWeek: number;
   };
   onNavigate?: (tab: string) => void;
 }
@@ -91,11 +92,11 @@ export const StatsGrid: React.FC<StatsGridProps> = ({ stats, onNavigate }) => {
           <FiCalendar size={28} />
         </div>
         <div className={cardStyles.statContent}>
-          <h3>{stats.hiredThisMonth}</h3>
+          <h3>{stats.interviewsThisWeek}</h3>
           <p>Interviews This Week</p>
           <div className={cardStyles.statTrend}>
             <FiTrendingUp className={`${cardStyles.trendIcon} ${cardStyles.up}`} size={14} />
-            <span className={`${cardStyles.trendText} ${cardStyles.up}`}>2 upcoming</span>
+            <span className={`${cardStyles.trendText} ${cardStyles.up}`}>{stats.interviewsThisWeek > 0 ? `${stats.interviewsThisWeek} scheduled` : 'None scheduled'}</span>
           </div>
         </div>
       </div>

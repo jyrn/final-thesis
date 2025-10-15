@@ -29,7 +29,7 @@ const RoleSelectionPage: React.FC = () => {
             {/* Welcome Text */}
             <div className={styles.welcomeText}>
               <p>Bridging job seekers and employers through smart, skills-based matching.</p>
-              <p>Choose your role to get started.</p>
+              <p>Choose your role to get started</p>
             </div>
 
             {/* Decorative Elements */}

@@ -544,6 +544,9 @@ const EmployerDashboard: React.FC = () => {
     pendingReviews: enhancedApplicants.filter(app => app.status === 'pending').length,
     openPositions: enhancedJobPostings.filter(job => job.status === 'active').length,
     hiredThisMonth: enhancedApplicants.filter(app => app.status === 'hired').length,
+    interviewsThisWeek: enhancedApplicants.filter(app => 
+      app.status === 'interview'
+    ).length,
     totalApplicationsThisWeek: enhancedApplicants.filter(app => 
       new Date(app.appliedDate) > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
     ).length
