@@ -54,6 +54,7 @@ import { JobFormModal } from '../../components/employer/dashboard/JobFormModal';
 import { CompanyProfileModal } from '../../components/employer/dashboard/CompanyProfileModal';
 import { TeamManagementModal } from '../../components/employer/dashboard/TeamManagementModal';
 import { DocumentsModal } from '../../components/employer/dashboard/DocumentsModal';
+import { InterviewEmailModal } from '../../components/employer/dashboard/InterviewEmailModal';
 
 // Modal data types
 interface CompanyProfileData {
@@ -139,6 +140,10 @@ const EmployerDashboard: React.FC = () => {
   // Job form modal states
   const [isJobFormModalOpen, setIsJobFormModalOpen] = useState(false);
   const [jobToEdit, setJobToEdit] = useState<Job | null>(null);
+
+  // Interview email modal states
+  const [isInterviewEmailModalOpen, setIsInterviewEmailModalOpen] = useState(false);
+  const [applicantToInterview, setApplicantToInterview] = useState<Applicant | null>(null);
 
   // Initialize Firebase auth state listener and check verification status
   useEffect(() => {
@@ -602,15 +607,34 @@ const EmployerDashboard: React.FC = () => {
 
   // Handle applicant actions with backend integration
   const handleApproveApplicant = async (applicantId: string) => {
+    // Find the applicant to get their details
+    const applicant = enhancedApplicants.find(app => app.id === applicantId);
+    if (!applicant) {
+      alert('Applicant not found.');
+      return;
+    }
+    
+    // Open the interview email modal
+    setApplicantToInterview(applicant);
+    setIsInterviewEmailModalOpen(true);
+  };
+  
+  // Handle sending interview invitation email
+  const handleSendInterviewInvitation = async (
+    customMessage: string | null,
+    interviewDetails: any,
+    sendEmail: boolean
+  ) => {
     try {
-      if (!currentUser) {
+      if (!currentUser || !applicantToInterview) {
         alert('Please log in again to update application status');
         return;
       }
 
       const token = await currentUser.getIdToken();
       
-      const response = await fetch(`http://localhost:3001/api/applications/${applicantId}/status`, {
+      // Update status to interview
+      const statusResponse = await fetch(`http://localhost:3001/api/applications/${applicantToInterview.id}/status`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -619,22 +643,44 @@ const EmployerDashboard: React.FC = () => {
         body: JSON.stringify({ status: 'interview' })
       });
 
-      if (response.ok) {
-        setApplicantStatuses(prev => ({
-          ...prev,
-          [applicantId]: 'interview'
-        }));
-        
-        // Update local applications state
-        setApplications(prev => prev.map(app => 
-          app.id === applicantId ? { ...app, status: 'interview' } : app
-        ));
-        
-        alert('Applicant moved to interview stage!');
-      } else {
+      if (!statusResponse.ok) {
         throw new Error('Failed to update application status');
       }
-    } catch (error) {      alert('Failed to update applicant status. Please try again.');
+      
+      // Send email if requested
+      if (sendEmail) {
+        const emailResponse = await fetch(`http://localhost:3001/api/applications/${applicantToInterview.id}/send-interview-email`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({ customMessage, interviewDetails })
+        });
+        
+        if (!emailResponse.ok) {
+          console.error('Failed to send email, but status was updated');
+        }
+      }
+      
+      // Update local state
+      setApplicantStatuses(prev => ({
+        ...prev,
+        [applicantToInterview.id]: 'interview'
+      }));
+      
+      setApplications(prev => prev.map(app => 
+        app.id === applicantToInterview.id ? { ...app, status: 'interview' } : app
+      ));
+      
+      // Update selectedApplicant if it's the same applicant
+      if (selectedApplicant?.id === applicantToInterview.id) {
+        setSelectedApplicant({ ...selectedApplicant, status: 'interview' });
+      }
+      
+      alert(sendEmail ? 'Applicant moved to interview stage and email sent!' : 'Applicant moved to interview stage!');
+    } catch (error) {
+      alert('Failed to update applicant status. Please try again.');
     }
   };
 
@@ -1346,6 +1392,21 @@ const EmployerDashboard: React.FC = () => {
           // Handle save documents data
         }}
       />
+
+      {/* Interview Email Modal */}
+      {applicantToInterview && (
+        <InterviewEmailModal
+          isOpen={isInterviewEmailModalOpen}
+          onClose={() => {
+            setIsInterviewEmailModalOpen(false);
+            setApplicantToInterview(null);
+          }}
+          onSend={handleSendInterviewInvitation}
+          applicantName={applicantToInterview.name}
+          applicantEmail={applicantToInterview.email}
+          jobTitle={applicantToInterview.position}
+        />
+      )}
 
       <JobFormModal
         job={jobToEdit}

@@ -5,6 +5,7 @@ const fs = require('fs');
 const path = require('path');
 const cloudStorageService = require('../services/cloudStorageService');
 const Employer = require('../models/Employer');
+const InterviewTemplate = require('../models/InterviewTemplate');
 const { verifyToken } = require('../middleware/authMiddleware');
 const { requireRole } = require('../middleware/roleBasedAccess');
 
@@ -942,6 +943,78 @@ router.get('/documents', verifyToken, requireRole('employer'), async (req, res) 
   } catch (error) {    res.status(500).json({
       success: false,
       message: 'Error fetching documents',
+      error: error.message
+    });
+  }
+});
+
+// GET /api/employers/interview-templates - Get saved interview email templates
+router.get('/interview-templates', verifyToken, requireRole('employer'), async (req, res) => {
+  try {
+    let template = await InterviewTemplate.findOne({ employerUid: req.user.uid });
+    
+    // If no template exists, create one with defaults
+    if (!template) {
+      template = new InterviewTemplate({
+        employerUid: req.user.uid
+      });
+      await template.save();
+    }
+    
+    res.json({
+      success: true,
+      data: {
+        whatToBring: template.whatToBring,
+        dressCode: template.dressCode,
+        nextSteps: template.nextSteps
+      }
+    });
+    
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching interview templates',
+      error: error.message
+    });
+  }
+});
+
+// PUT /api/employers/interview-templates - Update interview email templates
+router.put('/interview-templates', verifyToken, requireRole('employer'), async (req, res) => {
+  try {
+    const { whatToBring, dressCode, nextSteps } = req.body;
+    
+    // Use findOneAndUpdate with upsert to create if doesn't exist
+    const template = await InterviewTemplate.findOneAndUpdate(
+      { employerUid: req.user.uid },
+      {
+        employerUid: req.user.uid,
+        whatToBring: whatToBring,
+        dressCode: dressCode,
+        nextSteps: nextSteps,
+        updatedAt: Date.now()
+      },
+      {
+        new: true, // Return the updated document
+        upsert: true, // Create if doesn't exist
+        setDefaultsOnInsert: true
+      }
+    );
+    
+    res.json({
+      success: true,
+      message: 'Interview email templates updated successfully',
+      data: {
+        whatToBring: template.whatToBring,
+        dressCode: template.dressCode,
+        nextSteps: template.nextSteps
+      }
+    });
+    
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Error updating interview templates',
       error: error.message
     });
   }

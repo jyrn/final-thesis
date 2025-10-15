@@ -329,6 +329,78 @@ router.put('/:id/status', verifyToken, async (req, res) => {
   }
 });
 
+// ------------------ SEND INTERVIEW INVITATION EMAIL ------------------
+router.post('/:id/send-interview-email', verifyToken, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { customMessage, interviewDetails } = req.body;
+    const { uid } = req.user;
+
+    // Find the application
+    const application = await Application.findOne({ _id: id, employerUid: uid });
+    if (!application) {
+      return res.status(404).json({ success: false, error: 'Application not found' });
+    }
+
+    // Get job details
+    const Job = require('../models/Job');
+    const job = await Job.findById(application.jobId);
+    if (!job) {
+      return res.status(404).json({ success: false, error: 'Job not found' });
+    }
+
+    // Get employer details
+    const Employer = require('../models/Employer');
+    const employer = await Employer.findOne({ uid });
+    if (!employer) {
+      return res.status(404).json({ success: false, error: 'Employer not found' });
+    }
+
+    // Get jobseeker details
+    const JobSeeker = require('../models/JobSeeker');
+    const jobSeeker = await JobSeeker.findOne({ uid: application.jobSeekerUid });
+    if (!jobSeeker) {
+      return res.status(404).json({ success: false, error: 'Job seeker not found' });
+    }
+
+    // Get user email
+    const User = require('../models/User');
+    const user = await User.findOne({ uid: application.jobSeekerUid });
+    if (!user || !user.email) {
+      return res.status(404).json({ success: false, error: 'Job seeker email not found' });
+    }
+
+    // Send interview invitation email
+    const emailService = require('../services/emailService');
+    const emailResult = await emailService.sendInterviewInvitationEmail(
+      user.email,
+      jobSeeker.fullName || user.email,
+      job.title,
+      employer.companyName,
+      customMessage,
+      interviewDetails,
+      employer.email // Pass employer email for BCC and reply-to
+    );
+
+    if (emailResult.success) {
+      res.json({
+        success: true,
+        message: 'Interview invitation email sent successfully',
+        data: { emailSent: true, messageId: emailResult.messageId }
+      });
+    } else {
+      res.status(500).json({
+        success: false,
+        error: 'Failed to send email',
+        details: emailResult.error
+      });
+    }
+  } catch (error) {
+    console.error('Error sending interview invitation email:', error);
+    res.status(500).json({ success: false, error: 'Failed to send interview invitation email' });
+  }
+});
+
 // ------------------ JOB SEEKER GET APPLICATIONS ------------------
 router.get('/jobseeker', verifyToken, async (req, res) => {
   try {

@@ -821,6 +821,182 @@ class EmailService {
     }
   }
 
+  async sendInterviewInvitationEmail(applicantEmail, applicantName, jobTitle, companyName, customMessage = null, interviewDetails = {}, employerEmail = null) {
+    // If email service is not configured, just log the action
+    if (!this.isConfigured) {
+      console.log('Email service not configured - Interview invitation would be sent to:', applicantEmail);
+      return { success: true, message: 'Email service not configured - notification logged to console' };
+    }
+
+    const {
+      date = 'To be scheduled',
+      time = 'To be confirmed',
+      location = 'To be confirmed',
+      contactPerson = '',
+      contactEmail = '',
+      contactPhone = '',
+      whatToBring = '',
+      dressCode = '',
+      additionalNotes = '',
+      nextSteps = ''
+    } = interviewDetails;
+    
+    // Format date if provided
+    const formattedDate = date && date !== 'To be scheduled' 
+      ? new Date(date).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })
+      : date;
+    
+    // Format time if provided (convert 24h to 12h format)
+    const formattedTime = time && time !== 'To be confirmed'
+      ? new Date(`2000-01-01T${time}`).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })
+      : time;
+
+    const mailOptions = {
+      from: process.env.EMAIL_USER || 'noreply@skillsync.com',
+      to: applicantEmail,
+      bcc: employerEmail || undefined, // Add employer email as BCC
+      replyTo: employerEmail || contactEmail || undefined, // Set reply-to as employer or contact email
+      subject: `Interview Invitation - ${jobTitle} at ${companyName}`,
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <div style="background-color: #10b981; color: white; padding: 20px; text-align: center;">
+            <h1>Interview Invitation</h1>
+          </div>
+          
+          <div style="padding: 30px; background-color: #f9f9f9;">
+            <h2>Congratulations ${applicantName}!</h2>
+            
+            <p>We are pleased to inform you that you have been selected for an interview for the position of <strong>${jobTitle}</strong> at <strong>${companyName}</strong>.</p>
+            
+            ${customMessage ? `
+              <div style="background-color: white; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #10b981;">
+                <h3 style="color: #059669; margin-top: 0;">Message from ${companyName}:</h3>
+                <p style="white-space: pre-wrap; margin-bottom: 0;">${customMessage}</p>
+              </div>
+            ` : ''}
+            
+            <div style="background-color: white; padding: 20px; border-radius: 8px; margin: 20px 0;">
+              <h3 style="color: #059669; margin-top: 0;">Interview Details:</h3>
+              <table style="width: 100%; border-collapse: collapse;">
+                <tr>
+                  <td style="padding: 8px 0; color: #666; width: 120px;"><strong>Position:</strong></td>
+                  <td style="padding: 8px 0;">${jobTitle}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 8px 0; color: #666;"><strong>Company:</strong></td>
+                  <td style="padding: 8px 0;">${companyName}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 8px 0; color: #666;"><strong>Date:</strong></td>
+                  <td style="padding: 8px 0;">${formattedDate}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 8px 0; color: #666;"><strong>Time:</strong></td>
+                  <td style="padding: 8px 0;">${formattedTime}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 8px 0; color: #666;"><strong>Location:</strong></td>
+                  <td style="padding: 8px 0;">${location}</td>
+                </tr>
+                ${contactPerson ? `
+                <tr>
+                  <td style="padding: 8px 0; color: #666;"><strong>Contact Person:</strong></td>
+                  <td style="padding: 8px 0;">${contactPerson}</td>
+                </tr>
+                ` : ''}
+                ${contactEmail ? `
+                <tr>
+                  <td style="padding: 8px 0; color: #666;"><strong>Contact Email:</strong></td>
+                  <td style="padding: 8px 0;">${contactEmail}</td>
+                </tr>
+                ` : ''}
+                ${contactPhone ? `
+                <tr>
+                  <td style="padding: 8px 0; color: #666;"><strong>Contact Phone:</strong></td>
+                  <td style="padding: 8px 0;">${contactPhone}</td>
+                </tr>
+                ` : ''}
+              </table>
+            </div>
+            
+            ${whatToBring ? `
+              <div style="background-color: #d1fae5; border-left: 4px solid #10b981; padding: 15px; margin: 20px 0;">
+                <h3 style="color: #065f46; margin-top: 0;">What to Bring:</h3>
+                <p style="white-space: pre-wrap; margin-bottom: 0; color: #065f46;">${whatToBring}</p>
+              </div>
+            ` : `
+              <div style="background-color: #d1fae5; border-left: 4px solid #10b981; padding: 15px; margin: 20px 0;">
+                <h3 style="color: #065f46; margin-top: 0;">What to Bring:</h3>
+                <ul style="margin-bottom: 0; color: #065f46;">
+                  <li>Updated resume/CV</li>
+                  <li>Valid government-issued ID</li>
+                  <li>Portfolio or work samples (if applicable)</li>
+                  <li>Any relevant certificates or credentials</li>
+                </ul>
+              </div>
+            `}
+            
+            ${dressCode ? `
+              <div style="background-color: #e0e7ff; border-left: 4px solid #6366f1; padding: 15px; margin: 20px 0;">
+                <h3 style="color: #3730a3; margin-top: 0;">Dress Code:</h3>
+                <p style="margin-bottom: 0; color: #3730a3;">${dressCode}</p>
+              </div>
+            ` : ''}
+            
+            ${additionalNotes ? `
+              <div style="background-color: #fef3c7; border-left: 4px solid #f59e0b; padding: 15px; margin: 20px 0;">
+                <h3 style="color: #92400e; margin-top: 0;">Additional Information:</h3>
+                <p style="white-space: pre-wrap; margin-bottom: 0; color: #92400e;">${additionalNotes}</p>
+              </div>
+            ` : ''}
+            
+            ${nextSteps ? `
+              <div style="background-color: white; padding: 20px; border-radius: 8px; margin: 20px 0;">
+                <h3>Next Steps:</h3>
+                <ul style="margin: 10px 0; padding-left: 20px;">
+                  ${nextSteps.split('\n').filter(step => step.trim()).map(step => `<li style="margin: 8px 0;">${step}</li>`).join('')}
+                </ul>
+              </div>
+            ` : `
+              <div style="background-color: white; padding: 20px; border-radius: 8px; margin: 20px 0;">
+                <h3>Next Steps:</h3>
+                <ul>
+                  <li>Please confirm your attendance by replying to this email</li>
+                  <li>Review the job description and company information</li>
+                  <li>Prepare questions you'd like to ask during the interview</li>
+                  <li>Arrive 10-15 minutes early</li>
+                </ul>
+              </div>
+            `}
+            
+            <div style="text-align: center; margin: 30px 0;">
+              <a href="${process.env.FRONTEND_URL || 'http://localhost:3000'}/jobseeker/dashboard" 
+                 style="background-color: #10b981; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; display: inline-block;">
+                View Application Status
+              </a>
+            </div>
+            
+            <p>We look forward to meeting you and learning more about your qualifications. Good luck with your interview!</p>
+            
+            <hr style="margin: 30px 0; border: none; border-top: 1px solid #ddd;">
+            
+            <p style="color: #666; font-size: 14px;">
+              If you have any questions or need to reschedule, please contact us as soon as possible.<br>
+              This is an automated message from SkillSync Job Portal.
+            </p>
+          </div>
+        </div>
+      `
+    };
+
+    try {
+      const result = await this.transporter.sendMail(mailOptions);
+      return { success: true, messageId: result.messageId };
+    } catch (error) {
+      return { success: false, error: error.message };
+    }
+  }
+
   async testConnection() {
     try {
       await this.transporter.verify();
