@@ -6,16 +6,13 @@ import './JobDemandTab.css';
 
 interface JobDemandData {
   jobTitle: string;
-  category: 'technology' | 'healthcare' | 'finance' | 'education' | 'marketing' | 'sales' | 'engineering' | 'other';
+  department: string;
   totalPostings: number;
   totalApplicants: number;
-  averageApplicantsPerJob: number;
   demandLevel: 'very-high' | 'high' | 'moderate' | 'low' | 'very-low';
-  growthRate: number;
   averageSalary?: number;
   activeJobs: number;
   filledJobs: number;
-  timeToFill: number; // in days
 }
 
 interface JobTrend {
@@ -30,8 +27,8 @@ const JobDemandTab: React.FC = () => {
   const [chartData, setChartData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const [filterCategory, setFilterCategory] = useState<'all' | 'technology' | 'healthcare' | 'finance' | 'education' | 'marketing' | 'sales' | 'engineering' | 'other'>('all');
-  const [sortBy, setSortBy] = useState<'applicants' | 'ratio' | 'growth' | 'title' | 'salary' | 'timeToFill' | 'demandLevel'>('title');
+  const [filterDepartment, setFilterDepartment] = useState<string>('all');
+  const [sortBy, setSortBy] = useState<'applicants' | 'title' | 'salary' | 'demandLevel'>('title');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
 
   // Define helper functions before they're used
@@ -66,7 +63,7 @@ const JobDemandTab: React.FC = () => {
     }
   };
 
-  const handleSort = (column: 'applicants' | 'ratio' | 'growth' | 'title' | 'salary' | 'timeToFill' | 'demandLevel') => {
+  const handleSort = (column: 'applicants' | 'title' | 'salary' | 'demandLevel') => {
     if (sortBy === column) {
       setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
     } else {
@@ -78,8 +75,8 @@ const JobDemandTab: React.FC = () => {
   const filteredJobs = jobDemandData
     .filter(job => {
       const matchesSearch = job.jobTitle.toLowerCase().includes(searchTerm.toLowerCase());
-      const matchesCategory = filterCategory === 'all' || job.category === filterCategory;
-      return matchesSearch && matchesCategory;
+      const matchesDepartment = filterDepartment === 'all' || job.department === filterDepartment;
+      return matchesSearch && matchesDepartment;
     })
     .sort((a, b) => {
       let result = 0;
@@ -93,25 +90,10 @@ const JobDemandTab: React.FC = () => {
           const bApplicants = Number(b.totalApplicants) || 0;
           result = aApplicants - bApplicants;
           break;
-        case 'ratio':
-          const aRatio = Number(a.averageApplicantsPerJob) || 0;
-          const bRatio = Number(b.averageApplicantsPerJob) || 0;
-          result = aRatio - bRatio;
-          break;
-        case 'growth':
-          const aGrowth = Number(a.growthRate) || 0;
-          const bGrowth = Number(b.growthRate) || 0;
-          result = aGrowth - bGrowth;
-          break;
         case 'salary':
           const aSalary = Number(a.averageSalary) || 0;
           const bSalary = Number(b.averageSalary) || 0;
           result = aSalary - bSalary;
-          break;
-        case 'timeToFill':
-          const aTime = Number(a.timeToFill) || 0;
-          const bTime = Number(b.timeToFill) || 0;
-          result = aTime - bTime;
           break;
         case 'demandLevel':
           const aDemandValue = getDemandLevelValue(a.demandLevel || '');
@@ -161,19 +143,16 @@ const JobDemandTab: React.FC = () => {
 
   const exportJobDemandData = () => {
     const csvContent = [
-      ['Job Title', 'Category', 'Total Postings', 'Total Applicants', 'Avg Applicants/Job', 'Demand Level', 'Growth Rate', 'Avg Salary', 'Active Jobs', 'Filled Jobs', 'Time to Fill (days)'],
+      ['Job Title', 'Department', 'Total Postings', 'Total Applicants', 'Demand Level', 'Avg Salary', 'Active Jobs', 'Filled Jobs'],
       ...filteredJobs.map(job => [
         job.jobTitle,
-        job.category,
+        job.department,
         job.totalPostings.toString(),
         job.totalApplicants.toString(),
-        job.averageApplicantsPerJob.toFixed(1),
         job.demandLevel,
-        `${job.growthRate}%`,
         job.averageSalary?.toString() || 'N/A',
         job.activeJobs.toString(),
-        job.filledJobs.toString(),
-        job.timeToFill.toString()
+        job.filledJobs.toString()
       ])
     ].map(row => row.join(',')).join('\n');
 
@@ -191,8 +170,8 @@ const JobDemandTab: React.FC = () => {
   // Use summary stats if available, otherwise calculate from data
   const totalJobs = summaryStats?.totalJobs || jobDemandData.reduce((sum, job) => sum + job.totalPostings, 0);
   const totalApplicants = summaryStats?.totalApplicants || jobDemandData.reduce((sum, job) => sum + job.totalApplicants, 0);
-  const averageTimeToFill = summaryStats?.averageTimeToFill || (jobDemandData.length > 0 ? Math.round(jobDemandData.reduce((sum, job) => sum + job.timeToFill, 0) / jobDemandData.length) : 0);
   const highDemandCount = summaryStats?.highDemandCount || jobDemandData.filter(job => job.demandLevel === 'very-high' || job.demandLevel === 'high').length;
+  const totalCategories = summaryStats?.totalCategories || jobDemandData.length;
 
   if (loading) {
     return (
@@ -229,34 +208,34 @@ const JobDemandTab: React.FC = () => {
         />
         <StatsCard
           icon={FiBarChart2}
-          value={averageTimeToFill}
-          label="Avg Time to Fill (days)"
-          change={averageTimeToFill > 0 ? -Math.floor(averageTimeToFill * 0.05) : 0}
-          changeLabel="days improvement"
+          value={totalCategories}
+          label="Job Categories"
+          change={totalCategories > 0 ? Math.floor(totalCategories * 0.1) : 0}
+          changeLabel="from last month"
         />
       </div>
 
 
-      {/* Job Demand Insights - Four Chart Visualizations */}
+      {/* Job Demand Insights - Department Distribution */}
       <div 
         className="analytics-card chart-card full-width-charts no-hover-effects"
       >
         <div className="card-header">
-          <h3>Job Demand Insights</h3>
-          <span className="chart-subtitle">Comprehensive Analytics Dashboard</span>
+          <h3>Job Demand by Department</h3>
+          <span className="chart-subtitle">Distribution of jobs and applicants across departments</span>
         </div>
         <div className="charts-grid-improved">
-          {/* 1. Bar Chart - Most In-Demand Categories */}
+          {/* 1. Horizontal Bar Chart - Top Demanding Categories */}
           <div className="chart-section-enhanced">
             <div className="chart-header">
               <h4 className="chart-title-enhanced">Most In-Demand Categories</h4>
               <p className="chart-subtitle-text">Ranked by demand score and job opportunities</p>
             </div>
-            <div className="category-bar-chart-container">
-              {chartData?.categoryDistribution && chartData.categoryDistribution.length > 0 ? (
+            <div className="horizontal-bar-chart-container">
+              {chartData?.departmentDistribution && chartData.departmentDistribution.length > 0 ? (
                 (() => {
-                  // Sort categories by demand score (descending)
-                  const sortedCategories = [...chartData.categoryDistribution]
+                  // Sort categories by demand score (descending) and take top 6
+                  const sortedCategories = [...chartData.departmentDistribution]
                     .sort((a, b) => (b.demandScore || 0) - (a.demandScore || 0))
                     .slice(0, 6);
                   
@@ -267,25 +246,25 @@ const JobDemandTab: React.FC = () => {
                     const colors = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4'];
                     
                     return (
-                      <div key={category._id} className="category-bar-item">
-                        <div className="category-info">
-                          <div className="category-rank">#{index + 1}</div>
-                          <div className="category-details">
-                            <span className="category-name">{category._id}</span>
-                            <span className="category-stats">{category.jobCount} jobs • {category.totalApplicants} applicants</span>
+                      <div key={category._id} className="horizontal-bar-item">
+                        <div className="job-info">
+                          <div className="job-rank">#{index + 1}</div>
+                          <div className="job-details">
+                            <span className="job-name">{category._id}</span>
+                            <span className="job-stats">{category.jobCount} jobs • {category.totalApplicants} applicants</span>
                           </div>
                         </div>
-                        <div className="category-bar-wrapper">
-                          <div className="category-bar-track">
+                        <div className="horizontal-bar-wrapper">
+                          <div className="horizontal-bar-track">
                             <div 
-                              className="category-bar-fill"
+                              className="horizontal-bar-fill"
                               style={{ 
                                 width: `${barWidth}%`,
                                 backgroundColor: colors[index % colors.length]
                               }}
                             ></div>
                           </div>
-                          <div className="category-percentage">
+                          <div className="bar-percentage">
                             {barWidth.toFixed(0)}%
                           </div>
                         </div>
@@ -302,258 +281,113 @@ const JobDemandTab: React.FC = () => {
             </div>
           </div>
 
-          {/* 2. Line Chart - Monthly Job Trends */}
-          <div className="chart-section-enhanced full-width-enhanced">
+          {/* 2. Donut Chart - Department Distribution */}
+          <div className="chart-section-enhanced">
             <div className="chart-header">
-              <h4 className="chart-title-enhanced">Monthly Job Demand Trends</h4>
-              <p className="chart-subtitle-text">Job posting trends across different months and categories</p>
+              <h4 className="chart-title-enhanced">Top 10 Departments</h4>
+              <p className="chart-subtitle-text">Most active departments by applicant count</p>
             </div>
-            <div className="line-graph-container">
-              {chartData?.monthlyTrendsByCategory && chartData.monthlyTrendsByCategory.length > 0 ? (
-                <>
-                  <svg viewBox="0 0 800 220" style={{ width: '100%', height: '100%' }}>
-                    {/* Chart background */}
-                    <rect x="80" y="20" width="680" height="170" fill="#fafafa" stroke="#e5e7eb" strokeWidth="1" rx="4"/>
-                    
-                    {(() => {
-                      // Get top 5 categories from categoryDistribution data (stable sort)
-                      const topCategories = [...chartData.categoryDistribution]
-                        .sort((a, b) => (b.demandScore || 0) - (a.demandScore || 0))
-                        .slice(0, 5)
-                        .map(cat => cat._id);
-                      const colors = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'];
-                        
-                        // Use actual monthly category data from backend
-                        const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-                        
-                        // Get all available months from backend data
-                        const availableMonths = chartData.monthlyTrendsByCategory.map((month: any) => month._id);
-                        const earliestMonth = availableMonths.length > 0 ? Math.min(...availableMonths.map((m: string) => parseInt(m.split('-')[1]))) : 9;
-                        
-                        // Create complete 12-month data using real backend data
-                        const monthsData = monthNames.map((monthName, index) => {
-                          const monthId = `2024-${String(index + 1).padStart(2, '0')}`;
-                          
-                          // Find real data for this month
-                          const realMonthData = chartData.monthlyTrendsByCategory.find((month: any) => month._id === monthId);
-                          
-                          if (realMonthData) {
-                            // Use actual database data
-                            return {
-                              _id: monthId,
-                              monthName,
-                              totalJobs: realMonthData.totalJobs,
-                              totalApplicants: realMonthData.totalApplicants,
-                              categories: realMonthData.categories || []
-                            };
-                          } else if (index + 1 < earliestMonth) {
-                            // Months before earliest posting - show 0
-                            return {
-                              _id: monthId,
-                              monthName,
-                              totalJobs: 0,
-                              totalApplicants: 0,
-                              categories: topCategories.map(categoryName => ({
-                                category: categoryName,
-                                jobCount: 0,
-                                applicantCount: 0
-                              }))
-                            };
-                          } else {
-                            // Future months - use last available data as baseline
-                            const lastRealMonth = chartData.monthlyTrendsByCategory[chartData.monthlyTrendsByCategory.length - 1];
-                            return {
-                              _id: monthId,
-                              monthName,
-                              totalJobs: lastRealMonth ? Math.max(0, lastRealMonth.totalJobs + Math.floor(Math.random() * 3 - 1)) : 0,
-                              totalApplicants: lastRealMonth ? Math.max(0, lastRealMonth.totalApplicants + Math.floor(Math.random() * 10 - 3)) : 0,
-                              categories: topCategories.map(categoryName => {
-                                const lastCategoryData = lastRealMonth?.categories?.find((cat: any) => cat.category === categoryName);
-                                return {
-                                  category: categoryName,
-                                  jobCount: lastCategoryData ? Math.max(0, lastCategoryData.jobCount + Math.floor(Math.random() * 2 - 1)) : 0,
-                                  applicantCount: lastCategoryData ? Math.max(0, lastCategoryData.applicantCount + Math.floor(Math.random() * 5 - 2)) : 0
-                                };
-                              })
-                            };
-                          }
-                        });
-                        
-                        // Calculate max job count for scaling
-                        const maxJobs = Math.max(...monthsData.flatMap((month: any) => 
-                          month.categories?.map((c: any) => c.jobCount) || [1]
-                        ));
-                        
-                        // Y-axis grid lines and labels
-                        const yAxisSteps = 5;
-                        const stepValue = Math.ceil(maxJobs / yAxisSteps);
-                        
-                        return (
-                          <>
-                            {/* Grid lines */}
-                            {Array.from({ length: yAxisSteps + 1 }, (_, i) => {
-                              const value = i * stepValue;
-                              const yPosition = 170 - (value / maxJobs) * 130;
-                              return (
-                                <line 
-                                  key={i}
-                                  x1="80" 
-                                  y1={yPosition} 
-                                  x2="760" 
-                                  y2={yPosition}
-                                  stroke="#e5e7eb" 
-                                  strokeWidth="1"
-                                  strokeDasharray="3,3"
-                                />
-                              );
-                            })}
-                            
-                            {/* Axes */}
-                            <line x1="80" y1="40" x2="80" y2="170" stroke="#374151" strokeWidth="2"/>
-                            <line x1="80" y1="170" x2="760" y2="170" stroke="#374151" strokeWidth="2"/>
-                            
-                            {/* Y-axis labels */}
-                            {Array.from({ length: yAxisSteps + 1 }, (_, i) => {
-                              const value = i * stepValue;
-                              const yPosition = 170 - (value / maxJobs) * 130;
-                              return (
-                                <text
-                                  key={i}
-                                  x="75"
-                                  y={yPosition + 4}
-                                  textAnchor="end"
-                                  fontSize="12"
-                                  fill="#6b7280"
-                                  fontWeight="500"
-                                >
-                                  {value}
-                                </text>
-                              );
-                            })}
-                            
-                            {/* X-axis labels (months) */}
-                            {monthsData.map((month: any, index: number) => {
-                              const xPosition = 80 + ((index + 0.5) * (680 / monthsData.length));
-                              return (
-                                <text
-                                  key={month._id}
-                                  x={xPosition}
-                                  y="185"
-                                  textAnchor="middle"
-                                  fontSize="11"
-                                  fill="#374151"
-                                  fontWeight="500"
-                                >
-                                  {month.monthName}
-                                </text>
-                              );
-                            })}
-                            
-                            {/* Category trend lines */}
-                            {topCategories.map((categoryName, categoryIndex) => {
-                              const points = monthsData.map((month: any, monthIndex: number) => {
-                                const category = month.categories?.find((c: any) => c.category === categoryName);
-                                const jobCount = category ? category.jobCount : 0;
-                                const x = 80 + ((monthIndex + 0.5) * (680 / monthsData.length));
-                                const y = 170 - (jobCount / maxJobs) * 130;
-                                return `${x},${y}`;
-                              }).join(' ');
-                              
-                              return (
-                                <g key={categoryName}>
-                                  <polyline
-                                    points={points}
-                                    fill="none"
-                                    stroke={colors[categoryIndex]}
-                                    strokeWidth="3"
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                  />
-                                  {monthsData.map((month: any, monthIndex: number) => {
-                                    const category = month.categories?.find((c: any) => c.category === categoryName);
-                                    const jobCount = category ? category.jobCount : 0;
-                                    const x = 80 + ((monthIndex + 0.5) * (680 / monthsData.length));
-                                    const y = 170 - (jobCount / maxJobs) * 130;
-                                    return (
-                                      <g key={`${categoryName}-${monthIndex}`}>
-                                        <circle
-                                          cx={x}
-                                          cy={y}
-                                          r="4"
-                                          fill={colors[categoryIndex]}
-                                          stroke="white"
-                                          strokeWidth="2"
-                                        />
-                                        {/* Invisible larger circle for better hover detection */}
-                                        <circle
-                                          cx={x}
-                                          cy={y}
-                                          r="12"
-                                          fill="transparent"
-                                          className="hover-circle"
-                                        >
-                                          <title>{`${categoryName} - ${month.monthName}: ${jobCount} jobs`}</title>
-                                        </circle>
-                                      </g>
-                                    );
-                                  })}
-                                </g>
-                              );
-                            })}
-                            
-                            {/* Y-axis title */}
-                            <text
-                              x="25"
-                              y="105"
-                              textAnchor="middle"
-                              fontSize="12"
-                              fill="#374151"
-                              fontWeight="600"
-                              transform="rotate(-90, 25, 105)"
-                            >
-                              Job Count
-                            </text>
-                            
-                            {/* X-axis title */}
-                            <text
-                              x="420"
-                              y="210"
-                              textAnchor="middle"
-                              fontSize="12"
-                              fill="#374151"
-                              fontWeight="600"
-                            >
-                              Months (2024)
-                            </text>
-                          </>
-                        );
-                      })()}
-                    </svg>
+            <div className="donut-chart-container">
+              {chartData?.departmentDistribution && chartData.departmentDistribution.length > 0 ? (
+                (() => {
+                  // Sort by total applicants and take top 10
+                  const departments = [...chartData.departmentDistribution]
+                    .sort((a, b) => b.totalApplicants - a.totalApplicants)
+                    .slice(0, 10);
+                  const colors = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4', '#f97316', '#84cc16', '#06b6d4', '#8b5cf6'];
+                  const total = departments.reduce((sum: number, dept: any) => sum + dept.totalApplicants, 0);
                   
-                  <div className="line-legend">
-                    {(() => {
-                      const colors = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'];
-                      const topCategories = [...chartData.categoryDistribution]
-                        .sort((a, b) => (b.demandScore || 0) - (a.demandScore || 0))
-                        .slice(0, 5)
-                        .map(cat => cat._id);
+                  return (
+                    <div className="donut-chart-wrapper">
+                      <svg viewBox="0 0 400 400" style={{ width: '400px', height: '400px' }}>
+                        {(() => {
+                          let cumulativePercentage = 0;
+                          const radius = 120;
+                          const innerRadius = 75;
+                          const centerX = 200;
+                          const centerY = 200;
+                          
+                          return departments.map((dept: any, index: number) => {
+                            const percentage = total > 0 ? (dept.totalApplicants / total) * 100 : 0;
+                            const startAngle = (cumulativePercentage / 100) * 360 - 90;
+                            const endAngle = ((cumulativePercentage + percentage) / 100) * 360 - 90;
+                            
+                            const startAngleRad = (startAngle * Math.PI) / 180;
+                            const endAngleRad = (endAngle * Math.PI) / 180;
+                            
+                            const x1 = centerX + radius * Math.cos(startAngleRad);
+                            const y1 = centerY + radius * Math.sin(startAngleRad);
+                            const x2 = centerX + radius * Math.cos(endAngleRad);
+                            const y2 = centerY + radius * Math.sin(endAngleRad);
+                            
+                            const x3 = centerX + innerRadius * Math.cos(endAngleRad);
+                            const y3 = centerY + innerRadius * Math.sin(endAngleRad);
+                            const x4 = centerX + innerRadius * Math.cos(startAngleRad);
+                            const y4 = centerY + innerRadius * Math.sin(startAngleRad);
+                            
+                            const largeArcFlag = percentage > 50 ? 1 : 0;
+                            
+                            const pathData = [
+                              `M ${x1} ${y1}`,
+                              `A ${radius} ${radius} 0 ${largeArcFlag} 1 ${x2} ${y2}`,
+                              `L ${x3} ${y3}`,
+                              `A ${innerRadius} ${innerRadius} 0 ${largeArcFlag} 0 ${x4} ${y4}`,
+                              'Z'
+                            ].join(' ');
+                            
+                            cumulativePercentage += percentage;
+                            
+                            return (
+                              <path
+                                key={dept._id}
+                                d={pathData}
+                                fill={colors[index % colors.length]}
+                                stroke="white"
+                                strokeWidth="2"
+                              >
+                                <title>{`${dept._id}: ${dept.totalApplicants} applicants (${percentage.toFixed(1)}%)`}</title>
+                              </path>
+                            );
+                          });
+                        })()
+                        }
+                        
+                        {/* Center text */}
+                        <text x="200" y="185" textAnchor="middle" fontSize="16" fill="#374151" fontWeight="600">
+                          Total
+                        </text>
+                        <text x="200" y="205" textAnchor="middle" fontSize="24" fill="#1f2937" fontWeight="700">
+                          {total}
+                        </text>
+                        <text x="200" y="225" textAnchor="middle" fontSize="14" fill="#6b7280">
+                          Applicants
+                        </text>
+                      </svg>
                       
-                      return topCategories.map((categoryName, index) => (
-                        <div key={categoryName} className="legend-item">
-                          <div 
-                            className="legend-color"
-                            style={{ backgroundColor: colors[index] }}
-                          ></div>
-                          <span>{categoryName}</span>
-                        </div>
-                      ));
-                    })()}
-                  </div>
-                </>
+                      <div className="donut-legend">
+                        {departments.map((dept: any, index: number) => {
+                          const percentage = total > 0 ? (dept.totalApplicants / total) * 100 : 0;
+                          return (
+                            <div key={dept._id} className="legend-item">
+                              <div 
+                                className="legend-color"
+                                style={{ backgroundColor: colors[index % colors.length] }}
+                              ></div>
+                              <div className="legend-text">
+                                <span className="legend-name">{dept._id}</span>
+                                <span className="legend-stats">{dept.totalApplicants} ({percentage.toFixed(1)}%)</span>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  );
+                })()
               ) : (
                 <div className="no-data-message-enhanced">
-                  <div className="no-data-icon">📈</div>
-                  <p>No monthly trend data available</p>
+                  <div className="no-data-icon">🍩</div>
+                  <p>No department data available</p>
                 </div>
               )}
             </div>
@@ -585,19 +419,14 @@ const JobDemandTab: React.FC = () => {
             </div>
             
             <select
-              value={filterCategory}
-              onChange={(e) => setFilterCategory(e.target.value as any)}
+              value={filterDepartment}
+              onChange={(e) => setFilterDepartment(e.target.value)}
               className="filter-select-modern"
             >
-              <option value="all">All Categories</option>
-              <option value="technology">Technology</option>
-              <option value="healthcare">Healthcare</option>
-              <option value="finance">Finance</option>
-              <option value="education">Education</option>
-              <option value="marketing">Marketing</option>
-              <option value="sales">Sales</option>
-              <option value="engineering">Engineering</option>
-              <option value="other">Other</option>
+              <option value="all">All Departments</option>
+              {Array.from(new Set(jobDemandData.map(job => job.department))).sort().map(dept => (
+                <option key={dept} value={dept}>{dept}</option>
+              ))}
             </select>
           </div>
         </div>
@@ -621,25 +450,12 @@ const JobDemandTab: React.FC = () => {
                 </div>
               </th>
               <th>
-                <span>CATEGORY</span>
+                <span>DEPARTMENT</span>
               </th>
               <th className="sortable-header" onClick={() => handleSort('applicants')}>
                 <div className="header-content">
                   <span>APPLICANTS</span>
                   {sortBy === 'applicants' ? (
-                    sortOrder === 'desc' ? <FiChevronDown /> : <FiChevronUp />
-                  ) : (
-                    <FiChevronDown className="sort-icon-inactive" />
-                  )}
-                </div>
-              </th>
-              <th className="sortable-header" onClick={() => handleSort('ratio')}>
-                <div className="header-content">
-                  <span className="two-line-header">
-                    <span>AVG</span>
-                    <span>COMPETITION</span>
-                  </span>
-                  {sortBy === 'ratio' ? (
                     sortOrder === 'desc' ? <FiChevronDown /> : <FiChevronUp />
                   ) : (
                     <FiChevronDown className="sort-icon-inactive" />
@@ -659,19 +475,6 @@ const JobDemandTab: React.FC = () => {
                   )}
                 </div>
               </th>
-              <th className="sortable-header" onClick={() => handleSort('growth')}>
-                <div className="header-content">
-                  <span className="two-line-header">
-                    <span>GROWTH</span>
-                    <span>RATE</span>
-                  </span>
-                  {sortBy === 'growth' ? (
-                    sortOrder === 'desc' ? <FiChevronDown /> : <FiChevronUp />
-                  ) : (
-                    <FiChevronDown className="sort-icon-inactive" />
-                  )}
-                </div>
-              </th>
               <th className="sortable-header" onClick={() => handleSort('salary')}>
                 <div className="header-content">
                   <span className="two-line-header">
@@ -685,24 +488,11 @@ const JobDemandTab: React.FC = () => {
                   )}
                 </div>
               </th>
-              <th className="sortable-header" onClick={() => handleSort('timeToFill')}>
-                <div className="header-content">
-                  <span className="two-line-header">
-                    <span>TIME TO</span>
-                    <span>FILL</span>
-                  </span>
-                  {sortBy === 'timeToFill' ? (
-                    sortOrder === 'desc' ? <FiChevronDown /> : <FiChevronUp />
-                  ) : (
-                    <FiChevronDown className="sort-icon-inactive" />
-                  )}
-                </div>
-              </th>
             </tr>
           </thead>
           <tbody>
             {filteredJobs.map((job, index) => (
-              <tr key={`${job.jobTitle}-${job.category}-${index}`}>
+              <tr key={`${job.jobTitle}-${job.department}-${index}`}>
                 <td className="number-cell">
                   <span className="row-number">{index + 1}</span>
                 </td>
@@ -712,20 +502,13 @@ const JobDemandTab: React.FC = () => {
                   </div>
                 </td>
                 <td>
-                  <span className={`category-badge ${job.category}`}>
-                    {job.category}
+                  <span className="department-badge">
+                    {job.department}
                   </span>
                 </td>
                 <td>
                   <div className="metric-value">
                     {job.totalApplicants}
-                  </div>
-                </td>
-                <td>
-                  <div className="competition-cell">
-                    <span className="competition-ratio">
-                      {job.averageApplicantsPerJob.toFixed(1)} per job
-                    </span>
                   </div>
                 </td>
                 <td>
@@ -737,18 +520,7 @@ const JobDemandTab: React.FC = () => {
                   </span>
                 </td>
                 <td>
-                  <span className={`growth-rate ${job.growthRate >= 0 ? 'positive' : 'negative'}`}>
-                    {job.growthRate >= 0 ? <FiTrendingUp /> : <FiMinus />}
-                    {job.growthRate > 0 ? '+' : ''}{job.growthRate}%
-                  </span>
-                </td>
-                <td>
                   {job.averageSalary ? `₱${job.averageSalary.toLocaleString()}` : 'N/A'}
-                </td>
-                <td>
-                  <span className="time-to-fill">
-                    {job.timeToFill} days
-                  </span>
                 </td>
               </tr>
             ))}

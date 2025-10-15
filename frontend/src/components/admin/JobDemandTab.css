@@ -208,15 +208,12 @@
 }
 
 /* Fixed column widths for no-scroll layout */
-.admin-job-demand-table th:nth-child(1) { width: 40px; } /* # */
-.admin-job-demand-table th:nth-child(2) { width: 20%; } /* Job Title */
-.admin-job-demand-table th:nth-child(3) { width: 14%; } /* Category */
-.admin-job-demand-table th:nth-child(4) { width: 12%; } /* Applicants */
-.admin-job-demand-table th:nth-child(5) { width: 14%; } /* Avg Competition */
-.admin-job-demand-table th:nth-child(6) { width: 14%; } /* Demand Level */
-.admin-job-demand-table th:nth-child(7) { width: 12%; } /* Growth Rate */
-.admin-job-demand-table th:nth-child(8) { width: 12%; } /* Avg Salary */
-.admin-job-demand-table th:nth-child(9) { width: 10%; } /* Time to Fill */
+.admin-job-demand-table th:nth-child(1) { width: 50px; } /* # */
+.admin-job-demand-table th:nth-child(2) { width: 30%; } /* Job Title */
+.admin-job-demand-table th:nth-child(3) { width: 18%; } /* Department */
+.admin-job-demand-table th:nth-child(4) { width: 14%; } /* Applicants */
+.admin-job-demand-table th:nth-child(5) { width: 18%; } /* Demand Level */
+.admin-job-demand-table th:nth-child(6) { width: 20%; } /* Avg Salary */
 
 .admin-job-demand-table tbody tr {
   border-bottom: 1px solid #f3f4f6;
@@ -266,6 +263,199 @@
   color: #6b7280;
   font-size: 0.875rem;
   margin: 0;
+}
+
+/* Department badge styling */
+.department-badge {
+  display: inline-block;
+  padding: 0.375rem 0.75rem;
+  background-color: #f3f4f6;
+  color: #374151;
+  border-radius: 6px;
+  font-size: 0.813rem;
+  font-weight: 500;
+  text-transform: capitalize;
+  white-space: nowrap;
+}
+
+/* Donut Chart Styling */
+.donut-chart-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 2rem;
+  min-height: 500px;
+}
+
+.donut-chart-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 4rem;
+  max-width: 100%;
+}
+
+.donut-legend {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  min-width: 200px;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.5rem;
+  border-radius: 6px;
+  transition: background-color 0.2s ease;
+}
+
+.legend-item:hover {
+  background-color: #f9fafb;
+}
+
+.legend-color {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.legend-text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.legend-name {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #374151;
+}
+
+.legend-stats {
+  font-size: 0.75rem;
+  color: #6b7280;
+}
+
+/* Horizontal Bar Chart Styling */
+.horizontal-bar-chart-container {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 1.5rem;
+  max-width: 100%;
+}
+
+.horizontal-bar-item {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.75rem;
+  background: #fafafa;
+  border-radius: 8px;
+  transition: background-color 0.2s ease;
+}
+
+.horizontal-bar-item:hover {
+  background: #f0f0f0;
+}
+
+.job-info {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  min-width: 250px;
+  flex-shrink: 0;
+}
+
+.job-rank {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  background: #3b82f6;
+  color: white;
+  border-radius: 50%;
+  font-size: 0.75rem;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.job-details {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.job-name {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #374151;
+  line-height: 1.2;
+}
+
+.job-stats {
+  font-size: 0.75rem;
+  color: #6b7280;
+}
+
+.horizontal-bar-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex: 1;
+  min-width: 0;
+}
+
+.horizontal-bar-track {
+  flex: 1;
+  height: 8px;
+  background: #e5e7eb;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.horizontal-bar-fill {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.3s ease;
+}
+
+.bar-percentage {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #374151;
+  min-width: 35px;
+  text-align: right;
+}
+
+/* Responsive charts */
+@media (max-width: 768px) {
+  .donut-chart-wrapper {
+    flex-direction: column;
+    gap: 2rem;
+  }
+  
+  .donut-legend {
+    min-width: auto;
+    width: 100%;
+  }
+  
+  .horizontal-bar-item {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.75rem;
+  }
+  
+  .job-info {
+    min-width: auto;
+  }
+  
+  .horizontal-bar-wrapper {
+    width: 100%;
+  }
 }
 
 /* Number column specific styles */
