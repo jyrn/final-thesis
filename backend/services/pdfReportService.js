@@ -787,19 +787,43 @@ class PDFReportService {
   }
 
   addJobDemandSpecificSections(doc, data) {
+    // Ensure we start on a fresh page for better organization
+    this.ensurePageSpace(doc, 150);
+    
+    // Category Distribution Table
+    if (data.chartData && data.chartData.categoryDistribution) {
+      this.addCategoryDistributionTable(doc, data.chartData.categoryDistribution);
+      this.ensurePageSpace(doc, 100);
+    }
+    
+    // Top Demanding Jobs Table
+    if (data.chartData && data.chartData.topDemandingJobs) {
+      this.addTopDemandingJobsTable(doc, data.chartData.topDemandingJobs);
+      this.ensurePageSpace(doc, 100);
+    }
+    
+    // Monthly Trends Table
+    if (data.chartData && data.chartData.monthlyTrends) {
+      this.addMonthlyTrendsTable(doc, data.chartData.monthlyTrends);
+      this.ensurePageSpace(doc, 100);
+    }
+    
+    // Job demand trends with proper data
+    if (data.chartData && data.chartData.categoryDistribution) {
+      this.addJobDemandTrendsSection(doc, data.chartData.categoryDistribution);
+      this.ensurePageSpace(doc, 80);
+    }
+    
     // Skills trends
     if (data.skillsTrends) {
       this.addSkillsTrendsSection(doc, data.skillsTrends);
-    }
-    
-    // Job demand trends
-    if (data.jobDemandTrends) {
-      this.addJobDemandTrendsSection(doc, data.jobDemandTrends);
+      this.ensurePageSpace(doc, 80);
     }
     
     // Salary analytics
     if (data.salaryAnalytics) {
       this.addSalaryAnalyticsSection(doc, data.salaryAnalytics);
+      this.ensurePageSpace(doc, 80);
     }
     
     // Industry trends
@@ -986,35 +1010,374 @@ class PDFReportService {
     doc.y += 20;
   }
 
-  addJobDemandTrendsSection(doc, demandData) {
+  addJobDemandTrendsSection(doc, categoryData) {
     const startY = doc.y + 20;
     
     doc.fontSize(16)
        .font('Helvetica-Bold')
        .fill(this.colors.primary)
-       .text('Job Demand Trends', 50, startY);
+       .text('Job Demand Trends Analysis', 50, startY);
 
     doc.y = startY + 40;
 
     doc.fontSize(10).font('Helvetica').fill(this.colors.text);
     
-    demandData.slice(0, 8).forEach(item => {
-      const avgApps = item.avgApplicationsPerJob ? item.avgApplicationsPerJob.toFixed(1) : '0';
-      doc.text(`${item._id?.title || 'Not Specified'} (${item._id?.department || 'N/A'}): ${item.totalPostings || 0} postings, ${avgApps} avg applications`, 70, doc.y + 5);
+    // Sort by demand score and take top 8
+    const topCategories = [...categoryData]
+      .sort((a, b) => (b.demandScore || 0) - (a.demandScore || 0))
+      .slice(0, 8);
+    
+    topCategories.forEach((category, index) => {
+      const demandScore = category.demandScore ? category.demandScore.toFixed(1) : '0';
+      const jobCount = category.jobCount || 0;
+      const applicantCount = category.totalApplicants || 0;
+      const ratio = jobCount > 0 ? (applicantCount / jobCount).toFixed(1) : '0';
+      
+      doc.text(
+        `${index + 1}. ${category._id || 'Not Specified'}: ${demandScore}% demand score (${jobCount} jobs, ${applicantCount} applicants, ${ratio} applicants/job)`, 
+        70, 
+        doc.y + 5
+      );
     });
 
-    doc.y += 40;
+    doc.y += 50;
+  }
+
+  addCategoryDistributionTable(doc, categoryData) {
+    // Ensure enough space for the table
+    this.ensurePageSpace(doc, 300);
+    
+    const startY = doc.y + 20;
+    
+    // Section title
+    doc.fontSize(16)
+       .font('Helvetica-Bold')
+       .fill(this.colors.primary)
+       .text('Category Distribution', 50, startY);
+
+    doc.y = startY + 40;
+
+    // Table headers
+    const headers = ['Rank', 'Category', 'Job Count', 'Total Applicants', 'Demand Score'];
+    const columnWidths = [60, 150, 80, 100, 90];
+    const pageWidth = columnWidths.reduce((sum, width) => sum + width, 0);
+    
+    // Header background
+    doc.rect(50, doc.y, pageWidth, 25)
+       .fill('#f5f5f5')
+       .stroke('#cccccc')
+       .lineWidth(1);
+    
+    doc.fontSize(10)
+       .font('Helvetica-Bold')
+       .fill('#000000');
+
+    let currentX = 50;
+    headers.forEach((header, index) => {
+      doc.text(header, currentX + 3, doc.y + 8, {
+        width: columnWidths[index] - 6,
+        align: 'center'
+      });
+      currentX += columnWidths[index];
+    });
+
+    doc.y += 30;
+
+    // Data rows
+    const sortedCategories = [...categoryData]
+      .sort((a, b) => (b.demandScore || 0) - (a.demandScore || 0))
+      .slice(0, 10);
+
+    sortedCategories.forEach((category, index) => {
+      // Check if we need a new page for this row
+      if (doc.y > doc.page.height - 120) {
+        doc.addPage();
+        doc.y = 50;
+        
+        // Re-add header on new page
+        this.addTableHeader(doc, headers, columnWidths, 'Category Distribution (continued)');
+      }
+      
+      const rowY = doc.y;
+      
+      doc.fontSize(9)
+         .font('Helvetica')
+         .fill('#000000');
+
+      const rowData = [
+        (index + 1).toString(),
+        category._id || 'N/A',
+        (category.jobCount || 0).toString(),
+        (category.totalApplicants || 0).toString(),
+        `${Math.round(category.demandScore || 0)}%`
+      ];
+
+      let currentX = 50;
+      rowData.forEach((data, colIndex) => {
+        doc.text(data, currentX + 3, rowY, {
+          width: columnWidths[colIndex] - 6,
+          align: colIndex === 0 || colIndex >= 2 ? 'center' : 'left',
+          ellipsis: true
+        });
+        currentX += columnWidths[colIndex];
+      });
+
+      doc.y = rowY + 20;
+      
+      // Add row separator
+      if (index < sortedCategories.length - 1) {
+        doc.moveTo(50, doc.y - 2)
+           .lineTo(50 + pageWidth, doc.y - 2)
+           .stroke('#eeeeee')
+           .lineWidth(0.5);
+      }
+    });
+
+    doc.y += 30;
+  }
+
+  addTopDemandingJobsTable(doc, jobsData) {
+    // Ensure enough space for the table
+    this.ensurePageSpace(doc, 300);
+    
+    const startY = doc.y + 20;
+    
+    // Section title
+    doc.fontSize(16)
+       .font('Helvetica-Bold')
+       .fill(this.colors.primary)
+       .text('Top Demanding Jobs', 50, startY);
+
+    doc.y = startY + 40;
+
+    // Table headers
+    const headers = ['Rank', 'Job Title', 'Department', 'Job Count', 'Applicants', 'Demand Score'];
+    const columnWidths = [50, 120, 100, 70, 80, 80];
+    const pageWidth = columnWidths.reduce((sum, width) => sum + width, 0);
+    
+    // Header background
+    doc.rect(50, doc.y, pageWidth, 25)
+       .fill('#f5f5f5')
+       .stroke('#cccccc')
+       .lineWidth(1);
+    
+    doc.fontSize(10)
+       .font('Helvetica-Bold')
+       .fill('#000000');
+
+    let currentX = 50;
+    headers.forEach((header, index) => {
+      doc.text(header, currentX + 3, doc.y + 8, {
+        width: columnWidths[index] - 6,
+        align: 'center'
+      });
+      currentX += columnWidths[index];
+    });
+
+    doc.y += 30;
+
+    // Data rows
+    const topJobs = jobsData.slice(0, 10);
+
+    topJobs.forEach((job, index) => {
+      // Check if we need a new page for this row
+      if (doc.y > doc.page.height - 120) {
+        doc.addPage();
+        doc.y = 50;
+        
+        // Re-add header on new page
+        this.addTableHeader(doc, headers, columnWidths, 'Top Demanding Jobs (continued)');
+      }
+      
+      const rowY = doc.y;
+      
+      doc.fontSize(9)
+         .font('Helvetica')
+         .fill('#000000');
+
+      const rowData = [
+        (index + 1).toString(),
+        job._id || 'N/A',
+        job.department || 'N/A',
+        (job.totalJobs || 0).toString(),
+        (job.totalApplicants || 0).toString(),
+        `${Math.round(job.demandScore || 0)}%`
+      ];
+
+      let currentX = 50;
+      rowData.forEach((data, colIndex) => {
+        doc.text(data, currentX + 3, rowY, {
+          width: columnWidths[colIndex] - 6,
+          align: colIndex === 0 || colIndex >= 3 ? 'center' : 'left',
+          ellipsis: true
+        });
+        currentX += columnWidths[colIndex];
+      });
+
+      doc.y = rowY + 20;
+      
+      // Add row separator
+      if (index < topJobs.length - 1) {
+        doc.moveTo(50, doc.y - 2)
+           .lineTo(50 + pageWidth, doc.y - 2)
+           .stroke('#eeeeee')
+           .lineWidth(0.5);
+      }
+    });
+
+    doc.y += 30;
+  }
+
+  addMonthlyTrendsTable(doc, trendsData) {
+    // Ensure enough space for the table
+    this.ensurePageSpace(doc, 300);
+    
+    const startY = doc.y + 20;
+    
+    // Section title
+    doc.fontSize(16)
+       .font('Helvetica-Bold')
+       .fill(this.colors.primary)
+       .text('Monthly Job Trends', 50, startY);
+
+    doc.y = startY + 40;
+
+    // Table headers
+    const headers = ['Month', 'Total Jobs', 'Total Applicants', 'Top Department', 'Dept Jobs'];
+    const columnWidths = [80, 80, 100, 120, 80];
+    const pageWidth = columnWidths.reduce((sum, width) => sum + width, 0);
+    
+    // Header background
+    doc.rect(50, doc.y, pageWidth, 25)
+       .fill('#f5f5f5')
+       .stroke('#cccccc')
+       .lineWidth(1);
+    
+    doc.fontSize(10)
+       .font('Helvetica-Bold')
+       .fill('#000000');
+
+    let currentX = 50;
+    headers.forEach((header, index) => {
+      doc.text(header, currentX + 3, doc.y + 8, {
+        width: columnWidths[index] - 6,
+        align: 'center'
+      });
+      currentX += columnWidths[index];
+    });
+
+    doc.y += 30;
+
+    // Data rows
+    const sortedTrends = [...trendsData].sort((a, b) => a._id.localeCompare(b._id));
+
+    sortedTrends.forEach((trend, index) => {
+      // Check if we need a new page for this row
+      if (doc.y > doc.page.height - 120) {
+        doc.addPage();
+        doc.y = 50;
+        
+        // Re-add header on new page
+        this.addTableHeader(doc, headers, columnWidths, 'Monthly Job Trends (continued)');
+      }
+      
+      const rowY = doc.y;
+      
+      doc.fontSize(9)
+         .font('Helvetica')
+         .fill('#000000');
+
+      // Find top department for this month
+      const topDept = trend.departments && trend.departments.length > 0 
+        ? trend.departments.reduce((max, dept) => dept.jobCount > max.jobCount ? dept : max)
+        : null;
+
+      const monthName = new Date(trend._id + '-01').toLocaleDateString('en-US', { 
+        year: 'numeric', 
+        month: 'short' 
+      });
+
+      const rowData = [
+        monthName,
+        (trend.totalJobs || 0).toString(),
+        (trend.totalApplicants || 0).toString(),
+        topDept ? topDept.department : 'N/A',
+        topDept ? topDept.jobCount.toString() : '0'
+      ];
+
+      let currentX = 50;
+      rowData.forEach((data, colIndex) => {
+        doc.text(data, currentX + 3, rowY, {
+          width: columnWidths[colIndex] - 6,
+          align: colIndex === 0 || colIndex === 3 ? 'left' : 'center',
+          ellipsis: true
+        });
+        currentX += columnWidths[colIndex];
+      });
+
+      doc.y = rowY + 20;
+      
+      // Add row separator
+      if (index < sortedTrends.length - 1) {
+        doc.moveTo(50, doc.y - 2)
+           .lineTo(50 + pageWidth, doc.y - 2)
+           .stroke('#eeeeee')
+           .lineWidth(0.5);
+      }
+    });
+
+    doc.y += 30;
+  }
+
+  ensurePageSpace(doc, requiredSpace) {
+    if (doc.y + requiredSpace > doc.page.height - 100) {
+      doc.addPage();
+      doc.y = 50;
+    }
+  }
+
+  addTableHeader(doc, headers, columnWidths, title = null) {
+    if (title) {
+      doc.fontSize(14)
+         .font('Helvetica-Bold')
+         .fill(this.colors.primary)
+         .text(title, 50, doc.y);
+      doc.y += 30;
+    }
+
+    const pageWidth = columnWidths.reduce((sum, width) => sum + width, 0);
+    
+    // Header background
+    doc.rect(50, doc.y, pageWidth, 25)
+       .fill('#f5f5f5')
+       .stroke('#cccccc')
+       .lineWidth(1);
+    
+    doc.fontSize(10)
+       .font('Helvetica-Bold')
+       .fill('#000000');
+
+    let currentX = 50;
+    headers.forEach((header, index) => {
+      doc.text(header, currentX + 3, doc.y + 8, {
+        width: columnWidths[index] - 6,
+        align: 'center'
+      });
+      currentX += columnWidths[index];
+    });
+
+    doc.y += 30;
   }
 
   getReportDisplayName(reportType) {
     const displayNames = {
       'registered-jobseekers': 'Registered Jobseekers Report',
-      'employers-companies': 'Employers/Companies Report',
+      'employers-companies': 'Employers & Companies Report',
       'job-postings': 'Job Postings Report',
       'job-demand-analytics': 'Job Demand Analytics Report'
     };
     
-    return displayNames[reportType] || reportType;
+    return displayNames[reportType] || 'Report';
   }
 }
 
