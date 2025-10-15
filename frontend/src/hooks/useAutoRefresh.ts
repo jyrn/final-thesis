@@ -57,25 +57,52 @@ export const useAutoRefresh = (
   const [lastRefreshTime, setLastRefreshTime] = useState<Date | null>(null);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
   const isMountedRef = useRef(true);
+  const isRefreshingRef = useRef(false);
+  const fetchFunctionRef = useRef(fetchFunction);
+  const refreshOnMountRef = useRef(refreshOnMount);
+  const fetchFunctionIdRef = useRef(0);
 
-  // Manual refresh function
-  const refresh = useCallback(async () => {
-    if (isRefreshing) return; // Prevent concurrent refreshes
+  // Keep refs up to date
+  useEffect(() => {
+    fetchFunctionRef.current = fetchFunction;
+    refreshOnMountRef.current = refreshOnMount;
+  }, [fetchFunction, refreshOnMount]);
+
+  // Internal refresh function that uses refs
+  const performRefresh = useCallback(async () => {
+    if (isRefreshingRef.current) {
+      return;
+    }
+    
+    isRefreshingRef.current = true;
+    setIsRefreshing(true);
     
     try {
-      setIsRefreshing(true);
-      await fetchFunction();
+      // Add timeout to prevent hanging forever (60 seconds)
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error('Refresh timeout after 60 seconds')), 60000);
+      });
+      
+      await Promise.race([
+        fetchFunctionRef.current(),
+        timeoutPromise
+      ]);
       if (isMountedRef.current) {
         setLastRefreshTime(new Date());
       }
     } catch (error) {
-      console.error('Error during refresh:', error);
+      console.error('[useAutoRefresh] Error during refresh:', error);
     } finally {
+      // ALWAYS reset the ref, even if component unmounted
+      isRefreshingRef.current = false;
       if (isMountedRef.current) {
         setIsRefreshing(false);
       }
     }
-  }, [fetchFunction, isRefreshing]);
+  }, []);
+
+  // Manual refresh function (exposed to caller)
+  const refresh = performRefresh;
 
   // Auto-refresh effect
   useEffect(() => {
@@ -87,14 +114,21 @@ export const useAutoRefresh = (
       return;
     }
 
+    // Reset the refreshing lock when setting up a new interval
+    // This prevents stale lock state from previous intervals
+    if (isRefreshingRef.current) {
+      isRefreshingRef.current = false;
+      setIsRefreshing(false);
+    }
+
     // Initial refresh on mount if enabled
-    if (refreshOnMount) {
-      refresh();
+    if (refreshOnMountRef.current) {
+      performRefresh();
     }
 
     // Set up interval for auto-refresh
     intervalRef.current = setInterval(() => {
-      refresh();
+      performRefresh();
     }, interval);
 
     return () => {
@@ -103,7 +137,7 @@ export const useAutoRefresh = (
         intervalRef.current = null;
       }
     };
-  }, [enabled, interval, refresh, refreshOnMount]);
+  }, [enabled, interval, performRefresh]);
 
   // Refresh on window focus
   useEffect(() => {

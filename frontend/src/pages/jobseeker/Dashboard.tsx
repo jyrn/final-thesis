@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import styles from './Dashboard.module.css'
 import { FiHome, FiBriefcase, FiFileText, FiUser, FiBookmark, FiMapPin, FiDollarSign, FiClock, FiMenu, FiX, FiFilter, FiSliders, FiLogOut, FiEdit3 } from 'react-icons/fi'
@@ -214,7 +214,7 @@ const Dashboard: React.FC = () => {
   };
 
   // Extract loadJobs function for reusability
-  const loadJobs = async () => {
+  const loadJobs = useCallback(async () => {
     try {
       // Load jobs from backend API (public endpoint, no auth needed)
       const jobService = JobService.getInstance();
@@ -223,10 +223,10 @@ const Dashboard: React.FC = () => {
     } catch (err) {
       setError('Failed to load jobs. Please try again later.');
     }
-  };
+  }, []);
 
   // Extract loadAuthData function for reusability
-  const loadAuthData = async () => {
+  const loadAuthData = useCallback(async () => {
     try {
       // Get current Firebase user directly (faster than onAuthStateChanged)
       const { auth } = await import('../../config/firebase');
@@ -319,14 +319,14 @@ const Dashboard: React.FC = () => {
         localStorage.setItem('userResume', JSON.stringify(resumeData));
       }
     } catch (error) {
-      // Silent fail for auth errors
+      // Silent fail - allow refresh to complete even if auth data fails
     }
-  };
+  }, []);
 
   // Combined refresh function
-  const refreshAllData = async () => {
+  const refreshAllData = useCallback(async () => {
     await Promise.all([loadJobs(), loadAuthData()]);
-  };
+  }, [loadJobs, loadAuthData]);
 
   // Auto-refresh hook - refreshes every 30 seconds
   // Only enable after initial data has loaded

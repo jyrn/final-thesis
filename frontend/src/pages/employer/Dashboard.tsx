@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { onAuthStateChanged } from 'firebase/auth';
 import { useNavigate } from 'react-router-dom';
 import { 
@@ -267,7 +267,7 @@ const EmployerDashboard: React.FC = () => {
   useEffect(() => {  }, [userProfile]);
 
   // Extracted loadJobs function for reusability
-  const loadJobs = async () => {
+  const loadJobs = useCallback(async () => {
     if (!isAuthReady || !currentUser || isCheckingVerification || userVerificationStatus !== 'verified') {
       return;
     }
@@ -318,7 +318,7 @@ const EmployerDashboard: React.FC = () => {
     } finally {
       setIsLoadingJobs(false);
     }
-  };
+  }, [isAuthReady, currentUser, isCheckingVerification, userVerificationStatus, userProfile]);
 
   // Load jobs from backend when auth is ready and user is verified
   useEffect(() => {
@@ -371,7 +371,7 @@ const EmployerDashboard: React.FC = () => {
   const [isLoadingApplications, setIsLoadingApplications] = useState(true);
 
   // Extracted loadApplications function for reusability
-  const loadApplications = async () => {
+  const loadApplications = useCallback(async () => {
     if (!isAuthReady || !currentUser || isCheckingVerification || userVerificationStatus !== 'verified') {
       return;
     }
@@ -437,7 +437,7 @@ const EmployerDashboard: React.FC = () => {
     } finally {
       setIsLoadingApplications(false);
     }
-  };
+  }, [isAuthReady, currentUser, isCheckingVerification, userVerificationStatus]);
 
   // Load applications from backend when auth is ready and user is verified
   useEffect(() => {
@@ -445,16 +445,18 @@ const EmployerDashboard: React.FC = () => {
   }, [isAuthReady, currentUser, isCheckingVerification, userVerificationStatus]);
 
   // Combined refresh function for both jobs and applications
-  const refreshAllData = async () => {
+  const refreshAllData = useCallback(async () => {
     await Promise.all([loadJobs(), loadApplications()]);
-  };
+  }, [loadJobs, loadApplications]);
 
   // Auto-refresh hook - refreshes every 30 seconds
+  const autoRefreshEnabled = isAuthReady && !!currentUser && !isCheckingVerification && userVerificationStatus === 'verified';
+  
   const { refresh: manualRefresh, isRefreshing, lastRefreshTime } = useAutoRefresh(
     refreshAllData,
     {
       interval: 30000, // 30 seconds
-      enabled: isAuthReady && !!currentUser && !isCheckingVerification && userVerificationStatus === 'verified',
+      enabled: autoRefreshEnabled,
       refreshOnMount: false,
       refreshOnFocus: true
     }
