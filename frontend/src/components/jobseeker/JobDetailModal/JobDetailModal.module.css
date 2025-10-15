@@ -268,15 +268,15 @@
 }
 
 .metaBadge:hover {
-  background: #9947a2;
+  background: #5550b1;
   color: white;
-  border-color: #9947a2;
+  border-color: #5550b1;
 }
 
 .badgeIcon {
   width: 14px;
   height: 14px;
-  color: #9947a2;
+  color: #5550b1;
   transition: color 0.2s ease;
 }
 
@@ -286,7 +286,7 @@
 
 .pesoIcon {
   font-weight: 700;
-  color: #9947a2;
+  color: #5550b1;
   font-size: 0.875rem;
 }
 
@@ -414,7 +414,7 @@
   padding: 1rem;
   background: #f8fafc;
   border-radius: 8px;
-  border-left: 4px solid #9947a2;
+  border-left: 4px solid #5550b1;
 }
 
 .infoLabel {
@@ -513,7 +513,7 @@
 
 .requirementsList li::before {
   content: '•';
-  color: #9947a2;
+  color: #5550b1;
   font-weight: bold;
   position: absolute;
   left: 0;
@@ -527,13 +527,13 @@
   gap: 0.75rem;
   margin-bottom: 1.5rem;
   padding: 1rem;
-  background: linear-gradient(135deg, rgba(153, 71, 162, 0.1), rgba(122, 58, 133, 0.1));
+  background: linear-gradient(135deg, rgba(85, 80, 177, 0.1), rgba(74, 69, 160, 0.1));
   border-radius: 12px;
-  border: 1px solid rgba(153, 71, 162, 0.2);
+  border: 1px solid rgba(85, 80, 177, 0.2);
 }
 
 .salaryIcon {
-  color: #9947a2;
+  color: #5550b1;
   width: 20px;
   height: 20px;
 }
@@ -568,7 +568,7 @@
 }
 
 .benefitIcon {
-  color: #9947a2;
+  color: #5550b1;
   width: 14px;
   height: 14px;
 }
@@ -609,7 +609,7 @@
 }
 
 .statIcon {
-  color: #9947a2;
+  color: #5550b1;
   width: 18px;
   height: 18px;
   flex-shrink: 0;
@@ -636,7 +636,7 @@
 }
 
 .websiteLink {
-  color: #9947a2;
+  color: #5550b1;
   text-decoration: none;
   font-weight: 500;
   transition: color 0.2s ease;
@@ -697,8 +697,8 @@
   align-items: center;
   gap: 0.5rem;
   background: white;
-  border: 2px solid #9947a2;
-  color: #9947a2;
+  border: 2px solid #5550b1;
+  color: #5550b1;
   padding: 0.75rem 1rem;
   border-radius: 8px;
   font-weight: 600;
@@ -1034,7 +1034,7 @@
   padding: 0.75rem;
   background: #f8fafc;
   border-radius: 8px;
-  border-left: 4px solid #9947a2;
+  border-left: 4px solid #5550b1;
 }
 
 .educationLabel {
