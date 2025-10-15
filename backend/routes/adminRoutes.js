@@ -1606,6 +1606,9 @@ router.post('/reports/generate', verifyToken, superAdminMiddleware, async (req, 
         break;
 
       case 'job-demand-analytics':
+        // Enhanced Job Demand Analytics Report with comprehensive insights
+        
+        // 1. Get detailed job demand data with demand levels
         const jobDemandData = await Job.aggregate([
           { $match: { createdAt: { $gte: start, $lte: end } } },
           {
@@ -1617,36 +1620,254 @@ router.post('/reports/generate', verifyToken, superAdminMiddleware, async (req, 
             }
           },
           {
+            $addFields: {
+              totalApplicants: { $size: '$applications' },
+              activeJobs: { $cond: [{ $eq: ['$status', 'active'] }, 1, 0] },
+              filledJobs: { $cond: [{ $eq: ['$status', 'closed'] }, 1, 0] }
+            }
+          },
+          {
             $group: {
-              _id: { 
+              _id: {
                 title: '$title',
                 department: { $ifNull: ['$department', 'Other'] }
               },
               totalPostings: { $sum: 1 },
-              totalApplications: { $sum: { $size: '$applications' } },
-              avgApplicationsPerJob: { $avg: { $size: '$applications' } }
+              totalApplicants: { $sum: '$totalApplicants' },
+              activeJobs: { $sum: '$activeJobs' },
+              filledJobs: { $sum: '$filledJobs' },
+              averageSalary: { $avg: '$salaryMin' },
+              avgApplicationsPerJob: { $avg: '$totalApplicants' }
             }
           },
-          { $sort: { totalApplications: -1 } },
-          { $limit: 20 }
+          {
+            $project: {
+              jobTitle: '$_id.title',
+              department: '$_id.department',
+              totalPostings: 1,
+              totalApplicants: 1,
+              activeJobs: 1,
+              filledJobs: 1,
+              averageSalary: { $round: ['$averageSalary', 0] },
+              avgApplicationsPerJob: { $round: ['$avgApplicationsPerJob', 1] }
+            }
+          },
+          { $sort: { totalApplicants: -1 } }
         ]);
-        
+
+        // Calculate demand levels for each job
+        const maxApplicants = jobDemandData.length > 0 ? Math.max(...jobDemandData.map(job => job.totalApplicants || 0)) : 1;
+        jobDemandData.forEach(job => {
+          const percentage = maxApplicants > 0 ? (job.totalApplicants / maxApplicants) * 100 : 0;
+          if (percentage >= 80) job.demandLevel = 'Very High';
+          else if (percentage >= 60) job.demandLevel = 'High';
+          else if (percentage >= 40) job.demandLevel = 'Moderate';
+          else if (percentage >= 20) job.demandLevel = 'Low';
+          else job.demandLevel = 'Very Low';
+        });
+
+        // 2. Department analysis with demand scores
+        const departmentAnalysis = await Job.aggregate([
+          { $match: { createdAt: { $gte: start, $lte: end } } },
+          {
+            $lookup: {
+              from: 'applications',
+              localField: '_id',
+              foreignField: 'jobId',
+              as: 'applications'
+            }
+          },
+          {
+            $addFields: {
+              department: { $ifNull: ['$department', 'Other'] },
+              applicantCount: { $size: '$applications' }
+            }
+          },
+          {
+            $group: {
+              _id: '$department',
+              jobCount: { $sum: 1 },
+              totalApplicants: { $sum: '$applicantCount' },
+              avgSalary: { $avg: '$salaryMin' },
+              totalViews: { $sum: { $ifNull: ['$viewCount', 0] } }
+            }
+          },
+          {
+            $addFields: {
+              demandScore: {
+                $add: [
+                  { $multiply: ['$jobCount', 30] },
+                  { $multiply: ['$totalApplicants', 5] },
+                  { $multiply: ['$totalViews', 0.1] }
+                ]
+              },
+              avgApplicantsPerJob: { $divide: ['$totalApplicants', '$jobCount'] }
+            }
+          },
+          { $sort: { demandScore: -1 } }
+        ]);
+
+        // 3. Trending analysis (month-over-month)
+        const trendingAnalysis = await Job.aggregate([
+          { $match: { createdAt: { $gte: start, $lte: end } } },
+          {
+            $lookup: {
+              from: 'applications',
+              localField: '_id',
+              foreignField: 'jobId',
+              as: 'applications'
+            }
+          },
+          {
+            $addFields: {
+              month: { $dateToString: { format: "%Y-%m", date: "$createdAt" } },
+              applicantCount: { $size: '$applications' }
+            }
+          },
+          {
+            $group: {
+              _id: {
+                month: '$month',
+                department: { $ifNull: ['$department', 'Other'] }
+              },
+              jobCount: { $sum: 1 },
+              totalApplicants: { $sum: '$applicantCount' }
+            }
+          },
+          {
+            $group: {
+              _id: '$_id.month',
+              departments: {
+                $push: {
+                  department: '$_id.department',
+                  jobCount: '$jobCount',
+                  applicantCount: '$totalApplicants'
+                }
+              },
+              totalJobs: { $sum: '$jobCount' },
+              totalApplicants: { $sum: '$totalApplicants' }
+            }
+          },
+          { $sort: { '_id': 1 } }
+        ]);
+
+        // 4. Salary insights by demand level
+        const salaryInsights = await Job.aggregate([
+          { $match: { createdAt: { $gte: start, $lte: end }, salaryMin: { $exists: true, $ne: null } } },
+          {
+            $lookup: {
+              from: 'applications',
+              localField: '_id',
+              foreignField: 'jobId',
+              as: 'applications'
+            }
+          },
+          {
+            $addFields: {
+              applicantCount: { $size: '$applications' }
+            }
+          },
+          {
+            $group: {
+              _id: '$department',
+              avgSalary: { $avg: '$salaryMin' },
+              minSalary: { $min: '$salaryMin' },
+              maxSalary: { $max: '$salaryMin' },
+              totalApplicants: { $sum: '$applicantCount' },
+              jobCount: { $sum: 1 }
+            }
+          },
+          { $sort: { avgSalary: -1 } }
+        ]);
+
+        // 5. Competition metrics
+        const competitionMetrics = {
+          highCompetition: jobDemandData.filter(job => job.totalApplicants >= maxApplicants * 0.6).length,
+          mediumCompetition: jobDemandData.filter(job => job.totalApplicants >= maxApplicants * 0.2 && job.totalApplicants < maxApplicants * 0.6).length,
+          lowCompetition: jobDemandData.filter(job => job.totalApplicants < maxApplicants * 0.2).length,
+          averageApplicationsPerJob: jobDemandData.length > 0 ? (jobDemandData.reduce((sum, job) => sum + job.totalApplicants, 0) / jobDemandData.length).toFixed(1) : 0
+        };
+
         const jobPostingsCount = await Job.countDocuments({ createdAt: { $gte: start, $lte: end } });
+        const totalApplicationsCount = jobDemandData.reduce((sum, job) => sum + job.totalApplicants, 0);
+
+        // 6. Industry trends analysis
+        const industryTrends = await Job.aggregate([
+          { $match: { createdAt: { $gte: start, $lte: end } } },
+          {
+            $lookup: {
+              from: 'applications',
+              localField: '_id',
+              foreignField: 'jobId',
+              as: 'applications'
+            }
+          },
+          {
+            $addFields: {
+              department: { $ifNull: ['$department', 'Other'] },
+              applicantCount: { $size: '$applications' }
+            }
+          },
+          {
+            $group: {
+              _id: '$department',
+              jobCount: { $sum: 1 },
+              totalApplicants: { $sum: '$applicantCount' },
+              avgSalary: { $avg: '$salaryMin' },
+              totalViews: { $sum: { $ifNull: ['$viewCount', 0] } },
+              activeJobs: { $sum: { $cond: [{ $eq: ['$status', 'active'] }, 1, 0] } },
+              filledJobs: { $sum: { $cond: [{ $eq: ['$status', 'closed'] }, 1, 0] } }
+            }
+          },
+          {
+            $addFields: {
+              avgApplicantsPerJob: { 
+                $cond: [
+                  { $gt: ['$jobCount', 0] },
+                  { $divide: ['$totalApplicants', '$jobCount'] },
+                  0
+                ]
+              },
+              fillRate: {
+                $cond: [
+                  { $gt: ['$jobCount', 0] },
+                  { $multiply: [{ $divide: ['$filledJobs', '$jobCount'] }, 100] },
+                  0
+                ]
+              }
+            }
+          },
+          { $sort: { totalApplicants: -1 } }
+        ]);
 
         reportData = {
           summary: { 
+            reportPeriod: `${start.toISOString().split('T')[0]} to ${end.toISOString().split('T')[0]}`,
             totalJobCategories: jobDemandData.length,
-            mostDemandedJob: jobDemandData[0]?._id?.title || 'N/A',
             totalJobPostings: jobPostingsCount,
-            totalApplications: jobDemandData.reduce((sum, job) => sum + job.totalApplications, 0),
-            avgApplicationsPerJob: jobDemandData.length > 0 ? (jobDemandData.reduce((sum, job) => sum + job.avgApplicationsPerJob, 0) / jobDemandData.length).toFixed(2) : 0
+            totalApplications: totalApplicationsCount,
+            mostDemandedJob: jobDemandData[0]?.jobTitle || 'N/A',
+            mostDemandedDepartment: departmentAnalysis[0]?._id || 'N/A',
+            averageApplicationsPerJob: competitionMetrics.averageApplicationsPerJob,
+            highestDemandLevel: jobDemandData.find(job => job.demandLevel === 'Very High') ? 'Very High' : 'High',
+            competitionDistribution: {
+              high: competitionMetrics.highCompetition,
+              medium: competitionMetrics.mediumCompetition,
+              low: competitionMetrics.lowCompetition
+            }
           },
-          jobDemandTrends: jobDemandData,
-          industryTrends: await Job.aggregate([
-            { $match: { createdAt: { $gte: start, $lte: end } } },
-            { $group: { _id: '$department', count: { $sum: 1 } } },
-            { $sort: { count: -1 } }
-          ]),
+          jobDemandRankings: jobDemandData.slice(0, 20),
+          departmentAnalysis: departmentAnalysis,
+          industryTrends: industryTrends,
+          trendingData: trendingAnalysis,
+          salaryInsights: salaryInsights,
+          competitionMetrics: competitionMetrics,
+          insights: {
+            topPerformingDepartments: departmentAnalysis.slice(0, 5),
+            emergingTrends: trendingAnalysis.slice(-3),
+            salaryCompetitiveness: salaryInsights.slice(0, 3),
+            industryGrowth: industryTrends.slice(0, 5)
+          },
           details: includeDetails ? await Job.aggregate([
             { $match: { createdAt: { $gte: start, $lte: end } } },
             {
@@ -1658,15 +1879,46 @@ router.post('/reports/generate', verifyToken, superAdminMiddleware, async (req, 
               }
             },
             {
+              $addFields: {
+                totalApplicants: { $size: '$applications' },
+                department: { $ifNull: ['$department', 'Other'] }
+              }
+            },
+            {
               $project: {
-                title: 1,
-                companyName: 1,
-                totalApplications: { $size: '$applications' },
+                companyName: { $ifNull: ['$companyName', 'Unknown Company'] },
+                jobTitle: '$title',
+                department: '$department',
+                totalApplicants: '$totalApplicants',
+                status: 1,
                 createdAt: 1
               }
             },
-            { $sort: { totalApplications: -1, createdAt: -1 } }
-          ]) : []
+            { $sort: { totalApplicants: -1, createdAt: -1 } }
+          ]).then(jobs => {
+            // Apply the same global dynamic demand level calculation using maxApplicants from main analytics
+            return jobs.map(job => {
+              const percentage = maxApplicants > 0 ? (job.totalApplicants / maxApplicants) * 100 : 0;
+              
+              let demandLevel;
+              if (percentage >= 80) {
+                demandLevel = 'Very High';
+              } else if (percentage >= 60) {
+                demandLevel = 'High';
+              } else if (percentage >= 40) {
+                demandLevel = 'Moderate';
+              } else if (percentage >= 20) {
+                demandLevel = 'Low';
+              } else {
+                demandLevel = 'Very Low';
+              }
+
+              return {
+                ...job,
+                demandLevel
+              };
+            });
+          }) : []
         };
         break;
 
