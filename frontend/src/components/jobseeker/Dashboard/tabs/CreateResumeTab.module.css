@@ -11,12 +11,11 @@
 
 /* Header Banner */
 .headerBanner {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #6b66c7 0%, #5550b1 50%, #7a75d4 100%);
   border-radius: 16px;
   padding: 32px;
   margin-bottom: 32px;
   color: white;
-  box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
 }
 
 .headerContent {
@@ -111,9 +110,9 @@
 .sectionIcon {
   width: 30px;
   height: 30px;
-  color: #3b82f6;
+  color: #5550b1;
   flex-shrink: 0;
-  background: rgba(59, 130, 246, 0.1);
+  background: rgba(85, 80, 177, 0.1);
   padding: 6px;
   border-radius: 8px;
 }
@@ -154,7 +153,7 @@
 .labelIcon {
   width: 16px;
   height: 16px;
-  color: #3b82f6;
+  color: #5550b1;
 }
 
 .formInput {
@@ -172,8 +171,8 @@
 
 .formInput:focus {
   outline: none;
-  border-color: #3b82f6;
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  border-color: #5550b1;
+  box-shadow: 0 0 0 3px rgba(85, 80, 177, 0.1);
   background: #fafbff;
 }
 
@@ -199,8 +198,8 @@
 
 .formTextarea:focus {
   outline: none;
-  border-color: #3b82f6;
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  border-color: #5550b1;
+  box-shadow: 0 0 0 3px rgba(85, 80, 177, 0.1);
   background: #fafbff;
 }
 
@@ -249,7 +248,7 @@
   content: '';
   width: 8px;
   height: 8px;
-  background: #3b82f6;
+  background: #5550b1;
   border-radius: 50%;
   flex-shrink: 0;
 }
@@ -279,7 +278,7 @@
   align-items: center;
   gap: 0.375rem;
   padding:0.5rem 1rem;
-  background: linear-gradient(135deg, #3b82f6, #2563eb);
+  background: linear-gradient(135deg, #5550b1, #6b66c7);
   color: white;
   border: none;
   border-radius: 6px;
@@ -288,16 +287,16 @@
   cursor: pointer;
   transition: all 0.2s ease;
   margin-bottom: 1rem;
-  box-shadow: 0 1px 3px rgba(59, 130, 246, 0.3);
+  box-shadow: 0 1px 3px rgba(85, 80, 177, 0.3);
   text-transform: none;
   letter-spacing: normal;
   width: fit-content;
 }
 
 .addButton:hover {
-  background: linear-gradient(135deg, #2563eb, #1d4ed8);
+  background: linear-gradient(135deg, #6b66c7, #4a45a0);
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+  box-shadow: 0 4px 12px rgba(85, 80, 177, 0.4);
 }
 
 /* Photo and Name Layout */
@@ -385,7 +384,7 @@
   height: 16px;
   margin: 0;
   cursor: pointer;
-  accent-color: #3b82f6;
+  accent-color: #5550b1;
 }
 
 .presentCheckbox span {
@@ -503,9 +502,9 @@
 }
 
 .yearPickerItem.selected {
-  background: #3b82f6;
+  background: #5550b1;
   color: white;
-  border-color: #3b82f6;
+  border-color: #5550b1;
 }
 
 .yearPickerItem.disabled {
@@ -567,11 +566,11 @@
 }
 
 .photoChangeButton {
-  background: #3b82f6;
+  background: #5550b1;
 }
 
 .photoChangeButton:hover {
-  background: #2563eb;
+  background: #6b66c7;
   transform: translateY(-1px);
 }
 
@@ -600,10 +599,10 @@
 }
 
 .photoPlaceholder:hover {
-  border-color: #3b82f6;
+  border-color: #5550b1;
   background: #f0f9ff;
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.15);
+  box-shadow: 0 4px 12px rgba(85, 80, 177, 0.15);
 }
 
 .photoPlaceholderIcon {
@@ -614,7 +613,7 @@
 }
 
 .photoPlaceholder:hover .photoPlaceholderIcon {
-  color: #3b82f6;
+  color: #5550b1;
 }
 
 .photoPlaceholderText {
@@ -684,7 +683,7 @@
 
 .backToTopButton {
   padding: 12px;
-  background-color: #3b82f6;
+  background-color: #5550b1;
   border: none;
   border-radius: 50%;
   color: white;
@@ -693,7 +692,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 8px 24px rgba(59, 130, 246, 0.4);
+  box-shadow: 0 4px 12px rgba(85, 80, 177, 0.2);
   transition: all 0.3s;
   width: 48px;
   height: 48px;
@@ -702,7 +701,7 @@
 
 .stickySaveButton {
   padding: 16px 32px;
-  background-color: #667eea;
+  background-color: #5550b1;
   border: none;
   border-radius: 50px;
   color: white;
@@ -712,7 +711,7 @@
   display: flex;
   align-items: center;
   gap: 12px;
-  box-shadow: 0 8px 24px rgba(102, 126, 234, 0.4);
+  box-shadow: 0 4px 12px rgba(85, 80, 177, 0.2);
   transition: all 0.3s;
   min-width: 200px;
   justify-content: center;
@@ -768,7 +767,7 @@
 }
 
 .saveButton {
-  background: linear-gradient(135deg, #3b82f6, #2563eb);
+  background: linear-gradient(135deg, #5550b1, #6b66c7);
   color: white;
   border: none;
   padding: 1rem 2rem;
@@ -781,7 +780,7 @@
   gap: 0.75rem;
   justify-content: center;
   transition: all 0.3s ease;
-  box-shadow: 0 4px 14px rgba(59, 130, 246, 0.4);
+  box-shadow: 0 4px 14px rgba(85, 80, 177, 0.4);
   min-width: 220px;
   letter-spacing: 0.025em;
   text-transform: uppercase;
@@ -789,9 +788,9 @@
 }
 
 .saveButton:hover:not(:disabled) {
-  background: linear-gradient(135deg, #2563eb, #1d4ed8);
+  background: linear-gradient(135deg, #6b66c7, #4a45a0);
   transform: translateY(-2px);
-  box-shadow: 0 8px 20px rgba(59, 130, 246, 0.5);
+  box-shadow: 0 8px 20px rgba(85, 80, 177, 0.5);
 }
 
 .saveButton:disabled {
@@ -895,8 +894,8 @@
 
 /* Resume Status Banner */
 .statusBanner {
-  background: linear-gradient(135deg, #dbeafe, #bfdbfe);
-  border: 1px solid #93c5fd;
+  background: linear-gradient(135deg, #fdf4ff, #f3e8ff);
+  border: 1px solid #d8b4fe;
   border-radius: 8px;
   padding: 1rem;
   margin-bottom: 2rem;
@@ -910,12 +909,12 @@
 }
 
 .statusIcon {
-  color: #2563eb;
+  color: #5550b1;
   font-size: 1.25rem;
 }
 
 .statusContent span {
-  color: #1e40af;
+  color: #5550b1;
   font-weight: 500;
   flex: 1;
   min-width: 200px;
@@ -1037,7 +1036,7 @@
   color: #1e293b;
   margin: 0 0 0.75rem 0;
   padding-bottom: 0.25rem;
-  border-bottom: 2px solid #3b82f6;
+  border-bottom: 2px solid #5550b1;
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
@@ -1238,9 +1237,9 @@
   .skillItem {
     padding: 0.25rem 0.5rem;
     border-radius: 12px;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, #6b66c7 0%, #5550b1 100%);
     border: none;
-    box-shadow: 0 2px 4px rgba(102, 126, 234, 0.2);
+    box-shadow: 0 2px 4px rgba(85, 80, 177, 0.2);
   }
   
   .skillItem .formInput {
@@ -1622,7 +1621,7 @@
   align-items: center;
   gap: 0.375rem;
   padding: 0.5rem 1rem;
-  background: #3b82f6;
+  background: #5550b1;
   color: white;
   border: none;
   border-radius: 6px;
@@ -1633,9 +1632,9 @@
 }
 
 .editButton:hover {
-  background: #2563eb;
+  background: #6b66c7;
   transform: translateY(-1px);
-  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
+  box-shadow: 0 2px 8px rgba(85, 80, 177, 0.3);
 }
 
 .resumeContent {
@@ -1671,7 +1670,7 @@
 .contactInfo svg {
   width: 16px;
   height: 16px;
-  color: #3b82f6;
+  color: #5550b1;
 }
 
 .experienceDisplay {
@@ -1740,9 +1739,9 @@
 .skillTag {
   display: inline-block;
   padding: 0.5rem 1rem;
-  background: linear-gradient(135deg, #dbeafe, #bfdbfe);
-  color: #1e40af;
-  border: 1px solid #93c5fd;
+  background: linear-gradient(135deg, #fdf4ff, #f3e8ff);
+  color: #5550b1;
+  border: 1px solid #d8b4fe;
   border-radius: 20px;
   font-size: 0.875rem;
   font-weight: 500;
@@ -1750,7 +1749,7 @@
 }
 
 .skillTag:hover {
-  background: linear-gradient(135deg, #bfdbfe, #93c5fd);
+  background: linear-gradient(135deg, #f3e8ff, #e9d5ff);
   transform: translateY(-1px);
 }
 
@@ -1894,7 +1893,7 @@
   width: 40px;
   height: 40px;
   border: 4px solid #f3f3f3;
-  border-top: 4px solid #007bff;
+  border-top: 4px solid #5550b1;
   border-radius: 50%;
   animation: spin 1s linear infinite;
   margin: 0 auto;
@@ -2011,12 +2010,12 @@
 
 /* Status Banner */
 .statusBanner {
-  background: linear-gradient(135deg, #007bff, #0056b3);
+  background: linear-gradient(135deg, #5550b1, #6b66c7);
   color: white;
   padding: 1rem;
   border-radius: 8px;
   margin-bottom: 1.5rem;
-  box-shadow: 0 2px 8px rgba(0, 123, 255, 0.2);
+  box-shadow: 0 2px 8px rgba(85, 80, 177, 0.2);
 }
 
 .statusContent {
@@ -2166,8 +2165,8 @@
 }
 
 .uploadSection:hover {
-  border-color: #3b82f6;
-  background: linear-gradient(135deg, #f0f9ff 0%, #dbeafe 100%);
+  border-color: #5550b1;
+  background: linear-gradient(135deg, #fdf4ff 0%, #f3e8ff 100%);
 }
 
 .uploadHeader {
@@ -2197,7 +2196,7 @@
   align-items: center;
   gap: 0.75rem;
   padding: 1rem 2rem;
-  background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+  background: linear-gradient(135deg, #5550b1 0%, #6b66c7 100%);
   color: white;
   border: none;
   border-radius: 10px;
@@ -2205,22 +2204,22 @@
   font-weight: 600;
   cursor: pointer;
   transition: all 0.3s ease;
-  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+  box-shadow: 0 4px 12px rgba(85, 80, 177, 0.3);
   min-width: 200px;
   justify-content: center;
 }
 
 .uploadButton:hover:not(:disabled) {
-  background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%);
+  background: linear-gradient(135deg, #6b66c7 0%, #4a45a0 100%);
   transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(59, 130, 246, 0.4);
+  box-shadow: 0 6px 20px rgba(85, 80, 177, 0.4);
 }
 
 .uploadButton:disabled {
   opacity: 0.7;
   cursor: not-allowed;
   transform: none;
-  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.2);
+  box-shadow: 0 2px 8px rgba(85, 80, 177, 0.2);
 }
 
 .uploadIcon {
@@ -2328,8 +2327,8 @@
 }
 
 .addSectionContainer:hover {
-  border-color: #3b82f6;
-  background: linear-gradient(135deg, #f0f9ff, #dbeafe);
+  border-color: #5550b1;
+  background: linear-gradient(135deg, #fdf4ff, #f3e8ff);
   transform: translateY(-1px);
 }
 
@@ -2345,8 +2344,8 @@
 }
 
 .addSectionDropdown select:focus {
-  border-color: #3b82f6;
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  border-color: #5550b1;
+  box-shadow: 0 0 0 3px rgba(85, 80, 177, 0.1);
 }
 
 /* Section Reordering Controls */
@@ -2434,7 +2433,7 @@
   padding: 1rem 1.5rem;
   background: linear-gradient(135deg, #f1f5f9, #e2e8f0);
   border-radius: 8px;
-  border-left: 4px solid #3b82f6;
+  border-left: 4px solid #5550b1;
 }
 
 .optionalSectionTitle {
@@ -2450,7 +2449,7 @@
 .optionalSectionIcon {
   width: 24px;
   height: 24px;
-  color: #3b82f6;
+  color: #5550b1;
 }
 
 /* Certificate Section Styles */

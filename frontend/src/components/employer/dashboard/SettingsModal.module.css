@@ -50,7 +50,7 @@
   align-items: center;
   padding: 2.5rem 2.5rem 1.5rem;
   border-bottom: 1px solid rgba(226, 232, 240, 0.6);
-  background: linear-gradient(135deg, rgba(59, 130, 246, 0.03) 0%, rgba(147, 197, 253, 0.03) 100%);
+  background: linear-gradient(135deg, rgba(52, 51, 134, 0.03) 0%, rgba(147, 197, 253, 0.03) 100%);
   border-radius: 24px 24px 0 0;
 }
 
@@ -63,8 +63,8 @@
 .headerIcon {
   width: 32px;
   height: 32px;
-  color: #3b82f6;
-  background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(147, 197, 253, 0.1) 100%);
+  color: #343386;
+  background: linear-gradient(135deg, rgba(52, 51, 134, 0.1) 0%, rgba(165, 180, 252, 0.1) 100%);
   padding: 8px;
   border-radius: 12px;
 }
@@ -149,8 +149,8 @@
 }
 
 .input:focus {
-  border-color: #3b82f6;
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  border-color: #343386;
+  box-shadow: 0 0 0 3px rgba(52, 51, 134, 0.1);
 }
 
 .textarea {
@@ -167,8 +167,8 @@
 }
 
 .textarea:focus {
-  border-color: #3b82f6;
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  border-color: #343386;
+  box-shadow: 0 0 0 3px rgba(52, 51, 134, 0.1);
 }
 
 .modalActions {
@@ -204,7 +204,7 @@
 .saveButton {
   flex: 1;
   padding: 0.875rem 1.5rem;
-  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  background: linear-gradient(135deg, #343386 0%, #2a2968 100%);
   color: white;
   border: none;
   border-radius: 12px;
@@ -212,7 +212,7 @@
   font-size: 0.875rem;
   cursor: pointer;
   transition: all 0.3s ease;
-  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.25);
+  box-shadow: 0 2px 8px rgba(52, 51, 134, 0.25);
   position: relative;
   overflow: hidden;
 }
@@ -233,9 +233,9 @@
 }
 
 .saveButton:hover {
-  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+  background: linear-gradient(135deg, #2a2968 0%, #1e1b4b 100%);
   transform: translateY(-1px);
-  box-shadow: 0 4px 16px rgba(59, 130, 246, 0.4);
+  box-shadow: 0 4px 16px rgba(52, 51, 134, 0.4);
 }
 
 .checkboxGroup {
@@ -271,8 +271,8 @@
 }
 
 .checkbox.checked {
-  background: #3b82f6;
-  border-color: #3b82f6;
+  background: #343386;
+  border-color: #343386;
 }
 
 .checkbox.checked::after {
@@ -313,12 +313,12 @@
 }
 
 .planCard:hover {
-  border-color: #3b82f6;
-  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.15);
+  border-color: #343386;
+  box-shadow: 0 4px 12px rgba(52, 51, 134, 0.15);
 }
 
 .planCard.selected {
-  border-color: #3b82f6;
+  border-color: #343386;
   background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
 }
 
@@ -339,7 +339,7 @@
 .planPrice {
   font-size: 1.5rem;
   font-weight: 700;
-  color: #3b82f6;
+  color: #343386;
   margin: 0;
 }
 
@@ -401,7 +401,7 @@
 .memberAvatar {
   width: 48px;
   height: 48px;
-  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  background: linear-gradient(135deg, #343386 0%, #2a2968 100%);
   color: white;
   border-radius: 12px;
   display: flex;
@@ -517,7 +517,7 @@
 }
 
 .previewIcon {
-  color: #3b82f6;
+  color: #343386;
   font-size: 1.5rem;
 }
 
@@ -562,7 +562,7 @@
 }
 
 .openInNewTabButton {
-  background: #3b82f6;
+  background: #343386;
   color: white;
   border: none;
   padding: 0.75rem 1.5rem;
@@ -632,7 +632,7 @@
 }
 
 .successButton {
-  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  background: linear-gradient(135deg, #343386 0%, #2a2968 100%);
   color: white;
   border: none;
   padding: 0.75rem 2rem;
@@ -641,12 +641,12 @@
   font-size: 1rem;
   cursor: pointer;
   transition: all 0.2s ease;
-  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+  box-shadow: 0 4px 12px rgba(52, 51, 134, 0.3);
 }
 
 .successButton:hover {
   transform: translateY(-2px);
-  box-shadow: 0 8px 20px rgba(59, 130, 246, 0.4);
+  box-shadow: 0 8px 20px rgba(52, 51, 134, 0.4);
 }
 
 @keyframes fadeIn {
@@ -698,13 +698,13 @@
   left: 0;
   right: 0;
   height: 4px;
-  background: linear-gradient(90deg, #3b82f6, #8b5cf6, #06b6d4);
+  background: linear-gradient(90deg, #343386, #8b5cf6, #06b6d4);
   opacity: 0;
   transition: opacity 0.3s ease;
 }
 
 .documentCard:hover {
-  border-color: #3b82f6;
+  border-color: #343386;
   background: linear-gradient(135deg, #ffffff 0%, #f0f9ff 100%);
   transform: translateY(-2px);
   box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
@@ -729,7 +729,7 @@
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  background: linear-gradient(135deg, #1e293b 0%, #3b82f6 100%);
+  background: linear-gradient(135deg, #1e293b 0%, #343386 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -788,16 +788,16 @@
   left: -100%;
   width: 100%;
   height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(59, 130, 246, 0.1), transparent);
+  background: linear-gradient(90deg, transparent, rgba(52, 51, 134, 0.1), transparent);
   transition: left 0.6s ease;
 }
 
 .uploadButton:hover {
-  border-color: #3b82f6;
-  color: #3b82f6;
+  border-color: #343386;
+  color: #343386;
   background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
   transform: translateY(-1px);
-  box-shadow: 0 10px 15px -3px rgba(59, 130, 246, 0.1);
+  box-shadow: 0 10px 15px -3px rgba(52, 51, 134, 0.1);
 }
 
 .uploadButton:hover::before {
@@ -822,7 +822,7 @@
   width: 16px;
   height: 16px;
   border: 2px solid #e2e8f0;
-  border-top: 2px solid #3b82f6;
+  border-top: 2px solid #343386;
   border-radius: 50%;
   animation: spin 1s linear infinite;
 }
@@ -859,8 +859,8 @@
   padding: 1.5rem;
   background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
   border-radius: 12px;
-  border-left: 4px solid #3b82f6;
-  box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.1);
+  border-left: 4px solid #343386;
+  box-shadow: 0 4px 6px -1px rgba(52, 51, 134, 0.1);
   position: relative;
 }
 
@@ -897,13 +897,13 @@
   background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
   border: 1px solid #bae6fd;
   border-radius: 12px;
-  box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.1);
+  box-shadow: 0 4px 6px -1px rgba(52, 51, 134, 0.1);
   transition: all 0.3s ease;
 }
 
 .existingDocument:hover {
   transform: translateY(-1px);
-  box-shadow: 0 8px 15px -3px rgba(59, 130, 246, 0.15);
+  box-shadow: 0 8px 15px -3px rgba(52, 51, 134, 0.15);
 }
 
 .documentPreview {
@@ -940,7 +940,7 @@
 
 .viewButton {
   padding: 0.75rem 1.5rem;
-  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  background: linear-gradient(135deg, #343386 0%, #2a2968 100%);
   color: white;
   text-decoration: none;
   border-radius: 10px;
@@ -948,7 +948,7 @@
   font-weight: 600;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   flex-shrink: 0;
-  box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.25);
+  box-shadow: 0 4px 6px -1px rgba(52, 51, 134, 0.25);
   position: relative;
   overflow: hidden;
 }
@@ -965,11 +965,11 @@
 }
 
 .viewButton:hover {
-  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+  background: linear-gradient(135deg, #2a2968 0%, #1e1b4b 100%);
   text-decoration: none;
   color: white;
   transform: translateY(-1px);
-  box-shadow: 0 10px 15px -3px rgba(59, 130, 246, 0.3);
+  box-shadow: 0 10px 15px -3px rgba(52, 51, 134, 0.3);
 }
 
 .viewButton:hover::before {
@@ -1033,12 +1033,12 @@
   width: 180px;
   height: 180px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+  background: linear-gradient(135deg, #343386 0%, #8b5cf6 100%);
   display: flex;
   align-items: center;
   justify-content: center;
   overflow: hidden;
-  box-shadow: 0 8px 32px rgba(59, 130, 246, 0.3);
+  box-shadow: 0 8px 32px rgba(52, 51, 134, 0.3);
   border: 4px solid white;
 }
 
@@ -1068,8 +1068,8 @@
   gap: 0.75rem;
   padding: 1rem 1.5rem;
   background: white;
-  border: 2px solid #3b82f6;
-  color: #3b82f6;
+  border: 2px solid #343386;
+  color: #343386;
   border-radius: 12px;
   font-size: 0.875rem;
   font-weight: 600;
@@ -1081,10 +1081,10 @@
 }
 
 .uploadButton:hover {
-  background: #3b82f6;
+  background: #343386;
   color: white;
   transform: translateY(-2px);
-  box-shadow: 0 8px 25px rgba(59, 130, 246, 0.3);
+  box-shadow: 0 8px 25px rgba(52, 51, 134, 0.3);
 }
 
 .uploadButton.uploading {

@@ -31,7 +31,7 @@ export const QuickActions: React.FC<QuickActionsProps> = ({
   const iconStyle = {
     width: '48px',
     height: '48px',
-    color: '#6366f1',
+    color: '#343386',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
@@ -46,9 +46,9 @@ export const QuickActions: React.FC<QuickActionsProps> = ({
   };
 
   const handleMouseEnter = (e: React.MouseEvent<HTMLDivElement>) => {
-    e.currentTarget.style.borderColor = '#6366f1';
+    e.currentTarget.style.borderColor = '#343386';
     e.currentTarget.style.transform = 'translateY(-2px)';
-    e.currentTarget.style.boxShadow = '0 4px 12px rgba(99, 102, 241, 0.15)';
+    e.currentTarget.style.boxShadow = '0 4px 12px rgba(52, 51, 134, 0.15)';
   };
 
   const handleMouseLeave = (e: React.MouseEvent<HTMLDivElement>) => {

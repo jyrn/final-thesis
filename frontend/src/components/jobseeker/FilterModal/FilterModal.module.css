@@ -280,7 +280,7 @@ html, body {
 .radioOption input[type="radio"] {
   width: 20px;
   height: 20px;
-  accent-color: #3b82f6;
+  accent-color: #5550b1;
 }
 
 .radioOption span {
@@ -335,17 +335,17 @@ html, body {
 }
 
 .chipActive {
-  background: #1e40af;
+  background: #5550b1;
   color: white;
-  border-color: #1e40af;
+  border-color: #5550b1;
   font-weight: 500;
 }
 
 .chipActive:hover {
-  background: #1e3a8a;
-  border-color: #1e3a8a;
+  background: #4a45a0;
+  border-color: #4a45a0;
   transform: translateY(-1px);
-  box-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.3);
+  box-shadow: 0 4px 6px -1px rgba(85, 80, 177, 0.3);
 }
 
 .locationOptions {
@@ -365,7 +365,7 @@ html, body {
 .checkboxOption input[type="checkbox"] {
   width: 18px;
   height: 18px;
-  accent-color: #3b82f6;
+  accent-color: #5550b1;
 }
 
 .checkboxOption span {
@@ -402,7 +402,7 @@ html, body {
   justify-content: flex-start;
   padding: 0 0.5rem;
   margin-bottom: 0.5rem;
-  color: #3b82f6;
+  color: #5550b1;
   font-weight: 600;
 }
 
@@ -430,7 +430,7 @@ html, body {
   width: 16px;
   height: 16px;
   border-radius: 50%;
-  background: #3b82f6;
+  background: #5550b1;
   cursor: pointer;
   pointer-events: auto;
   border: 2px solid white;
@@ -441,7 +441,7 @@ html, body {
   width: 16px;
   height: 16px;
   border-radius: 50%;
-  background: #3b82f6;
+  background: #5550b1;
   cursor: pointer;
   pointer-events: auto;
   border: 2px solid white;
@@ -483,7 +483,7 @@ html, body {
   width: 20px;
   height: 20px;
   border-radius: 50%;
-  background: #3b82f6;
+  background: #5550b1;
   cursor: pointer;
 }
 
@@ -491,7 +491,7 @@ html, body {
   width: 20px;
   height: 20px;
   border-radius: 50%;
-  background: #3b82f6;
+  background: #5550b1;
   cursor: pointer;
   border: none;
 }
@@ -563,7 +563,7 @@ html, body {
   padding: 0.875rem;
   border: none;
   border-radius: 10px;
-  background: #3b82f6;
+  background: #5550b1;
   color: white;
   font-size: 0.9375rem;
   font-weight: 600;
@@ -574,9 +574,9 @@ html, body {
 }
 
 .applyButton:hover {
-  background: #2563eb;
+  background: #4a45a0;
   transform: translateY(-1px);
-  box-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.2);
+  box-shadow: 0 4px 6px -1px rgba(85, 80, 177, 0.2);
 }
 
 .applyButton:active {

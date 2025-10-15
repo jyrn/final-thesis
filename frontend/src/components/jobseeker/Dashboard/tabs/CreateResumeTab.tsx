@@ -2874,8 +2874,8 @@ const CreateResumeTab: React.FC<CreateResumeTabProps> = ({
         borderRadius: '12px',
         padding: '20px 24px',
         marginBottom: '24px',
-        border: '2px solid #3b82f6',
-        boxShadow: '0 4px 12px rgba(59, 130, 246, 0.15)'
+        border: '2px solid #5550b1',
+        boxShadow: '0 4px 12px rgba(85, 80, 177, 0.15)'
       }}>
         {/* Header - Always Visible */}
         <div 
@@ -2899,7 +2899,7 @@ const CreateResumeTab: React.FC<CreateResumeTabProps> = ({
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
             <div style={{
-              backgroundColor: '#3b82f6',
+              backgroundColor: '#5550b1',
               borderRadius: '50%',
               padding: '10px',
               display: 'flex',
@@ -2922,18 +2922,18 @@ const CreateResumeTab: React.FC<CreateResumeTabProps> = ({
             alignItems: 'center',
             gap: '8px',
             padding: '8px 12px',
-            backgroundColor: showInstructions ? '#dbeafe' : '#f3f4f6',
+            backgroundColor: showInstructions ? '#f3e8ff' : '#f3f4f6',
             borderRadius: '6px',
-            border: `1px solid ${showInstructions ? '#3b82f6' : '#e5e7eb'}`
+            border: `1px solid ${showInstructions ? '#5550b1' : '#e5e7eb'}`
           }}>
             <span style={{ 
               fontSize: '13px', 
               fontWeight: '600',
-              color: showInstructions ? '#1e40af' : '#6b7280'
+              color: showInstructions ? '#5550b1' : '#6b7280'
             }}>
               {showInstructions ? 'Hide' : 'Show'}
             </span>
-            {showInstructions ? <FiChevronUp size={18} color="#1e40af" /> : <FiChevronDown size={18} color="#6b7280" />}
+            {showInstructions ? <FiChevronUp size={18} color="#5550b1" /> : <FiChevronDown size={18} color="#6b7280" />}
           </div>
         </div>
 
@@ -2946,7 +2946,7 @@ const CreateResumeTab: React.FC<CreateResumeTabProps> = ({
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
               <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
                 <span style={{ 
-                  backgroundColor: '#667eea', 
+                  backgroundColor: '#5550b1', 
                   color: 'white', 
                   borderRadius: '50%', 
                   width: '24px', 
@@ -2967,7 +2967,7 @@ const CreateResumeTab: React.FC<CreateResumeTabProps> = ({
               </div>
               <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
                 <span style={{ 
-                  backgroundColor: '#667eea', 
+                  backgroundColor: '#5550b1', 
                   color: 'white', 
                   borderRadius: '50%', 
                   width: '24px', 
@@ -2988,7 +2988,7 @@ const CreateResumeTab: React.FC<CreateResumeTabProps> = ({
               </div>
               <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
                 <span style={{ 
-                  backgroundColor: '#667eea', 
+                  backgroundColor: '#5550b1', 
                   color: 'white', 
                   borderRadius: '50%', 
                   width: '24px', 
@@ -3009,7 +3009,7 @@ const CreateResumeTab: React.FC<CreateResumeTabProps> = ({
               </div>
               <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
                 <span style={{ 
-                  backgroundColor: '#667eea', 
+                  backgroundColor: '#5550b1', 
                   color: 'white', 
                   borderRadius: '50%', 
                   width: '24px', 
@@ -4608,7 +4608,7 @@ const CreateResumeTab: React.FC<CreateResumeTabProps> = ({
             disabled={isSaving || !isFormValid()}
             className={styles.stickySaveButton}
             style={{
-              backgroundColor: isSaving || !isFormValid() ? '#9ca3af' : '#667eea',
+              backgroundColor: isSaving || !isFormValid() ? '#9ca3af' : '#5550b1',
               cursor: isSaving || !isFormValid() ? 'not-allowed' : 'pointer'
             }}
           >

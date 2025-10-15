@@ -41,12 +41,6 @@ export const ApplicantsTab: React.FC<ApplicantsTabProps> = ({
   return (
     <div className="p-8">
       <div className="max-w-full">
-        {/* Header Section */}
-        <div className="mb-8">
-          <h1 className="text-2xl font-semibold text-gray-900 mb-2">Applicants</h1>
-          <p className="text-gray-600">Review and manage candidate applications</p>
-        </div>
-
         {/* Search and Filter Section */}
         <div className="bg-white border border-gray-200 rounded-lg p-6 mb-12">
           <SearchAndFilter

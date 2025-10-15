@@ -161,7 +161,25 @@ const Sidebar: React.FC<SidebarProps> = ({
       >
         <div className={styles.sidebarHeader}>
           {(!isCollapsed || isMobile) && (
-            <h2 className={styles.logo}>SkillSync</h2>
+            <div className={styles.logoContainer}>
+              <img 
+                src="/logo.png" 
+                alt="SkillSync Logo" 
+                className={styles.logoImage}
+              />
+              <span className={styles.logoText}>SkillSync</span>
+            </div>
+          )}
+          
+          {/* Collapsed state logo */}
+          {isCollapsed && !isMobile && (
+            <div className={styles.logoCollapsed}>
+              <img 
+                src="/logo.png" 
+                alt="SkillSync Logo" 
+                className={styles.logoImageCollapsed}
+              />
+            </div>
           )}
           
           {/* Desktop collapse toggle */}

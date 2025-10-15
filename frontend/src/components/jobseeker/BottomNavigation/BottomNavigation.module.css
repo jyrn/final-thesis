@@ -30,11 +30,11 @@
 }
 
 .navButton.active .navIcon {
-  color: #3182ce;
+  color: #5550b1;
 }
 
 .navButton.active .navLabel {
-  color: #3182ce;
+  color: #5550b1;
   font-weight: 600;
 }
 

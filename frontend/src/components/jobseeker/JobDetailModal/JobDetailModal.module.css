@@ -39,7 +39,7 @@
 
 .header {
   position: relative;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #5550b1 0%, #6b66c7 100%);
   padding: 0;
   border: none;
 }
@@ -268,15 +268,15 @@
 }
 
 .metaBadge:hover {
-  background: #667eea;
+  background: #9947a2;
   color: white;
-  border-color: #667eea;
+  border-color: #9947a2;
 }
 
 .badgeIcon {
   width: 14px;
   height: 14px;
-  color: #667eea;
+  color: #9947a2;
   transition: color 0.2s ease;
 }
 
@@ -286,7 +286,7 @@
 
 .pesoIcon {
   font-weight: 700;
-  color: #667eea;
+  color: #9947a2;
   font-size: 0.875rem;
 }
 
@@ -414,7 +414,7 @@
   padding: 1rem;
   background: #f8fafc;
   border-radius: 8px;
-  border-left: 4px solid #667eea;
+  border-left: 4px solid #9947a2;
 }
 
 .infoLabel {
@@ -434,13 +434,13 @@
 }
 
 .facilityTag {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #5550b1 0%, #6b66c7 100%);
   color: white;
   padding: 0.75rem 1rem;
   border-radius: 20px;
   font-size: 0.875rem;
   font-weight: 500;
-  box-shadow: 0 2px 4px rgba(102, 126, 234, 0.2);
+  box-shadow: 0 2px 4px rgba(85, 80, 177, 0.2);
   transition: transform 0.2s ease;
 }
 
@@ -456,7 +456,7 @@
 
 .applyButton {
   width: 100%;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #5550b1 0%, #6b66c7 100%);
   color: white;
   border: none;
   border-radius: 12px;
@@ -465,14 +465,14 @@
   font-weight: 700;
   cursor: pointer;
   transition: all 0.3s ease;
-  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+  box-shadow: 0 4px 15px rgba(85, 80, 177, 0.4);
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
 
 .applyButton:hover {
   transform: translateY(-2px);
-  box-shadow: 0 8px 25px rgba(102, 126, 234, 0.6);
+  box-shadow: 0 8px 25px rgba(85, 80, 177, 0.6);
 }
 
 .applyButton:active {
@@ -513,7 +513,7 @@
 
 .requirementsList li::before {
   content: '•';
-  color: #667eea;
+  color: #9947a2;
   font-weight: bold;
   position: absolute;
   left: 0;
@@ -527,13 +527,13 @@
   gap: 0.75rem;
   margin-bottom: 1.5rem;
   padding: 1rem;
-  background: linear-gradient(135deg, #667eea10, #764ba210);
+  background: linear-gradient(135deg, rgba(153, 71, 162, 0.1), rgba(122, 58, 133, 0.1));
   border-radius: 12px;
-  border: 1px solid #667eea20;
+  border: 1px solid rgba(153, 71, 162, 0.2);
 }
 
 .salaryIcon {
-  color: #667eea;
+  color: #9947a2;
   width: 20px;
   height: 20px;
 }
@@ -568,7 +568,7 @@
 }
 
 .benefitIcon {
-  color: #667eea;
+  color: #9947a2;
   width: 14px;
   height: 14px;
 }
@@ -609,7 +609,7 @@
 }
 
 .statIcon {
-  color: #667eea;
+  color: #9947a2;
   width: 18px;
   height: 18px;
   flex-shrink: 0;
@@ -636,7 +636,7 @@
 }
 
 .websiteLink {
-  color: #667eea;
+  color: #9947a2;
   text-decoration: none;
   font-weight: 500;
   transition: color 0.2s ease;
@@ -697,8 +697,8 @@
   align-items: center;
   gap: 0.5rem;
   background: white;
-  border: 2px solid #667eea;
-  color: #667eea;
+  border: 2px solid #9947a2;
+  color: #9947a2;
   padding: 0.75rem 1rem;
   border-radius: 8px;
   font-weight: 600;
@@ -710,12 +710,12 @@
 }
 
 .saveButton:hover {
-  background: #667eea;
+  background: #5550b1;
   color: white;
 }
 
 .applyButton {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #5550b1 0%, #6b66c7 100%);
   color: white;
   border: none;
   border-radius: 12px;
@@ -733,7 +733,7 @@
 
 .applyButton:hover {
   transform: translateY(-1px);
-  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+  box-shadow: 0 6px 20px rgba(85, 80, 177, 0.4);
 }
 
 .applyButton.applied {
@@ -1034,7 +1034,7 @@
   padding: 0.75rem;
   background: #f8fafc;
   border-radius: 8px;
-  border-left: 4px solid #667eea;
+  border-left: 4px solid #9947a2;
 }
 
 .educationLabel {

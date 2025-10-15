@@ -1155,7 +1155,7 @@ const EmployerDashboard: React.FC = () => {
             >
               <FiMenu />
             </button>
-            <h1 className={layoutStyles.pageTitle}>{getHeaderTitle(activeTab)}</h1>
+            <h1 className={layoutStyles.pageTitle} style={{color: '#343386'}}>{getHeaderTitle(activeTab)}</h1>
           </div>
           
           <div className={layoutStyles.headerActions}>

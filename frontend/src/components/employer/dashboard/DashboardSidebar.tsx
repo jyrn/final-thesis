@@ -174,7 +174,25 @@ export const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
       >
         <div className={layoutStyles.sidebarHeader}>
           {(!sidebarCollapsed || isMobile) && (
-            <h2 className={layoutStyles.logo}>SkillSync</h2>
+            <div className={layoutStyles.logoContainer}>
+              <img 
+                src="/logo.png" 
+                alt="SkillSync Logo" 
+                className={layoutStyles.logoImage}
+              />
+              <span className={layoutStyles.logoText}>SkillSync</span>
+            </div>
+          )}
+          
+          {/* Collapsed state logo */}
+          {sidebarCollapsed && !isMobile && (
+            <div className={layoutStyles.logoCollapsed}>
+              <img 
+                src="/logo.png" 
+                alt="SkillSync Logo" 
+                className={layoutStyles.logoImageCollapsed}
+              />
+            </div>
           )}
           
           {/* Desktop collapse toggle */}

@@ -294,7 +294,7 @@
 
 /* Apply button */
 .applyButton {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #5550b1 0%, #6b66c7 100%);
   color: white;
   border: none;
   border-radius: 8px;
@@ -311,9 +311,9 @@
 }
 
 .applyButton:hover {
-  background: linear-gradient(135deg, #5a67d8 0%, #6b46c1 100%);
+  background: linear-gradient(135deg, #4a45a0 0%, #5a4fcf 100%);
   transform: translateY(-1px);
-  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+  box-shadow: 0 2px 8px rgba(85, 80, 177, 0.3);
 }
 
 .applyButton.applied {
@@ -479,7 +479,7 @@
   padding: 12px;
   background: #f8fafc;
   border-radius: 8px;
-  border-left: 3px solid #667eea;
+  border-left: 3px solid #5550b1;
 }
 
 .educationTitle {

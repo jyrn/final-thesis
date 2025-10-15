@@ -750,7 +750,7 @@ const Dashboard: React.FC = () => {
             >
               <FiMenu />
             </button>
-            <h1 className={styles.pageTitle}>{getPageTitle(activeTab)}</h1>
+            <h1 className={styles.pageTitle} style={{color: '#9947a2'}}>{getPageTitle(activeTab)}</h1>
           </div>
           
           {activeTab === 'jobs' && (

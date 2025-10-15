@@ -54,7 +54,7 @@
   align-items: center;
   justify-content: space-between;
   padding: 1.5rem 2rem;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #2a2968 0%, #343386 100%);
   border-bottom: 1px solid #e2e8f0;
   border-radius: 20px 20px 0 0;
   position: sticky;
@@ -288,15 +288,15 @@
 /* Textarea focus state */
 .compactTextarea:focus {
   outline: none;
-  border-color: #3b82f6;
-  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
+  border-color: #343386;
+  box-shadow: 0 0 0 2px rgba(52, 51, 134, 0.1);
 }
 
 .compactInput:focus,
 .compactSelect:focus {
   outline: none;
-  border-color: #3b82f6;
-  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
+  border-color: #343386;
+  box-shadow: 0 0 0 2px rgba(52, 51, 134, 0.1);
 }
 
 .compactTextarea {
@@ -315,8 +315,8 @@
 
 .compactTextarea:focus {
   outline: none;
-  border-color: #3b82f6;
-  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
+  border-color: #343386;
+  box-shadow: 0 0 0 2px rgba(52, 51, 134, 0.1);
 }
 
 .compactSalaryRange {
@@ -374,9 +374,9 @@
 }
 
 .compactAddButton {
-  background: #dbeafe;
-  color: #1e40af;
-  border: 1px solid #93c5fd;
+  background: #e0e7ff;
+  color: #343386;
+  border: 1px solid #a5b4fc;
   border-radius: 6px;
   padding: 0.5rem 1rem;
   cursor: pointer;
@@ -390,7 +390,7 @@
 }
 
 .compactAddButton:hover {
-  background: #bfdbfe;
+  background: #c7d2fe;
 }
 
 /* Legacy styles for compatibility */
@@ -451,9 +451,9 @@
 .select:focus,
 .textarea:focus {
   outline: none;
-  border-color: #3b82f6;
+  border-color: #343386;
   box-shadow: 
-    0 0 0 4px rgba(59, 130, 246, 0.1),
+    0 0 0 4px rgba(52, 51, 134, 0.1),
     0 4px 6px -1px rgba(0, 0, 0, 0.1);
   transform: translateY(-1px);
   background: #ffffff;
@@ -593,9 +593,9 @@
 }
 
 .addButton {
-  background: #dbeafe;
-  color: #1e40af;
-  border: 1px solid #93c5fd;
+  background: #e0e7ff;
+  color: #343386;
+  border: 1px solid #a5b4fc;
   border-radius: 8px;
   padding: 0.625rem 1rem;
   cursor: pointer;
@@ -610,8 +610,8 @@
 }
 
 .addButton:hover {
-  background: #bfdbfe;
-  border-color: #60a5fa;
+  background: #c7d2fe;
+  border-color: #818cf8;
 }
 
 .formActions {
@@ -654,15 +654,15 @@
 }
 
 .formActions button:last-child {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #2a2968 0%, #343386 100%);
   border: none;
   color: white;
-  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+  box-shadow: 0 4px 15px rgba(52, 51, 134, 0.4);
 }
 
 .formActions button:last-child:hover {
   transform: translateY(-2px);
-  box-shadow: 0 8px 25px rgba(102, 126, 234, 0.6);
+  box-shadow: 0 8px 25px rgba(52, 51, 134, 0.6);
 }
 
 /* Responsive Design */

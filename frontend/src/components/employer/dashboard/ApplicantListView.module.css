@@ -82,7 +82,7 @@
   width: 40px;
   height: 40px;
   border-radius: 50%;
-  background: #3b82f6;
+  background: #343386;
   color: white;
   display: flex;
   align-items: center;
@@ -129,8 +129,8 @@
 }
 
 .skillTag {
-  background: #eff6ff;
-  color: #1d4ed8;
+  background: #e0e7ff;
+  color: #343386;
   padding: 4px 8px;
   border-radius: 12px;
   font-size: 11px;
@@ -194,7 +194,7 @@
   align-items: center;
   gap: 6px;
   padding: 8px 12px;
-  background: #3b82f6;
+  background: #343386;
   color: white;
   border: none;
   border-radius: 6px;
@@ -205,7 +205,7 @@
 }
 
 .viewButton:hover {
-  background: #2563eb;
+  background: #2a2968;
 }
 
 .icon {

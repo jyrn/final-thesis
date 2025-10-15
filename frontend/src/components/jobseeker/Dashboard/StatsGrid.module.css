@@ -25,25 +25,25 @@
 .statCard:hover {
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
   transform: translateY(-4px);
-  border-color: #667eea;
+  border-color: #5550b1;
   cursor: pointer;
 }
 
 .statCard:hover .statIcon {
   transform: scale(1.05);
-  box-shadow: 0 6px 20px rgba(139, 92, 246, 0.4);
+  box-shadow: 0 6px 20px rgba(85, 80, 177, 0.4);
 }
 
 .statIcon {
   width: 56px;
   height: 56px;
   border-radius: 14px;
-  background: linear-gradient(135deg, #667eea, #764ba2);
+  background: linear-gradient(135deg, #6b66c7, #5550b1);
   display: flex;
   align-items: center;
   justify-content: center;
   color: white;
-  box-shadow: 0 4px 16px rgba(102, 126, 234, 0.3);
+  box-shadow: 0 4px 16px rgba(85, 80, 177, 0.3);
   font-size: 1.5rem;
 }
 

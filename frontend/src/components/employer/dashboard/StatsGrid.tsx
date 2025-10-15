@@ -22,8 +22,8 @@ export const StatsGrid: React.FC<StatsGridProps> = ({ stats, onNavigate }) => {
     }}>
       <div className={cardStyles.statCard} onClick={() => onNavigate?.('applicants')} style={{cursor: 'pointer'}}>
         <div className={`${cardStyles.statIcon} ${cardStyles.primary}`} style={{
-          background: 'linear-gradient(135deg, #667eea, #764ba2)',
-          boxShadow: '0 4px 16px rgba(102, 126, 234, 0.3)',
+          background: 'linear-gradient(135deg, #2a2968, #343386)',
+          boxShadow: '0 4px 16px rgba(52, 51, 134, 0.3)',
           width: '56px',
           height: '56px',
           borderRadius: '14px'
@@ -42,8 +42,8 @@ export const StatsGrid: React.FC<StatsGridProps> = ({ stats, onNavigate }) => {
 
       <div className={cardStyles.statCard} onClick={() => onNavigate?.('applicants')} style={{cursor: 'pointer'}}>
         <div className={`${cardStyles.statIcon} ${cardStyles.success}`} style={{
-          background: 'linear-gradient(135deg, #667eea, #764ba2)',
-          boxShadow: '0 4px 16px rgba(102, 126, 234, 0.3)',
+          background: 'linear-gradient(135deg, #2a2968, #343386)',
+          boxShadow: '0 4px 16px rgba(52, 51, 134, 0.3)',
           width: '56px',
           height: '56px',
           borderRadius: '14px'
@@ -62,8 +62,8 @@ export const StatsGrid: React.FC<StatsGridProps> = ({ stats, onNavigate }) => {
 
       <div className={cardStyles.statCard} onClick={() => onNavigate?.('jobs')} style={{cursor: 'pointer'}}>
         <div className={`${cardStyles.statIcon} ${cardStyles.warning}`} style={{
-          background: 'linear-gradient(135deg, #667eea, #764ba2)',
-          boxShadow: '0 4px 16px rgba(102, 126, 234, 0.3)',
+          background: 'linear-gradient(135deg, #2a2968, #343386)',
+          boxShadow: '0 4px 16px rgba(52, 51, 134, 0.3)',
           width: '56px',
           height: '56px',
           borderRadius: '14px'
@@ -82,8 +82,8 @@ export const StatsGrid: React.FC<StatsGridProps> = ({ stats, onNavigate }) => {
 
       <div className={cardStyles.statCard} onClick={() => onNavigate?.('applicants')} style={{cursor: 'pointer'}}>
         <div className={`${cardStyles.statIcon} ${cardStyles.info}`} style={{
-          background: 'linear-gradient(135deg, #667eea, #764ba2)',
-          boxShadow: '0 4px 16px rgba(102, 126, 234, 0.3)',
+          background: 'linear-gradient(135deg, #2a2968, #343386)',
+          boxShadow: '0 4px 16px rgba(52, 51, 134, 0.3)',
           width: '56px',
           height: '56px',
           borderRadius: '14px'

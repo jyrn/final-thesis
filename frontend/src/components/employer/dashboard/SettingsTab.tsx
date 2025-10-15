@@ -52,9 +52,6 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({
 
   return (
     <div className={styles.settingsTab}>
-      <div className={styles.header}>
-        <h1 className={styles.title}>All Settings</h1>
-      </div>
 
       <div className={styles.settingsGrid}>
         {settingsOptions.map((setting) => {

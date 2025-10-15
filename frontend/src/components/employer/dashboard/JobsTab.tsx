@@ -236,7 +236,6 @@ export const JobsTab: React.FC<JobsTabProps> = ({
   return (
     <div className={styles.jobsTab}>
       <div className={styles.header}>
-        <h1 className={styles.title}>All Job Posts</h1>
         <div className={styles.headerControls}>
           <select 
             className={styles.filterSelect}

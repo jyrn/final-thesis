@@ -35,10 +35,10 @@
 }
 
 .actionCard:hover {
-  border-color: #667eea;
-  box-shadow: 0 8px 28px rgba(102, 126, 234, 0.15);
+  border-color: #5550b1;
+  box-shadow: 0 8px 28px rgba(85, 80, 177, 0.15);
   transform: translateY(-4px);
-  background: linear-gradient(135deg, #ffffff 0%, #f8faff 100%);
+  background: linear-gradient(135deg, #ffffff 0%, #fdf4ff 100%);
 }
 
 .actionIcon {
@@ -46,7 +46,7 @@
   margin-bottom: 1rem;
   width: 40px;
   height: 40px;
-  color: #667eea;
+  color: #5550b1;
   transition: all 0.3s ease;
 }
 
@@ -58,7 +58,7 @@
 }
 
 .actionCard:hover .actionLabel {
-  color: #667eea;
+  color: #5550b1;
 }
 
 /* Mobile Responsive */
