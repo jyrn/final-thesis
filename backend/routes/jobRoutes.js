@@ -74,7 +74,9 @@ router.get('/', async (req, res) => {
         }
       }
     });
-  } catch (error) {    res.status(500).json({
+  } catch (error) {
+    console.error('Error fetching jobs:', error);
+    res.status(500).json({
       success: false,
       message: 'Error fetching jobs',
       error: error.message
@@ -107,7 +109,9 @@ router.get('/stats/overview', async (req, res) => {
         topLocations: jobsByLocation
       }
     });
-  } catch (error) {    res.status(500).json({
+  } catch (error) {
+    console.error('Error fetching job statistics:', error);
+    res.status(500).json({
       success: false,
       message: 'Error fetching job statistics',
       error: error.message
@@ -186,7 +190,9 @@ router.get('/employer/my-jobs', verifyToken, requireRole('employer'), async (req
         }
       }
     });
-  } catch (error) {    res.status(500).json({
+  } catch (error) {
+    console.error('Error fetching employer jobs:', error);
+    res.status(500).json({
       success: false,
       message: 'Error fetching your job postings',
       error: error.message
@@ -231,13 +237,17 @@ router.get('/:id', async (req, res) => {
           jobData.companyLogo = user.profilePicture;
         }
       }
-    } catch (error) {    }
+    } catch (error) {
+      // Ignore error fetching profile picture
+    }
 
     res.json({
       success: true,
       data: jobData
     });
-  } catch (error) {    res.status(500).json({
+  } catch (error) {
+    console.error('Error fetching job details:', error);
+    res.status(500).json({
       success: false,
       message: 'Error fetching job details',
       error: error.message
@@ -352,7 +362,9 @@ router.post('/', verifyToken, requireRole('employer'), async (req, res) => {
         preferredCourse: job.preferredCourse
       }
     });
-  } catch (error) {    res.status(500).json({
+  } catch (error) {
+    console.error('Error creating job posting:', error);
+    res.status(500).json({
       success: false,
       message: 'Error creating job posting',
       error: error.message
@@ -441,7 +453,9 @@ router.put('/:id', verifyToken, requireRole('employer'), async (req, res) => {
         lastUpdated: job.lastUpdated
       }
     });
-  } catch (error) {    res.status(500).json({
+  } catch (error) {
+    console.error('Error updating job posting:', error);
+    res.status(500).json({
       success: false,
       message: 'Error updating job posting',
       error: error.message
@@ -483,7 +497,9 @@ router.delete('/:id', verifyToken, requireRole('employer'), async (req, res) => 
       success: true,
       message: 'Job deleted successfully'
     });
-  } catch (error) {    res.status(500).json({
+  } catch (error) {
+    console.error('Error deleting job posting:', error);
+    res.status(500).json({
       success: false,
       message: 'Error deleting job posting',
       error: error.message
