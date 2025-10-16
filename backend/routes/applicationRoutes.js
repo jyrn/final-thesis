@@ -755,7 +755,7 @@ router.get('/:applicationId/resume', verifyToken, async (req, res) => {
         if (userResumeFiles.length > 0) {
           const latestFile = userResumeFiles.sort().pop();
           console.log('Using latest available resume file:', latestFile);
-          const baseUrl = process.env.BASE_URL || 'http://localhost:3001';
+          const baseUrl = process.env.BASE_URL || 'https://skillsync-backend-1.onrender.com';
           return res.redirect(`${baseUrl}/uploads/resumes/${latestFile}`);
         }
       }
@@ -763,7 +763,7 @@ router.get('/:applicationId/resume', verifyToken, async (req, res) => {
       return res.status(404).json({ message: 'Resume file not found on server' });
     }
 
-    const baseUrl = process.env.BASE_URL || 'http://localhost:3001';
+    const baseUrl = process.env.BASE_URL || 'https://skillsync-backend-1.onrender.com';
     const staticUrl = resumeFileUrl.startsWith('/uploads')
       ? `${baseUrl}${resumeFileUrl}`
       : `${baseUrl}/uploads/resumes/${path.basename(resumeFileUrl)}`;
