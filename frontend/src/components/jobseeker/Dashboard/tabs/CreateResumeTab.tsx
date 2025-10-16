@@ -779,7 +779,7 @@ const CreateResumeTab: React.FC<CreateResumeTabProps> = ({
       }
       
       const token = await auth.currentUser.getIdToken();
-      const response = await fetch('http://localhost:3001/api/resumes/current', {
+      const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:3001/api'}/resumes/current`, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -2034,7 +2034,7 @@ const CreateResumeTab: React.FC<CreateResumeTabProps> = ({
 
       const token = await auth.currentUser.getIdToken();
 
-      const response = await fetch('http://localhost:3001/api/jobseekers/upload-original-resume', {
+      const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:3001/api'}/jobseekers/upload-original-resume`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`
@@ -2131,7 +2131,7 @@ const CreateResumeTab: React.FC<CreateResumeTabProps> = ({
         resumeDataSize: JSON.stringify(enhancedResumeData).length
       });
       
-      const response = await fetch('http://localhost:3001/api/resumes/create', {
+      const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:3001/api'}/resumes/create`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

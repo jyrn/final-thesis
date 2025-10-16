@@ -131,7 +131,7 @@ export const ApplicantDetailsModal: React.FC<ApplicantDetailsModalProps> = ({
       if (!currentUser) return;
 
       const token = await currentUser.getIdToken();
-      const response = await fetch('http://localhost:3001/api/applications/employer', {
+      const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:3001/api'}/applications/employer`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -166,7 +166,7 @@ export const ApplicantDetailsModal: React.FC<ApplicantDetailsModalProps> = ({
       if (!currentUser) return;
 
       const token = await currentUser.getIdToken();
-      const response = await fetch(`http://localhost:3001/api/resumes/view/${applicationData._id}`, {
+      const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:3001/api'}/resumes/view/${applicationData._id}`, {
         headers: {
           'Authorization': `Bearer ${token}`,
         },
@@ -289,7 +289,7 @@ export const ApplicantDetailsModal: React.FC<ApplicantDetailsModalProps> = ({
       if (!currentUser || !applicationData?._id) return;
 
       const token = await currentUser.getIdToken();
-      const response = await fetch(`http://localhost:3001/api/resumes/download/${applicationData._id}`, {
+      const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:3001/api'}/resumes/download/${applicationData._id}`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -355,7 +355,7 @@ export const ApplicantDetailsModal: React.FC<ApplicantDetailsModalProps> = ({
       if (!currentUser) return;
 
       const token = await currentUser.getIdToken();
-      const response = await fetch(`http://localhost:3001/api/applications/${applicant.id}/status`, {
+      const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:3001/api'}/applications/${applicant.id}/status`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
