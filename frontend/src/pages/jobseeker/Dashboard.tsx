@@ -558,7 +558,8 @@ const Dashboard: React.FC = () => {
         return;
       }
 
-      const token = await user.getIdToken();      // Submit application to backend      const response = await fetch('http://localhost:3001/api/applications', {
+      const token = await user.getIdToken();      // Submit application to backend
+      const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:3001/api'}/applications`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

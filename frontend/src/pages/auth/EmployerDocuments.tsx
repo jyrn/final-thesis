@@ -195,7 +195,7 @@ const EmployerDocuments: React.FC = () => {
       const token = await user.getIdToken()
 
       // Upload documents to backend using cloud storage
-      const response = await fetch('http://localhost:3001/api/employers/upload-documents-cloud', {
+      const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:3001/api'}/employers/upload-documents-cloud`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`

@@ -168,7 +168,7 @@ const EmployerDashboard: React.FC = () => {
         // Check employer account status
         try {
           const token = await user.getIdToken();
-          const response = await fetch('http://localhost:3001/api/employers/account-status', {
+          const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:3001/api'}/employers/account-status`, {
             headers: {
               'Authorization': `Bearer ${token}`,
               'Content-Type': 'application/json'
@@ -217,7 +217,7 @@ const EmployerDashboard: React.FC = () => {
         let companyName = '';
         
         // Load employer profile
-        const employerResponse = await fetch('http://localhost:3001/api/employers/profile', {
+        const employerResponse = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:3001/api'}/employers/profile`, {
           headers: {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json'
@@ -243,7 +243,7 @@ const EmployerDashboard: React.FC = () => {
         }
 
         // Load user profile for profile picture
-        const userResponse = await fetch('http://localhost:3001/api/users/profile', {
+        const userResponse = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:3001/api'}/users/profile`, {
           headers: {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json'
@@ -353,7 +353,7 @@ const EmployerDashboard: React.FC = () => {
   const handleSaveCompanyProfile = async (profileData: CompanyProfileData) => {
     try {
       const token = await currentUser?.getIdToken();
-      const response = await fetch('http://localhost:3001/api/employers/profile', {
+      const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:3001/api'}/employers/profile`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -406,7 +406,7 @@ const EmployerDashboard: React.FC = () => {
       
       const token = await currentUser.getIdToken();
       
-      const response = await fetch('http://localhost:3001/api/applications/employer', {
+      const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:3001/api'}/applications/employer`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -651,7 +651,7 @@ const EmployerDashboard: React.FC = () => {
 
       const token = await currentUser.getIdToken();
       
-      const statusResponse = await fetch(`http://localhost:3001/api/applications/${applicantForInitialInterview.id}/status`, {
+      const statusResponse = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:3001/api'}/applications/${applicantForInitialInterview.id}/status`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -665,7 +665,7 @@ const EmployerDashboard: React.FC = () => {
       }
       
       if (sendEmail) {
-        const emailResponse = await fetch(`http://localhost:3001/api/applications/${applicantForInitialInterview.id}/send-initial-interview-email`, {
+        const emailResponse = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:3001/api'}/applications/${applicantForInitialInterview.id}/send-initial-interview-email`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -724,7 +724,7 @@ const EmployerDashboard: React.FC = () => {
 
       const token = await currentUser.getIdToken();
       
-      const statusResponse = await fetch(`http://localhost:3001/api/applications/${applicantForFinalInterview.id}/status`, {
+      const statusResponse = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:3001/api'}/applications/${applicantForFinalInterview.id}/status`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -738,7 +738,7 @@ const EmployerDashboard: React.FC = () => {
       }
       
       if (sendEmail) {
-        const emailResponse = await fetch(`http://localhost:3001/api/applications/${applicantForFinalInterview.id}/send-final-interview-email`, {
+        const emailResponse = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:3001/api'}/applications/${applicantForFinalInterview.id}/send-final-interview-email`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -800,7 +800,7 @@ const EmployerDashboard: React.FC = () => {
       const token = await currentUser.getIdToken();
       
       // Update status to hired
-      const statusResponse = await fetch(`http://localhost:3001/api/applications/${applicantToHire.id}/status`, {
+      const statusResponse = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:3001/api'}/applications/${applicantToHire.id}/status`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -815,7 +815,7 @@ const EmployerDashboard: React.FC = () => {
       
       // Send email if requested
       if (sendEmail) {
-        const emailResponse = await fetch(`http://localhost:3001/api/applications/${applicantToHire.id}/send-hire-email`, {
+        const emailResponse = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:3001/api'}/applications/${applicantToHire.id}/send-hire-email`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -859,7 +859,7 @@ const EmployerDashboard: React.FC = () => {
 
       const token = await currentUser.getIdToken();
       
-      const response = await fetch(`http://localhost:3001/api/applications/${applicantId}/status`, {
+      const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:3001/api'}/applications/${applicantId}/status`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -909,7 +909,7 @@ const EmployerDashboard: React.FC = () => {
       const token = await currentUser.getIdToken();
       
       // Use the application ID to fetch the specific applicant's resume
-      const response = await fetch(`http://localhost:3001/api/resumes/view/${applicant.id}`, {
+      const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:3001/api'}/resumes/view/${applicant.id}`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -959,7 +959,7 @@ const EmployerDashboard: React.FC = () => {
       const token = await currentUser.getIdToken();
       
       // Use the application ID to download the specific applicant's resume
-      const response = await fetch(`http://localhost:3001/api/resumes/download/${applicant.id}`, {
+      const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:3001/api'}/resumes/download/${applicant.id}`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'

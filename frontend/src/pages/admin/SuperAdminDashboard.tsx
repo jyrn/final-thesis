@@ -174,7 +174,7 @@ const SuperAdminDashboard: React.FC = () => {
       const formatDate = (date: Date) => date.toISOString().split('T')[0];
 
       // Generate PDF report
-      const response = await fetch('http://localhost:3001/api/admin/reports/generate', {
+      const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:3001/api'}/admin/reports/generate`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
