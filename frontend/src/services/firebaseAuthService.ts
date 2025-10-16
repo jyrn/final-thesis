@@ -7,8 +7,7 @@ import {
   onAuthStateChanged, 
   User, 
   GoogleAuthProvider, 
-  signInWithRedirect,
-  getRedirectResult,
+  signInWithPopup,
   reload,
   fetchSignInMethodsForEmail,
   updateProfile,
@@ -185,34 +184,27 @@ const firebaseAuthService = {
     }
   },
 
-  // Sign in with Google using redirect (fixes COOP policy issues)
+  // Sign in with Google using popup (fixes sessionStorage issues)
   async signInWithGoogle(role: 'jobseeker' | 'employer'): Promise<AuthResponse> {
     try {
       const provider = new GoogleAuthProvider();
-      // Store role in localStorage to retrieve after redirect
-      localStorage.setItem('pendingGoogleSignInRole', role);
-      await signInWithRedirect(auth, provider);
+      const result = await signInWithPopup(auth, provider);
       
-      // This will redirect the page, so we won't reach this return
-      return {
-        success: true,
-        message: 'Redirecting to Google sign in...'
-      };
-    } catch (error: any) {
-      return {
-        success: false,
-        error: error.message || 'Failed to sign in with Google'
-      };
-    }
-  },
-
-  // Handle redirect result after Google sign-in
-  async handleGoogleRedirectResult(): Promise<AuthResponse> {
-    try {
-      const result = await getRedirectResult(auth);
       if (result && result.user) {
-        const role = localStorage.getItem('pendingGoogleSignInRole') as 'jobseeker' | 'employer';
-        localStorage.removeItem('pendingGoogleSignInRole');
+        // Check if user exists in database
+        const userExists = await checkUserExists(result.user.uid);
+        
+        if (!userExists) {
+          // Save new user to database
+          await saveUserToDatabase({
+            uid: result.user.uid,
+            email: result.user.email || '',
+            role: role,
+            firstName: result.user.displayName?.split(' ')[0] || '',
+            lastName: result.user.displayName?.split(' ').slice(1).join(' ') || '',
+            emailVerified: result.user.emailVerified
+          });
+        }
         
         return {
           success: true,
@@ -223,12 +215,12 @@ const firebaseAuthService = {
       
       return {
         success: false,
-        error: 'No redirect result found'
+        error: 'No user returned from Google sign in'
       };
     } catch (error: any) {
       return {
         success: false,
-        error: error.message || 'Failed to handle Google redirect'
+        error: error.message || 'Failed to sign in with Google'
       };
     }
   },
