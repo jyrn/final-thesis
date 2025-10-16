@@ -2,7 +2,7 @@ services:
   - type: web
     name: skillsync-frontend
     env: static
-    buildCommand: npm run build
+    buildCommand: cd frontend && npm install && npm run build
     staticPublishPath: ./frontend/build
     routes:
       - type: rewrite
