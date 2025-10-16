@@ -1,5 +1,5 @@
 class JobseekerCloudService {
-  private baseUrl = 'http://localhost:3001/api';
+  private baseUrl = process.env.REACT_APP_API_URL || 'http://localhost:3001/api';
 
   // Upload resume photo to cloud storage (separate from profile picture)
   async uploadResumePhoto(file: File): Promise<{ success: boolean; data?: { cloudUrl: string }; message?: string }> {

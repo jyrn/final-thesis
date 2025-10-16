@@ -14,7 +14,7 @@ interface DocumentResponse {
 }
 
 class DocumentService {
-  private baseUrl = 'http://localhost:3001/api';
+  private baseUrl = process.env.REACT_APP_API_URL || 'http://localhost:3001/api';
 
   private getAuthHeaders() {
     const token = localStorage.getItem('token');
