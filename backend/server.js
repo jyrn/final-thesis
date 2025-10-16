@@ -36,7 +36,11 @@ if (process.env.ENABLE_ML_SERVICES !== 'false') {
 
 // Middleware
 app.use(cors({
-  origin: ['http://localhost:3000', 'http://127.0.0.1:3000'],
+  origin: [
+    'http://localhost:3000', 
+    'http://127.0.0.1:3000',
+    process.env.FRONTEND_URL || 'https://your-frontend-app.onrender.com'
+  ],
   credentials: true
 }));
 app.use(express.json({ limit: '50mb' }));
