@@ -1,6 +1,5 @@
 import { auth } from '../config/firebase';
-
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001/api';
+import API_BASE_URL from '../config/apiConfig';
 
 export interface ApiResponse<T = any> {
   success: boolean;
