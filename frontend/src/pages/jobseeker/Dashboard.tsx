@@ -82,7 +82,6 @@ const Dashboard: React.FC = () => {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false)
   const [isFirstVisit, setIsFirstVisit] = useState(true)
   const [hasSkippedResume, setHasSkippedResume] = useState(false)
-  const [showInitialResumePrompt, setShowInitialResumePrompt] = useState(false)
   const [attemptedJobId, setAttemptedJobId] = useState<string | number | null>(null)
   const [showFilterModal, setShowFilterModal] = useState(false)
   const [userProfile, setUserProfile] = useState<any>(null)
@@ -354,7 +353,6 @@ const Dashboard: React.FC = () => {
         
         // Show initial resume prompt only if first visit
         if (!hasVisited) {
-          setShowInitialResumePrompt(true)
           setIsFirstVisit(true)
         } else {
           setIsFirstVisit(false)
@@ -438,7 +436,6 @@ const Dashboard: React.FC = () => {
       
       setResume(resumeData)
       setShowResumeUpload(false)
-      setShowInitialResumePrompt(false)
       setHasSkippedResume(false)
       
       // Save to localStorage as backup/cache
@@ -459,7 +456,6 @@ const Dashboard: React.FC = () => {
 
   const handleSkipResume = () => {
     setHasSkippedResume(true);
-    setShowInitialResumePrompt(false);
     setShowResumeUpload(false);
     // Don't change the active tab, just close the modal
   };
@@ -833,49 +829,6 @@ const Dashboard: React.FC = () => {
         companyName={appliedJobDetails?.company || ''}
       />
 
-      {showInitialResumePrompt && (
-        <div className={styles.modalOverlay}>
-          <div className={styles.initialResumeModal}>
-            <div className={styles.modalHeader}>
-              <h2>Welcome to Your Job Dashboard!</h2>
-            </div>
-            <div className={styles.modalContent}>
-              <div className={styles.resumeIcon}>
-                <FiFileText size={48} />
-              </div>
-              <h3>Upload Your Resume for Better Job Matches</h3>
-              <p>
-                Your resume helps us understand your skills and experience to recommend 
-                the most relevant job opportunities. We'll analyze your background and 
-                match you with positions that fit your profile.
-              </p>
-              <ul className={styles.benefitsList}>
-                <li>Get personalized job recommendations</li>
-                <li>See jobs ranked by skill match</li>
-                <li>Apply to jobs with one click</li>
-                <li>Track your application status</li>
-              </ul>
-            </div>
-            <div className={styles.modalActions}>
-              <button 
-                className={styles.primaryBtn}
-                onClick={() => {
-                  setShowInitialResumePrompt(false)
-                  setShowResumeUpload(true)
-                }}
-              >
-                Upload Resume
-              </button>
-              <button 
-                className={styles.secondaryBtn}
-                onClick={handleSkipResume}
-              >
-                Skip for Now
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   )
 }
