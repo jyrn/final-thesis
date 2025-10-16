@@ -3,10 +3,8 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
-    "build": "react-scripts build",
     "start": "react-scripts start",
-    "lint": "next lint",
+    "build": "react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject"
   },
@@ -59,7 +57,6 @@
     "input-otp": "1.4.1",
     "jspdf": "^3.0.3",
     "lucide-react": "^0.454.0",
-    "next": "14.2.25",
     "next-themes": "^0.4.4",
     "pdfjs-dist": "^4.10.38",
     "react": "^18.2.0",
