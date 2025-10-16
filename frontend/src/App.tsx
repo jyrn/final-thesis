@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { HashRouter, Routes, Route } from 'react-router-dom';
 import MainLayout from './layouts/MainLayout';
 import RoleSelectionPage from './pages/auth/RoleSelectionPage';
 import EmployerAuth from './pages/auth/EmployerAuth';
@@ -17,7 +17,7 @@ import SuperAdminDashboard from './pages/admin/SuperAdminDashboard';
 
 function App() {
   return (
-    <BrowserRouter>
+    <HashRouter>
       <Routes>
         {/* Auth routes without layout */}
         <Route path="/" element={<RoleSelectionPage />} />
@@ -42,7 +42,7 @@ function App() {
           <Route path="/employer/dashboard" element={<EmployerDashboard />} />
         </Route>
       </Routes>
-    </BrowserRouter>
+    </HashRouter>
   );
 }
 
