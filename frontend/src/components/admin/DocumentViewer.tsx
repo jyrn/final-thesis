@@ -75,7 +75,7 @@ const DocumentViewer: React.FC<DocumentViewerProps> = ({
         return;
       }
       
-      const authenticatedUrl = `http://localhost:3001/api/admin/view-document/${document._id}?token=${token}`;
+      const authenticatedUrl = `https://skillsync-backend-gwwo.onrender.com/api/admin/view-document/${document._id}?token=${token}`;
       
       // Create a document object with the authenticated URL for preview
       const previewDoc = {

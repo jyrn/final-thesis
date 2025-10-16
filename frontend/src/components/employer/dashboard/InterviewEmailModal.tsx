@@ -72,7 +72,7 @@ export const InterviewEmailModal: React.FC<InterviewEmailModalProps> = ({
       if (!user) return;
       
       const token = await user.getIdToken();
-      const response = await fetch('http://localhost:3001/api/employers/interview-templates', {
+      const response = await fetch('https://skillsync-backend-gwwo.onrender.com/api/employers/interview-templates', {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -110,7 +110,7 @@ export const InterviewEmailModal: React.FC<InterviewEmailModalProps> = ({
         nextSteps: nextSteps
       };
       
-      await fetch('http://localhost:3001/api/employers/interview-templates', {
+      await fetch('https://skillsync-backend-gwwo.onrender.com/api/employers/interview-templates', {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,

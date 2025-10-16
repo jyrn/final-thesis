@@ -326,7 +326,7 @@ const ReportsTab: React.FC = () => {
         
         if (filters.format === 'pdf' || filters.format === 'xlsx') {
           // For PDF/XLSX, make a direct request to get the binary data
-          const response = await fetch('http://localhost:3001/api/admin/reports/generate', {
+          const response = await fetch('https://skillsync-backend-gwwo.onrender.com/api/admin/reports/generate', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -414,7 +414,7 @@ const ReportsTab: React.FC = () => {
       
       if (filters.format === 'pdf' || filters.format === 'xlsx') {
         // For PDF/XLSX, make a direct request to get the binary data
-        const response = await fetch('http://localhost:3001/api/admin/reports/generate-selected', {
+        const response = await fetch('https://skillsync-backend-gwwo.onrender.com/api/admin/reports/generate-selected', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -631,7 +631,7 @@ const ReportsTab: React.FC = () => {
       
       if (filters.format === 'pdf' || filters.format === 'xlsx') {
         // For PDF/XLSX, make a direct request to get the binary data
-        const response = await fetch('http://localhost:3001/api/admin/reports/generate-all', {
+        const response = await fetch('https://skillsync-backend-gwwo.onrender.com/api/admin/reports/generate-all', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',

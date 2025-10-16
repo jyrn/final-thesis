@@ -189,7 +189,7 @@ const SettingsTab: React.FC<SettingsTabProps> = ({ onNavigate }) => {
             
             if (resumeResponse.data.fileUrl) {
               resumes.generated = {
-                url: `http://localhost:3001${resumeResponse.data.fileUrl}`,
+                url: `https://skillsync-backend-gwwo.onrender.com${resumeResponse.data.fileUrl}`,
                 label: 'Generated Resume'
               };
             }

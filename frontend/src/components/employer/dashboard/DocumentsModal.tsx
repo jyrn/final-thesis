@@ -67,7 +67,7 @@ export const DocumentsModal: React.FC<DocumentsModalProps> = ({
       
       if (user) {
         const token = await user.getIdToken();
-        const response = await fetch('http://localhost:3001/api/employers/profile', {
+        const response = await fetch('https://skillsync-backend-gwwo.onrender.com/api/employers/profile', {
           headers: {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json'
@@ -87,7 +87,7 @@ export const DocumentsModal: React.FC<DocumentsModalProps> = ({
                 name: doc.documentName,
                 uploadDate: doc.uploadedAt,
                 size: 'Unknown', // Backend doesn't store file size
-                url: doc.cloudUrl || `http://localhost:3001/${doc.documentUrl}`,
+                url: doc.cloudUrl || `https://skillsync-backend-gwwo.onrender.com/${doc.documentUrl}`,
                 verificationStatus: doc.verificationStatus || employer.documentVerificationStatus
               };
             });
@@ -146,7 +146,7 @@ export const DocumentsModal: React.FC<DocumentsModalProps> = ({
       const token = await user.getIdToken();
       
       // Upload single document to cloud storage
-      const response = await fetch('http://localhost:3001/api/employers/upload-single-document', {
+      const response = await fetch('https://skillsync-backend-gwwo.onrender.com/api/employers/upload-single-document', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`
@@ -232,7 +232,7 @@ export const DocumentsModal: React.FC<DocumentsModalProps> = ({
       const token = await user.getIdToken();
       
       // Create the authenticated URL for the PDF
-      const url = `http://localhost:3001/api/employers/view-document/${documentType}?token=${token}`;
+      const url = `https://skillsync-backend-gwwo.onrender.com/api/employers/view-document/${documentType}?token=${token}`;
       
       // Get document name for preview
       const document = existingDocuments[documentType];

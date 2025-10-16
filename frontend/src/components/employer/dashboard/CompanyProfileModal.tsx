@@ -67,7 +67,7 @@ export const CompanyProfileModal: React.FC<CompanyProfileModalProps> = ({
           const { auth } = await import('../../../config/firebase');
           const token = await auth.currentUser?.getIdToken();
           
-          const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:3001/api'}/users/profile`, {
+          const response = await fetch(`${process.env.REACT_APP_API_URL || 'https://skillsync-backend-gwwo.onrender.com/api'}/users/profile`, {
             headers: {
               'Authorization': `Bearer ${token}`,
               'Content-Type': 'application/json'
@@ -117,7 +117,7 @@ export const CompanyProfileModal: React.FC<CompanyProfileModalProps> = ({
       const formData = new FormData();
       formData.append('profilePicture', file);
 
-      const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:3001/api'}/users/profile-picture-cloud`, {
+      const response = await fetch(`${process.env.REACT_APP_API_URL || 'https://skillsync-backend-gwwo.onrender.com/api'}/users/profile-picture-cloud`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${await (await import('../../../config/firebase')).auth.currentUser?.getIdToken()}`
@@ -157,7 +157,7 @@ export const CompanyProfileModal: React.FC<CompanyProfileModalProps> = ({
     setUploadError(null);
 
     try {
-      const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:3001/api'}/users/profile-picture-cloud`, {
+      const response = await fetch(`${process.env.REACT_APP_API_URL || 'https://skillsync-backend-gwwo.onrender.com/api'}/users/profile-picture-cloud`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${await (await import('../../../config/firebase')).auth.currentUser?.getIdToken()}`

@@ -1,7 +1,7 @@
 import { AdminUser, DashboardStats, PendingEmployer, Job } from '../types/admin';
 
 class AdminService {
-  private baseUrl = `${process.env.REACT_APP_API_URL || 'http://localhost:3001/api'}/admin`;
+  private baseUrl = `${process.env.REACT_APP_API_URL || 'https://skillsync-backend-gwwo.onrender.com/api'}/admin`;
 
   private getAuthHeaders() {
     const token = localStorage.getItem('adminToken');

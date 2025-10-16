@@ -54,7 +54,7 @@ const ApplicationsTab: React.FC<any> = ({
       }
 
       const token = await user.getIdToken();
-      const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:3001/api'}/applications/jobseeker`, {
+      const response = await fetch(`${process.env.REACT_APP_API_URL || 'https://skillsync-backend-gwwo.onrender.com/api'}/applications/jobseeker`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -93,7 +93,7 @@ const ApplicationsTab: React.FC<any> = ({
       
       for (const jobId of uniqueJobIds) {
         try {
-          const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:3001/api'}/jobs/${jobId}`, {
+          const response = await fetch(`${process.env.REACT_APP_API_URL || 'https://skillsync-backend-gwwo.onrender.com/api'}/jobs/${jobId}`, {
             headers: {
               'Authorization': `Bearer ${token}`,
               'Content-Type': 'application/json'
@@ -131,7 +131,7 @@ const ApplicationsTab: React.FC<any> = ({
       }
 
       const token = await user.getIdToken();
-      const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:3001/api'}/applications/${applicationId}/withdraw`, {
+      const response = await fetch(`${process.env.REACT_APP_API_URL || 'https://skillsync-backend-gwwo.onrender.com/api'}/applications/${applicationId}/withdraw`, {
         method: 'PATCH',
         headers: {
           'Authorization': `Bearer ${token}`,

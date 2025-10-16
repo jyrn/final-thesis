@@ -10,7 +10,7 @@ const PDFPreview: React.FC<PDFPreviewProps> = ({ resumeUrl, className }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const fullUrl = `http://localhost:3001${resumeUrl}`;
+  const fullUrl = `https://skillsync-backend-gwwo.onrender.com${resumeUrl}`;
 
   const handleLoad = () => {
     setIsLoading(false);

@@ -559,7 +559,7 @@ const Dashboard: React.FC = () => {
       }
 
       const token = await user.getIdToken();      // Submit application to backend
-      const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:3001/api'}/applications`, {
+      const response = await fetch(`${process.env.REACT_APP_API_URL || 'https://skillsync-backend-gwwo.onrender.com/api'}/applications`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

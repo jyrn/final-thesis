@@ -617,7 +617,7 @@ const EmployerAuth: React.FC = () => {
           formDataToSend.append('doleNoPendingCase', employerDocuments.doleNoPendingCase.file)
         }
 
-        const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:3001/api'}/auth/employer/documents`, {
+        const response = await fetch(`${process.env.REACT_APP_API_URL || 'https://skillsync-backend-gwwo.onrender.com/api'}/auth/employer/documents`, {
           method: 'POST',
           body: formDataToSend,
           // Don't set Content-Type header, let the browser set it with the correct boundary

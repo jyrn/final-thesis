@@ -68,7 +68,7 @@ export const HireEmailModal: React.FC<HireEmailModalProps> = ({
       if (!user) return;
       
       const token = await user.getIdToken();
-      const response = await fetch('http://localhost:3001/api/employers/hire-templates', {
+      const response = await fetch('https://skillsync-backend-gwwo.onrender.com/api/employers/hire-templates', {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -104,7 +104,7 @@ export const HireEmailModal: React.FC<HireEmailModalProps> = ({
         nextSteps: nextSteps
       };
       
-      await fetch('http://localhost:3001/api/employers/hire-templates', {
+      await fetch('https://skillsync-backend-gwwo.onrender.com/api/employers/hire-templates', {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,
