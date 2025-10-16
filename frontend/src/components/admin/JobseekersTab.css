@@ -454,9 +454,9 @@
 
 .actions-cell {
   padding: 1rem 0.25rem;
-  width: 240px !important;
+  width: 340px !important;
   max-width: 240px !important;
-  min-width: 240px !important;
+  min-width: 140px !important;
 }
 
 .action-buttons {
@@ -476,8 +476,9 @@
   cursor: pointer;
   transition: all 0.2s;
   background: white;
-  min-width: 35px;
-  width: 35px;
+  min-width: 70px;
+  width: auto;
+  flex-shrink: 0;
 }
 
 .jobseekers-tab .action-btn:hover {
@@ -691,8 +692,9 @@
   }
   
   .actions-cell {
-    min-width: 200px;
-    max-width: 220px;
+    min-width: 280px !important;
+    max-width: 320px !important;
+    width: 300px !important;
   }
   
   .admin-jobseekers-table .applications-cell {
