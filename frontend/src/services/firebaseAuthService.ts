@@ -7,7 +7,8 @@ import {
   onAuthStateChanged, 
   User, 
   GoogleAuthProvider, 
-  signInWithPopup,
+  signInWithRedirect,
+  getRedirectResult,
   reload,
   fetchSignInMethodsForEmail,
   updateProfile,
@@ -184,24 +185,50 @@ const firebaseAuthService = {
     }
   },
 
-  // Sign in with Google (without auto-creating backend user)
+  // Sign in with Google using redirect (fixes COOP policy issues)
   async signInWithGoogle(role: 'jobseeker' | 'employer'): Promise<AuthResponse> {
     try {
       const provider = new GoogleAuthProvider();
-      const userCredential = await signInWithPopup(auth, provider);
-      const { user } = userCredential;
+      // Store role in localStorage to retrieve after redirect
+      localStorage.setItem('pendingGoogleSignInRole', role);
+      await signInWithRedirect(auth, provider);
       
-      // Don't automatically create backend user - let the frontend handle this
-      // This prevents the race condition where backend creates user before frontend checks
-      
+      // This will redirect the page, so we won't reach this return
       return {
         success: true,
-        user,
-        message: 'Google sign in successful!'
+        message: 'Redirecting to Google sign in...'
       };
-    } catch (error: any) {      return {
+    } catch (error: any) {
+      return {
         success: false,
         error: error.message || 'Failed to sign in with Google'
+      };
+    }
+  },
+
+  // Handle redirect result after Google sign-in
+  async handleGoogleRedirectResult(): Promise<AuthResponse> {
+    try {
+      const result = await getRedirectResult(auth);
+      if (result && result.user) {
+        const role = localStorage.getItem('pendingGoogleSignInRole') as 'jobseeker' | 'employer';
+        localStorage.removeItem('pendingGoogleSignInRole');
+        
+        return {
+          success: true,
+          user: result.user,
+          message: 'Google sign in successful!'
+        };
+      }
+      
+      return {
+        success: false,
+        error: 'No redirect result found'
+      };
+    } catch (error: any) {
+      return {
+        success: false,
+        error: error.message || 'Failed to handle Google redirect'
       };
     }
   },
