@@ -37,7 +37,7 @@ function App() {
         <Route path="/pesostaff/dashboard" element={<AdminDashboard />} />
 
         {/* Protected routes with layout */}
-        <Route path="/" element={<MainLayout />}>
+        <Route element={<MainLayout />}>
           <Route path="/jobseeker/dashboard" element={<JobSeekerDashboard />} />
           <Route path="/employer/dashboard" element={<EmployerDashboard />} />
         </Route>
