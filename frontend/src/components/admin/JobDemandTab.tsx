@@ -283,19 +283,19 @@ const JobDemandTab: React.FC = () => {
 
           {/* 2. Donut Chart - Department Distribution */}
           <div className="chart-section-enhanced">
-            <div className="chart-header">
-              <h4 className="chart-title-enhanced">Top 10 Departments</h4>
-              <p className="chart-subtitle-text">Most active departments by applicant count</p>
+            <div className="chart-title-container">
+              <h4 className="chart-title-enhanced">Top 10 Companies by Hires</h4>
+              <p className="chart-subtitle-text">Companies with the highest number of successful hires</p>
             </div>
             <div className="donut-chart-container">
-              {chartData?.departmentDistribution && chartData.departmentDistribution.length > 0 ? (
+              {chartData?.companyHiringData && chartData.companyHiringData.length > 0 ? (
                 (() => {
-                  // Sort by total applicants and take top 10
-                  const departments = [...chartData.departmentDistribution]
-                    .sort((a, b) => b.totalApplicants - a.totalApplicants)
+                  // Sort by total hired and take top 10
+                  const companies = [...chartData.companyHiringData]
+                    .sort((a, b) => b.totalHired - a.totalHired)
                     .slice(0, 10);
                   const colors = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4', '#f97316', '#84cc16', '#06b6d4', '#8b5cf6'];
-                  const total = departments.reduce((sum: number, dept: any) => sum + dept.totalApplicants, 0);
+                  const total = companies.reduce((sum: number, company: any) => sum + company.totalHired, 0);
                   
                   return (
                     <div className="donut-chart-wrapper">
@@ -307,8 +307,8 @@ const JobDemandTab: React.FC = () => {
                           const centerX = 200;
                           const centerY = 200;
                           
-                          return departments.map((dept: any, index: number) => {
-                            const percentage = total > 0 ? (dept.totalApplicants / total) * 100 : 0;
+                          return companies.map((company: any, index: number) => {
+                            const percentage = total > 0 ? (company.totalHired / total) * 100 : 0;
                             const startAngle = (cumulativePercentage / 100) * 360 - 90;
                             const endAngle = ((cumulativePercentage + percentage) / 100) * 360 - 90;
                             
@@ -322,6 +322,24 @@ const JobDemandTab: React.FC = () => {
                             
                             const x3 = centerX + innerRadius * Math.cos(endAngleRad);
                             const y3 = centerY + innerRadius * Math.sin(endAngleRad);
+                            const textX = centerX + (radius + innerRadius) / 2 * Math.cos((startAngleRad + endAngleRad) / 2);
+                            const textY = centerY + (radius + innerRadius) / 2 * Math.sin((startAngleRad + endAngleRad) / 2);
+                            
+                            const textElement = percentage > 5 ? (
+                              <text 
+                                key={`text-${index}`}
+                                x={textX} 
+                                y={textY} 
+                                textAnchor="middle" 
+                                dominantBaseline="middle" 
+                                fontSize="12" 
+                                fill="white" 
+                                fontWeight="bold"
+                              >
+                                {company._id.length > 8 ? company._id.substring(0, 8) + '...' : company._id}
+                              </text>
+                            ) : null;
+
                             const x4 = centerX + innerRadius * Math.cos(startAngleRad);
                             const y4 = centerY + innerRadius * Math.sin(startAngleRad);
                             
@@ -338,15 +356,17 @@ const JobDemandTab: React.FC = () => {
                             cumulativePercentage += percentage;
                             
                             return (
-                              <path
-                                key={dept._id}
-                                d={pathData}
-                                fill={colors[index % colors.length]}
-                                stroke="white"
-                                strokeWidth="2"
-                              >
-                                <title>{`${dept._id}: ${dept.totalApplicants} applicants (${percentage.toFixed(1)}%)`}</title>
-                              </path>
+                              <g key={company._id}>
+                                <path
+                                  d={pathData}
+                                  fill={colors[index % colors.length]}
+                                  stroke="white"
+                                  strokeWidth="2"
+                                >
+                                  <title>{`${company._id}: ${company.totalHired} hires (${percentage.toFixed(1)}%)`}</title>
+                                </path>
+                                {textElement}
+                              </g>
                             );
                           });
                         })()
@@ -360,22 +380,22 @@ const JobDemandTab: React.FC = () => {
                           {total}
                         </text>
                         <text x="200" y="225" textAnchor="middle" fontSize="14" fill="#6b7280">
-                          Applicants
+                          Hires
                         </text>
                       </svg>
                       
                       <div className="donut-legend">
-                        {departments.map((dept: any, index: number) => {
-                          const percentage = total > 0 ? (dept.totalApplicants / total) * 100 : 0;
+                        {companies.map((company: any, index: number) => {
+                          const percentage = total > 0 ? (company.totalHired / total) * 100 : 0;
                           return (
-                            <div key={dept._id} className="legend-item">
+                            <div key={company._id} className="legend-item">
                               <div 
                                 className="legend-color"
                                 style={{ backgroundColor: colors[index % colors.length] }}
                               ></div>
                               <div className="legend-text">
-                                <span className="legend-name">{dept._id}</span>
-                                <span className="legend-stats">{dept.totalApplicants} ({percentage.toFixed(1)}%)</span>
+                                <span className="legend-label">{company._id}</span>
+                                <span className="legend-value">{company.totalHired} hires ({percentage.toFixed(1)}%)</span>
                               </div>
                             </div>
                           );

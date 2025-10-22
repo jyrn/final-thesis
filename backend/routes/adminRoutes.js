@@ -3118,8 +3118,8 @@ router.get('/job-demand-analytics', verifyToken, adminMiddleware, async (req, re
         100 // If all scores are the same, give 100%
     })).slice(0, 10);
 
-    // Get department distribution for charts
-    const categoryDistribution = await Job.aggregate([
+    // Get department distribution for bar chart (Most In Demand Categories)
+    const departmentDistribution = await Job.aggregate([
       {
         $match: {
           status: { $in: ['active', 'paused', 'closed'] }
@@ -3165,10 +3165,50 @@ router.get('/job-demand-analytics', verifyToken, adminMiddleware, async (req, re
       }
     ]);
 
+    // Get top 10 companies with most hires for donut chart
+    const companyHiringData = await Application.aggregate([
+      {
+        $match: {
+          status: 'hired'
+        }
+      },
+      {
+        $lookup: {
+          from: 'jobs',
+          localField: 'jobId',
+          foreignField: '_id',
+          as: 'jobInfo'
+        }
+      },
+      {
+        $unwind: '$jobInfo'
+      },
+      {
+        $group: {
+          _id: '$jobInfo.companyName',
+          totalHired: { $sum: 1 },
+          totalApplicants: { $sum: 1 }, // Keep for compatibility
+          jobCount: { 
+            $addToSet: '$jobId'
+          }
+        }
+      },
+      {
+        $addFields: {
+          jobCount: { $size: '$jobCount' },
+          demandScore: { $multiply: ['$totalHired', 10] } // Score based on hires
+        }
+      },
+      {
+        $sort: { totalHired: -1 }
+      }
+    ]);
+
     const analytics = {
       jobDemandData: jobs,
       chartData: {
-        departmentDistribution: categoryDistribution, // For donut chart
+        departmentDistribution: departmentDistribution, // For bar chart (Most In Demand Categories)
+        companyHiringData: companyHiringData, // For donut chart (Top Companies by Hires)
         topDemandingJobs // For bar chart
       },
       summary: {
