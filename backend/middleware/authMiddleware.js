@@ -20,6 +20,15 @@ const verifyToken = async (req, res, next) => {
       });
     }
 
+    // Development bypass for testing - remove in production
+    if (process.env.NODE_ENV === 'development' && token === 'dev-admin-token') {
+      req.user = {
+        uid: 'dev-admin',
+        role: 'admin'
+      };
+      return next();
+    }
+
     const decodedToken = await admin.auth().verifyIdToken(token.trim());
     
     // Fetch user role from database

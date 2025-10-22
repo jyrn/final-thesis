@@ -11,6 +11,16 @@ const adminMiddleware = async (req, res, next) => {
       });
     }
 
+    // Development bypass for testing - remove in production
+    if (process.env.NODE_ENV === 'development' && req.user.uid === 'dev-admin') {
+      req.adminUser = {
+        uid: 'dev-admin',
+        role: 'admin',
+        isActive: true,
+        registrationStatus: 'verified'
+      };
+      return next();
+    }
 
     // First check Admin collection
     let adminUser = await Admin.findOne({ 

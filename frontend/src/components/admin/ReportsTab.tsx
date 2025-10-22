@@ -8,10 +8,183 @@ import {
   FiTrendingUp, 
   FiBarChart2,
   FiFile,
-  FiClock
+  FiClock,
+  FiChevronDown,
+  FiChevronUp
 } from 'react-icons/fi';
 import adminService from '../../services/adminService';
+import { API_BASE_URL } from '../../config/apiConfig';
 import './ReportsTab.css';
+
+// Inject CSS styles for date filter controls
+const dateFilterStyles = document.createElement('style');
+dateFilterStyles.textContent = `
+  .date-filter-controls {
+    display: flex;
+    align-items: flex-start;
+    justify-content: flex-start;
+    gap: 1.5rem;
+    padding: 1rem 1.25rem;
+    background: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    margin: 1rem 0;
+  }
+
+  .date-filter-group {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+
+  .date-filter-label {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #495057;
+    margin-bottom: 0.25rem;
+  }
+
+  .date-filter-input {
+    padding: 0.5rem 0.75rem;
+    border: 1px solid #ced4da;
+    border-radius: 6px;
+    font-size: 0.875rem;
+    background: white;
+    width: 140px;
+    transition: border-color 0.2s ease;
+  }
+
+  .date-filter-input:focus {
+    outline: none;
+    border-color: #007bff;
+    box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+  }
+
+  .date-preset-btn {
+    padding: 0.5rem 0.875rem;
+    background: #007bff;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+    align-self: flex-end;
+    margin-top: 1.5rem;
+  }
+
+  .date-preset-btn:hover {
+    background: #0056b3;
+  }
+
+  .date-clear-btn {
+    padding: 0.5rem 0.875rem;
+    background: #6c757d;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+    align-self: flex-end;
+    margin-top: 1.5rem;
+  }
+
+  .date-clear-btn:hover {
+    background: #545b62;
+  }
+
+  .category-data-table .status-cell {
+    width: 120px;
+    min-width: 120px;
+  }
+
+  .category-data-table .date-cell {
+    width: 140px;
+    min-width: 140px;
+  }
+
+  .status-filter-group {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+
+  .status-filter-select {
+    padding: 0.5rem 0.75rem;
+    border: 1px solid #ced4da;
+    border-radius: 6px;
+    font-size: 0.875rem;
+    background: white;
+    width: 140px;
+    transition: border-color 0.2s ease;
+    cursor: pointer;
+  }
+
+  .status-filter-select:focus {
+    outline: none;
+    border-color: #007bff;
+    box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+  }
+
+  .category-header {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+    align-items: flex-start;
+  }
+
+  .category-title-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+  }
+
+  .category-title {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: #212529;
+    margin: 0;
+  }
+
+  .category-actions {
+    display: flex;
+    gap: 0.75rem;
+    align-items: center;
+    justify-content: flex-end;
+  }
+
+  @media (max-width: 768px) {
+    .date-filter-controls {
+      flex-direction: column;
+      align-items: stretch;
+      gap: 1rem;
+    }
+    
+    .date-filter-group {
+      align-items: stretch;
+    }
+    
+    .date-filter-input {
+      width: 100%;
+    }
+
+    .date-preset-btn, .date-clear-btn {
+      align-self: stretch;
+      margin-top: 0;
+    }
+  }
+`;
+
+if (!document.head.contains(dateFilterStyles)) {
+  document.head.appendChild(dateFilterStyles);
+}
 
 interface ReportFilter {
   reportTypes: string[];
@@ -20,6 +193,7 @@ interface ReportFilter {
   endDate: string;
   format: 'pdf' | 'xlsx';
   includeDetails: boolean;
+  statusFilter: string;
 }
 
 interface ReportData {
@@ -27,7 +201,50 @@ interface ReportData {
   name: string;
   description: string;
   icon: React.ComponentType;
-  category: 'overview' | 'employers' | 'jobs' | 'jobseekers' | 'admin' | 'system';
+  category: 'employers' | 'jobs' | 'jobseekers' | 'hiring';
+}
+
+interface ReportTableData {
+  employers: EmployerReportRow[];
+  jobs: JobReportRow[];
+  jobseekers: JobseekerReportRow[];
+  hiring: HiringReportRow[];
+}
+
+interface EmployerReportRow {
+  id: string;
+  companyName: string;
+  industry: string;
+  email: string;
+  status: string;
+  dateRegistered: string;
+  applicationCount: number;
+}
+
+interface JobReportRow {
+  id: string;
+  jobTitle: string;
+  companyName: string;
+  department: string;
+  status: string;
+  postedDate: string;
+  applicationCount: number;
+}
+
+interface JobseekerReportRow {
+  id: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  status: string;
+  registrationDate: string;
+}
+
+interface HiringReportRow {
+  id: string;
+  companyName: string;
+  hiredCount: number;
+  latestHireDate: string;
 }
 
 // Helper functions for report formatting
@@ -67,6 +284,39 @@ const formatReportForPDF = (reportData: any, reportName?: string): string => {
   return content;
 };
 
+// Helper function to get status options for each category
+const getStatusOptions = (category: string) => {
+  switch (category) {
+    case 'employers':
+      return [
+        { value: 'all', label: 'All Status' },
+        { value: 'verified', label: 'Verified' },
+        { value: 'pending', label: 'Pending' },
+        { value: 'rejected', label: 'Rejected' }
+      ];
+    case 'jobs':
+      return [
+        { value: 'all', label: 'All Status' },
+        { value: 'active', label: 'Active' },
+        { value: 'paused', label: 'Paused' },
+        { value: 'removed', label: 'Removed' },
+        { value: 'flagged', label: 'Flagged' }
+      ];
+    case 'jobseekers':
+      return [
+        { value: 'all', label: 'All Status' },
+        { value: 'active', label: 'Active' },
+        { value: 'inactive', label: 'Inactive' }
+      ];
+    case 'hiring':
+      return [
+        { value: 'all', label: 'All Companies' }
+      ];
+    default:
+      return [{ value: 'all', label: 'All Status' }];
+  }
+};
+
 const ReportsTab: React.FC = () => {
   const [filters, setFilters] = useState<ReportFilter>({
     reportTypes: [],
@@ -74,7 +324,8 @@ const ReportsTab: React.FC = () => {
     startDate: '',
     endDate: '',
     format: 'pdf',
-    includeDetails: true
+    includeDetails: true,
+    statusFilter: 'all'
   });
   
   const [loading, setLoading] = useState(false);
@@ -84,6 +335,82 @@ const ReportsTab: React.FC = () => {
   const [notification, setNotification] = useState<{type: 'success' | 'error' | 'info', message: string} | null>(null);
   const [bulkGenerating, setBulkGenerating] = useState(false);
   const [bulkProgress, setBulkProgress] = useState<{current: number, total: number, currentReport: string}>({current: 0, total: 0, currentReport: ''});
+  const [selectedCategory, setSelectedCategory] = useState<string>('employers');
+  const [reportTableData, setReportTableData] = useState<ReportTableData>({
+    employers: [],
+    jobs: [],
+    jobseekers: [],
+    hiring: []
+  });
+  const [tableLoading, setTableLoading] = useState(false);
+  const [sortConfig, setSortConfig] = useState<{key: string, direction: 'asc' | 'desc'} | null>(null);
+
+  // Sorting function
+  const handleSort = (key: string) => {
+    let direction: 'asc' | 'desc' = 'asc';
+    if (sortConfig && sortConfig.key === key && sortConfig.direction === 'asc') {
+      direction = 'desc';
+    }
+    setSortConfig({ key, direction });
+  };
+
+  // Get sorted data
+  const getSortedData = (data: any[]) => {
+    if (!sortConfig) return data;
+    
+    return [...data].sort((a, b) => {
+      const aValue = a[sortConfig.key];
+      const bValue = b[sortConfig.key];
+      
+      // Handle numbers
+      if (typeof aValue === 'number' && typeof bValue === 'number') {
+        return sortConfig.direction === 'asc' ? aValue - bValue : bValue - aValue;
+      }
+      
+      // Handle dates
+      if (sortConfig.key.includes('Date') || sortConfig.key.includes('date')) {
+        const aDate = new Date(aValue).getTime();
+        const bDate = new Date(bValue).getTime();
+        return sortConfig.direction === 'asc' ? aDate - bDate : bDate - aDate;
+      }
+      
+      // Handle strings (fallback)
+      const aStr = String(aValue).toLowerCase();
+      const bStr = String(bValue).toLowerCase();
+      if (aStr < bStr) return sortConfig.direction === 'asc' ? -1 : 1;
+      if (aStr > bStr) return sortConfig.direction === 'asc' ? 1 : -1;
+      return 0;
+    });
+  };
+
+  // Sortable header component
+  const SortableHeader = ({ column, children, isSortable = false }: { 
+    column: string; 
+    children: React.ReactNode; 
+    isSortable?: boolean;
+  }) => {
+    if (!isSortable) {
+      return <th>{children}</th>;
+    }
+
+    const isActive = sortConfig?.key === column;
+    const direction = isActive ? sortConfig.direction : null;
+
+    return (
+      <th 
+        className="sortable-header" 
+        onClick={() => handleSort(column)}
+        style={{ cursor: 'pointer', userSelect: 'none' }}
+      >
+        <div className="header-content">
+          {children}
+          <span className="sort-icon">
+            {direction === 'asc' ? <FiChevronUp /> : direction === 'desc' ? <FiChevronDown /> : <FiChevronDown style={{ opacity: 0.3 }} />}
+          </span>
+        </div>
+      </th>
+    );
+  };
 
   const reportTypes: ReportData[] = [
     // Registered Jobseekers Report
@@ -113,13 +440,13 @@ const ReportsTab: React.FC = () => {
       category: 'jobs'
     },
     
-    // Job Demand Analytics Report
+    // Hiring Analytics Report
     {
-      id: 'job-demand-analytics',
-      name: 'Job Demand Analytics Report',
-      description: 'Job market demand, skills trends, industry patterns, and hiring analytics',
-      icon: FiBarChart2,
-      category: 'jobs'
+      id: 'hiring-analytics',
+      name: 'Hiring Analytics Report',
+      description: 'Companies and their hiring statistics, showing total hired employees per company',
+      icon: FiTrendingUp,
+      category: 'hiring'
     }
   ];
 
@@ -311,22 +638,126 @@ const ReportsTab: React.FC = () => {
     }
   }, [filters.dateRange]);
 
-  const handleGenerateReport = async () => {
-    if (filters.reportTypes.length === 0) {
-      setNotification({type: 'error', message: 'Please select at least one report type'});
+  // Fetch report table data
+  const fetchReportTableData = async (category: string) => {
+    setTableLoading(true);
+    try {
+      // Check if dates are provided
+      if (!filters.startDate && !filters.endDate) {
+        console.log('No date filters provided, clearing data');
+        setReportTableData(prev => ({
+          ...prev,
+          [category]: []
+        }));
+        setTableLoading(false);
+        return;
+      }
+
+      let endpoint = '';
+      switch (category) {
+        case 'employers':
+          endpoint = '/admin/reports/employers-data';
+          break;
+        case 'jobs':
+          endpoint = '/admin/reports/jobs-data';
+          break;
+        case 'jobseekers':
+          endpoint = '/admin/reports/jobseekers-data';
+          break;
+        case 'hiring':
+          endpoint = '/admin/reports/hiring-analytics-data';
+          break;
+        default:
+          return;
+      }
+
+      // Add date filters and status filter as query parameters
+      const params = new URLSearchParams();
+      if (filters.startDate) {
+        params.append('startDate', filters.startDate);
+      }
+      if (filters.endDate) {
+        params.append('endDate', filters.endDate);
+      }
+      if (filters.statusFilter && filters.statusFilter !== 'all') {
+        params.append('status', filters.statusFilter);
+      }
+      
+      // Debug logging
+      console.log('Date filters:', { startDate: filters.startDate, endDate: filters.endDate });
+      console.log('API URL:', `${API_BASE_URL}${endpoint}${params.toString() ? '?' + params.toString() : ''}`);
+
+      const url = `${API_BASE_URL}${endpoint}${params.toString() ? '?' + params.toString() : ''}`;
+      const adminToken = localStorage.getItem('adminToken') || 
+                        (process.env.NODE_ENV === 'development' ? 'dev-admin-token' : null);
+      
+      if (!adminToken) {
+        throw new Error('No authentication token available');
+      }
+
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${adminToken}`
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to fetch ${category} data`);
+      }
+
+      const data = await response.json();
+      console.log(`${category} data received:`, data.data?.length || 0, 'records');
+      
+      setReportTableData(prev => ({
+        ...prev,
+        [category]: data.data || []
+      }));
+    } catch (error) {
+      console.error(`Error fetching ${category} data:`, error);
+      setNotification({type: 'error', message: `Failed to load ${category} data`});
+    } finally {
+      setTableLoading(false);
+    }
+  };
+
+  // Load data when category changes or date filters change
+  useEffect(() => {
+    if (selectedCategory) {
+      fetchReportTableData(selectedCategory);
+    }
+  }, [selectedCategory, filters.startDate, filters.endDate, filters.statusFilter]);
+
+  // Load initial data
+  useEffect(() => {
+    fetchReportTableData('employers');
+  }, []);
+
+  const handleGenerateCategoryReports = async (categoryId: string) => {
+    const categoryReports = getCategoryReports(categoryId);
+    if (categoryReports.length === 0) {
+      setNotification({type: 'error', message: 'No reports available in this category'});
+      return;
+    }
+
+    if (!filters.startDate || !filters.endDate) {
+      setNotification({type: 'error', message: 'Please select date range first'});
       return;
     }
 
     setLoading(true);
-    try {      if (filters.reportTypes.length === 1) {
+    const reportIds = categoryReports.map(r => r.id);
+    
+    try {
+      if (reportIds.length === 1) {
         // Single report generation
-        const reportType = filters.reportTypes[0];
+        const reportType = reportIds[0];
         const selectedReport = reportTypes.find(r => r.id === reportType);
         const fileName = `${selectedReport?.name || 'Report'}_${filters.startDate}_to_${filters.endDate}.${filters.format}`;
         
         if (filters.format === 'pdf' || filters.format === 'xlsx') {
           // For PDF/XLSX, make a direct request to get the binary data
-          const response = await fetch('https://skillsync-backend-gwwo.onrender.com/api/admin/reports/generate', {
+          const response = await fetch(`${API_BASE_URL}/admin/reports/generate`, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -337,7 +768,9 @@ const ReportsTab: React.FC = () => {
               startDate: filters.startDate,
               endDate: filters.endDate,
               format: filters.format,
-              includeDetails: filters.includeDetails
+              includeDetails: filters.includeDetails,
+              status: filters.statusFilter && filters.statusFilter !== 'all' ? filters.statusFilter : undefined,
+              sortConfig: sortConfig
             })
           });
 
@@ -360,7 +793,151 @@ const ReportsTab: React.FC = () => {
           } else {
             // Handle JSON fallback
             const data = await response.json();
-            if (data.pdfError || data.xlsxError) {              const textContent = formatReportForPDF(data.report, selectedReport?.name);
+            if (data.pdfError || data.xlsxError) {
+              const textContent = formatReportForPDF(data.report, selectedReport?.name);
+              const blob = new Blob([textContent], { type: 'text/plain' });
+              const url = URL.createObjectURL(blob);
+              const a = document.createElement('a');
+              a.href = url;
+              a.download = fileName.replace(/\.(pdf|xlsx)$/, '.txt');
+              a.click();
+              URL.revokeObjectURL(url);
+            }
+          }
+        }
+
+        // Add to generated reports list
+        const newReport = {
+          id: Date.now().toString(),
+          name: selectedReport?.name || 'Report',
+          type: reportType,
+          dateRange: `${filters.startDate} to ${filters.endDate}`,
+          format: filters.format,
+          generatedAt: new Date().toISOString(),
+          size: '2.3 MB'
+        };
+        
+        setGeneratedReports(prev => [newReport, ...prev]);
+        setNotification({type: 'success', message: `${selectedReport?.name} generated successfully!`});
+      } else {
+        // Multiple reports generation for category
+        const fileName = `${categories.find(c => c.id === categoryId)?.name || 'Category'}_Reports_${filters.startDate}_to_${filters.endDate}.${filters.format}`;
+        
+        if (filters.format === 'pdf' || filters.format === 'xlsx') {
+          const response = await fetch(`${API_BASE_URL}/admin/reports/generate-selected`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${localStorage.getItem('adminToken')}`
+            },
+            body: JSON.stringify({
+              reportTypes: reportIds,
+              startDate: filters.startDate,
+              endDate: filters.endDate,
+              format: filters.format,
+              includeDetails: filters.includeDetails
+            })
+          });
+
+          if (!response.ok) {
+            throw new Error(`Failed to generate category ${filters.format.toUpperCase()} reports`);
+          }
+
+          const contentType = response.headers.get('Content-Type');
+          
+          if (contentType && (contentType.includes('application/pdf') || contentType.includes('application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'))) {
+            const blob = await response.blob();
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = fileName;
+            a.click();
+            URL.revokeObjectURL(url);
+          } else {
+            const data = await response.json();
+            if (data.pdfError || data.xlsxError) {
+              let textContent = `${categories.find(c => c.id === categoryId)?.name.toUpperCase()} REPORTS\n${'='.repeat(50)}\n\n`;
+              textContent += `Generated: ${new Date().toLocaleString()}\n`;
+              textContent += `Category Reports: ${reportIds.length}\n\n`;
+              
+              const blob = new Blob([textContent], { type: 'text/plain' });
+              const url = URL.createObjectURL(blob);
+              const a = document.createElement('a');
+              a.href = url;
+              a.download = fileName.replace(/\.(pdf|xlsx)$/, '.txt');
+              a.click();
+              URL.revokeObjectURL(url);
+            }
+          }
+        }
+
+        const categoryName = categories.find(c => c.id === categoryId)?.name || 'Category';
+        setNotification({type: 'success', message: `${categoryName} reports generated successfully!`});
+      }
+      
+      setTimeout(() => setNotification(null), 3000);
+    } catch (error) {
+      setNotification({type: 'error', message: `Failed to generate report: ${error.message}`});
+      setTimeout(() => setNotification(null), 5000);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleGenerateReport = async () => {
+    if (filters.reportTypes.length === 0) {
+      setNotification({type: 'error', message: 'Please select at least one report type'});
+      return;
+    }
+
+    setLoading(true);
+    try {
+      if (filters.reportTypes.length === 1) {
+        // Single report generation
+        const reportType = filters.reportTypes[0];
+        const selectedReport = reportTypes.find(r => r.id === reportType);
+        const fileName = `${selectedReport?.name || 'Report'}_${filters.startDate}_to_${filters.endDate}.${filters.format}`;
+        
+        if (filters.format === 'pdf' || filters.format === 'xlsx') {
+          // For PDF/XLSX, make a direct request to get the binary data
+          const response = await fetch(`${API_BASE_URL}/admin/reports/generate`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${localStorage.getItem('adminToken')}`
+            },
+            body: JSON.stringify({
+              reportType: reportType,
+              startDate: filters.startDate,
+              endDate: filters.endDate,
+              format: filters.format,
+              includeDetails: filters.includeDetails,
+              status: filters.statusFilter && filters.statusFilter !== 'all' ? filters.statusFilter : undefined,
+              sortConfig: sortConfig
+            })
+          });
+
+          if (!response.ok) {
+            throw new Error(`Failed to generate ${filters.format.toUpperCase()} report`);
+          }
+
+          // Check if response is binary or JSON (fallback)
+          const contentType = response.headers.get('Content-Type');
+          
+          if (contentType && (contentType.includes('application/pdf') || contentType.includes('application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'))) {
+            // Handle binary response (PDF/XLSX)
+            const blob = await response.blob();
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = fileName;
+            a.click();
+            URL.revokeObjectURL(url);
+          } else {
+            // Handle JSON fallback
+            const data = await response.json();
+            if (data.pdfError || data.xlsxError) {
+              const textContent = formatReportForPDF(data.report, selectedReport?.name);
               const blob = new Blob([textContent], { type: 'text/plain' });
               const url = URL.createObjectURL(blob);
               const a = document.createElement('a');
@@ -393,7 +970,8 @@ const ReportsTab: React.FC = () => {
       
       // Auto-hide notification after 3 seconds
       setTimeout(() => setNotification(null), 3000);
-    } catch (error) {      setNotification({type: 'error', message: `Failed to generate report: ${error.message}`});
+    } catch (error) {
+      setNotification({type: 'error', message: `Failed to generate report: ${error.message}`});
       
       // Auto-hide notification after 5 seconds
       setTimeout(() => setNotification(null), 5000);
@@ -450,7 +1028,8 @@ const ReportsTab: React.FC = () => {
         } else {
           // Handle JSON fallback
           const data = await response.json();
-          if (data.pdfError || data.xlsxError) {            let textContent = `SELECTED REPORTS SUMMARY\n${'='.repeat(50)}\n\n`;
+          if (data.pdfError || data.xlsxError) {
+            let textContent = `SELECTED REPORTS SUMMARY\n${'='.repeat(50)}\n\n`;
             textContent += `Generated: ${new Date().toLocaleString()}\n`;
             textContent += `Selected Reports: ${filters.reportTypes.length}\n\n`;
             
@@ -468,7 +1047,8 @@ const ReportsTab: React.FC = () => {
       setNotification({type: 'success', message: `${filters.reportTypes.length} selected reports generated successfully! 🎉`});
       setTimeout(() => setNotification(null), 5000);
 
-    } catch (error) {      setNotification({type: 'error', message: `Selected reports generation failed: ${error.message}`});
+    } catch (error) {
+      setNotification({type: 'error', message: `Selected reports generation failed: ${error.message}`});
       setTimeout(() => setNotification(null), 5000);
     } finally {
       setBulkGenerating(false);
@@ -481,12 +1061,10 @@ const ReportsTab: React.FC = () => {
   };
 
   const categories = [
-    { id: 'overview', name: 'Dashboard Overview', icon: FiTrendingUp },
     { id: 'employers', name: 'Employer Reports', icon: FiBriefcase },
     { id: 'jobs', name: 'Job Reports', icon: FiFile },
     { id: 'jobseekers', name: 'Jobseeker Reports', icon: FiUsers },
-    { id: 'admin', name: 'Admin Reports', icon: FiBarChart2 },
-    { id: 'system', name: 'System Reports', icon: FiBarChart2 }
+    { id: 'hiring', name: 'Hiring Analytics Report', icon: FiTrendingUp }
   ];
 
   const handlePreviewReport = async () => {
@@ -505,7 +1083,9 @@ const ReportsTab: React.FC = () => {
           startDate: filters.startDate,
           endDate: filters.endDate,
           format: 'json' as 'json', // Always use JSON format for preview to ensure parseable response
-          includeDetails: false // Preview without detailed data
+          includeDetails: false, // Preview without detailed data
+          status: filters.statusFilter && filters.statusFilter !== 'all' ? filters.statusFilter : undefined,
+          sortConfig: sortConfig
         };
         
         const reportData = await adminService.generateReport(previewFilters);
@@ -522,7 +1102,9 @@ const ReportsTab: React.FC = () => {
             startDate: filters.startDate,
             endDate: filters.endDate,
             format: 'json' as 'json',
-            includeDetails: false
+            includeDetails: false,
+            status: filters.statusFilter && filters.statusFilter !== 'all' ? filters.statusFilter : undefined,
+            sortConfig: sortConfig
           };
           
           try {
@@ -533,7 +1115,8 @@ const ReportsTab: React.FC = () => {
               reportName: reportInfo?.name || reportType,
               data: reportData.report
             };
-          } catch (error) {            return {
+          } catch (error) {
+            return {
               reportType: reportType,
               reportName: reportTypes.find(r => r.id === reportType)?.name || reportType,
               error: error.message
@@ -571,7 +1154,8 @@ const ReportsTab: React.FC = () => {
       }
       
       setTimeout(() => setNotification(null), 3000);
-    } catch (error) {      setNotification({type: 'error', message: `Failed to generate preview: ${error.message}`});
+    } catch (error) {
+      setNotification({type: 'error', message: `Failed to generate preview: ${error.message}`});
       setTimeout(() => setNotification(null), 5000);
     } finally {
       setLoading(false);
@@ -631,7 +1215,7 @@ const ReportsTab: React.FC = () => {
       
       if (filters.format === 'pdf' || filters.format === 'xlsx') {
         // For PDF/XLSX, make a direct request to get the binary data
-        const response = await fetch('https://skillsync-backend-gwwo.onrender.com/api/admin/reports/generate-all', {
+        const response = await fetch(`${API_BASE_URL}/admin/reports/generate-all`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -641,7 +1225,9 @@ const ReportsTab: React.FC = () => {
             startDate: filters.startDate,
             endDate: filters.endDate,
             format: filters.format,
-            includeDetails: filters.includeDetails
+            includeDetails: filters.includeDetails,
+            status: filters.statusFilter && filters.statusFilter !== 'all' ? filters.statusFilter : undefined,
+            sortConfig: sortConfig
           })
         });
 
@@ -667,7 +1253,8 @@ const ReportsTab: React.FC = () => {
         } else {
           // Handle JSON fallback
           const data = await response.json();
-          if (data.pdfError || data.xlsxError) {            let textContent = `ALL REPORTS SUMMARY\n${'='.repeat(50)}\n\n`;
+          if (data.pdfError || data.xlsxError) {
+            let textContent = `ALL REPORTS SUMMARY\n${'='.repeat(50)}\n\n`;
             textContent += `Generated: ${new Date(data.data.metadata.generatedAt).toLocaleString()}\n`;
             textContent += `Date Range: ${data.data.metadata.dateRange}\n`;
             textContent += `Total Reports: ${data.data.metadata.totalReports}\n\n`;
@@ -699,7 +1286,8 @@ const ReportsTab: React.FC = () => {
       setNotification({type: 'success', message: successMessage});
       setTimeout(() => setNotification(null), 5000);
 
-    } catch (error) {      setNotification({type: 'error', message: `Bulk generation failed: ${error.message}`});
+    } catch (error) {
+      setNotification({type: 'error', message: `Bulk generation failed: ${error.message}`});
       setTimeout(() => setNotification(null), 5000);
     } finally {
       setBulkGenerating(false);
@@ -740,214 +1328,276 @@ const ReportsTab: React.FC = () => {
         </div>
       )}
 
-      {/* Reports Management Container - Exactly Like Jobseekers */}
+      {/* Reports Management Container */}
       <div className="reports-management-container">
-        {/* Header Container */}
-        <div className="reports-header-container">
-          <div className="header-left">
-            <h2 className="section-title">Reports ({reportTypes.length} total)</h2>
-            <p className="view-info">Showing 1-{reportTypes.length} of {reportTypes.length} reports • {filters.reportTypes.length} selected</p>
-          </div>
-          
-          <div className="reports-controls-compact">
-            {/* Date Range */}
-            <div className="control-group">
-              <select 
-                value={filters.dateRange} 
-                onChange={(e) => setFilters(prev => ({ ...prev, dateRange: e.target.value }))}
-                className="control-select"
-                title="Date Range"
-              >
-                {dateRangeOptions.map(option => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-            </div>
 
-            {/* Date Pickers */}
-            <div className="control-group date-input-compact">
-              <span className="date-label">FROM:</span>
-              <input
-                type="date"
-                value={filters.startDate}
-                onChange={(e) => setFilters(prev => ({ ...prev, startDate: e.target.value, dateRange: 'custom' }))}
-                className="control-input date-input"
-                title="Start Date"
-              />
-            </div>
+        {/* Category Filter Tabs */}
+        <div className="category-filter-tabs">
+          {categories.map(category => {
+            const CategoryIcon = category.icon;
+            const isActive = selectedCategory === category.id;
             
-            <div className="control-group date-input-compact">
-              <span className="date-label">TO:</span>
-              <input
-                type="date"
-                value={filters.endDate}
-                onChange={(e) => setFilters(prev => ({ ...prev, endDate: e.target.value, dateRange: 'custom' }))}
-                className="control-input date-input"
-                title="End Date"
-              />
-            </div>
-
-            {/* Format */}
-            <div className="control-group">
-              <select 
-                value={filters.format} 
-                onChange={(e) => setFilters(prev => ({ ...prev, format: e.target.value as 'pdf' | 'xlsx' }))}
-                className="control-select"
-                title="Export Format"
+            return (
+              <button
+                key={category.id}
+                onClick={() => setSelectedCategory(category.id)}
+                className={`category-tab ${isActive ? 'active' : ''}`}
               >
-                {formatOptions.map(option => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {/* Include Details */}
-            <div className="control-group">
-              <label className="control-checkbox compact">
-                <input
-                  type="checkbox"
-                  checked={filters.includeDetails}
-                  onChange={(e) => setFilters(prev => ({ ...prev, includeDetails: e.target.checked }))}
-                />
-                <span>Include Details</span>
-              </label>
-            </div>
-
-            {/* Action Buttons */}
-            <div className="control-group">
-              <button 
-                onClick={handleSelectAll}
-                className="control-btn control-btn-outline compact"
-                disabled={filters.reportTypes.length === reportTypes.length}
-                title="Select All Reports"
-              >
-                Select All
+                <CategoryIcon className="tab-icon" />
+                <span>{category.name}</span>
               </button>
-            </div>
-
-            <div className="control-group">
-              <button 
-                onClick={handleClearAll}
-                className="control-btn control-btn-outline compact"
-                disabled={filters.reportTypes.length === 0}
-                title="Clear All Selections"
-              >
-                Clear All
-              </button>
-            </div>
-
-            <div className="control-group">
-              <button 
-                onClick={handlePreviewReport}
-                disabled={loading || !isFormValid()}
-                className="control-btn control-btn-secondary compact"
-                title="Preview Selected Reports"
-              >
-                {loading ? <FiClock className="spinning" /> : <FiFileText />}
-                Preview
-              </button>
-            </div>
-            
-            <div className="control-group">
-              <button 
-                onClick={handleGenerateReport}
-                disabled={loading || !isFormValid()}
-                className="control-btn control-btn-primary compact"
-                title="Generate Selected Reports"
-              >
-                {loading ? <FiClock className="spinning" /> : <FiDownload />}
-                Generate
-              </button>
-            </div>
-          </div>
+            );
+          })}
         </div>
 
-        {/* Table Section */}
-        {reportTypes.length > 0 ? (
-          <div className="admin-reports-table-container">
-            <div className="admin-reports-table-wrapper">
-              <table className="admin-reports-table">
-            <thead>
-              <tr>
-                <th className="checkbox-column">
-                  <input
-                    type="checkbox"
-                    checked={filters.reportTypes.length === reportTypes.length}
-                    onChange={filters.reportTypes.length === reportTypes.length ? handleClearAll : handleSelectAll}
-                    className="header-checkbox"
-                  />
-                </th>
-                <th>CATEGORY</th>
-                <th>REPORT NAME</th>
-                <th>DESCRIPTION</th>
-              </tr>
-            </thead>
-            <tbody>
-              {categories.map(category => {
-                const categoryReports = getCategoryReports(category.id);
-                const CategoryIcon = category.icon;
-                
-                return categoryReports.map((report, index) => {
-                  const ReportIcon = report.icon;
-                  const isSelected = filters.reportTypes.includes(report.id);
+        {/* Selected Category Report Table */}
+        <div className="selected-category-section">
+          {selectedCategory && (() => {
+            const category = categories.find(c => c.id === selectedCategory);
+            const CategoryIcon = category?.icon || FiFile;
+            const categoryData = reportTableData[selectedCategory as keyof ReportTableData] || [];
+            
+            return (
+              <div className="category-reports-section">
+                {/* Category Header */}
+                <div className="category-header">
+                  <div className="category-title-row">
+                    <h3 className="category-title">{category?.name}</h3>
+                    
+                    <div className="category-actions">
+                      <button 
+                        onClick={() => fetchReportTableData(selectedCategory)}
+                        disabled={tableLoading}
+                        className="control-btn control-btn-outline compact refresh-btn"
+                        title="Refresh Data"
+                      >
+                        {tableLoading ? <FiClock className="spinning" /> : ''}
+                        Refresh
+                      </button>
+                      
+                      <button 
+                        onClick={() => handleGenerateCategoryReports(selectedCategory)}
+                        disabled={loading}
+                        className="control-btn control-btn-primary compact category-generate-btn"
+                        title={`Generate ${category?.name}`}
+                      >
+                        {loading ? <FiClock className="spinning" /> : <FiDownload />}
+                        Generate Report
+                      </button>
+                    </div>
+                  </div>
                   
-                  return (
-                    <tr 
-                      key={report.id}
-                      className={`report-row ${isSelected ? 'selected' : ''}`}
+                  {/* Date Filter Controls */}
+                  <div className="date-filter-controls">
+                    <div className="date-filter-group">
+                      <label className="date-filter-label">From:</label>
+                      <input
+                        type="date"
+                        value={filters.startDate}
+                        onChange={(e) => setFilters(prev => ({ ...prev, startDate: e.target.value }))}
+                        className="date-filter-input"
+                        title="Start Date"
+                      />
+                    </div>
+                    
+                    <div className="date-filter-group">
+                      <label className="date-filter-label">To:</label>
+                      <input
+                        type="date"
+                        value={filters.endDate}
+                        onChange={(e) => setFilters(prev => ({ ...prev, endDate: e.target.value }))}
+                        className="date-filter-input"
+                        title="End Date"
+                      />
+                    </div>
+                    
+                    <div className="status-filter-group">
+                      <label className="date-filter-label">Status:</label>
+                      <select
+                        value={filters.statusFilter}
+                        onChange={(e) => setFilters(prev => ({ ...prev, statusFilter: e.target.value }))}
+                        className="status-filter-select"
+                        title="Filter by Status"
+                      >
+                        {getStatusOptions(selectedCategory).map(option => (
+                          <option key={option.value} value={option.value}>
+                            {option.label}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    
+                    <button 
+                      onClick={() => {
+                        const today = new Date();
+                        const thirtyDaysAgo = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000);
+                        setFilters(prev => ({
+                          ...prev,
+                          startDate: thirtyDaysAgo.toISOString().split('T')[0],
+                          endDate: today.toISOString().split('T')[0]
+                        }));
+                      }}
+                      className="date-preset-btn"
+                      title="Last 30 Days"
                     >
-                      <td className="checkbox-cell">
-                        <label className="checkbox-wrapper">
-                          <input
-                            type="checkbox"
-                            checked={isSelected}
-                            onChange={() => handleToggleReport(report.id)}
-                            className="row-checkbox"
-                          />
-                          <span className="checkbox-clickarea"></span>
-                        </label>
-                      </td>
-                      {index === 0 && (
-                        <td 
-                          className="category-cell"
-                          rowSpan={categoryReports.length}
-                        >
-                          <div className="category-info">
-                            <span className="category-name">{category.name}</span>
-                          </div>
-                        </td>
+                      Last 30 Days
+                    </button>
+                    
+                    <button 
+                      onClick={() => {
+                        setFilters(prev => ({ ...prev, startDate: '', endDate: '' }));
+                      }}
+                      className="date-clear-btn"
+                      title="Clear Date Filter"
+                    >
+                      Clear
+                    </button>
+                  </div>
+                </div>
+                
+                {/* Category Data Table */}
+                <div className="category-table-container">
+                  {tableLoading ? (
+                    <div className="table-loading">
+                      <FiClock className="spinning" />
+                      <p>Loading {category?.name.toLowerCase()} data...</p>
+                    </div>
+                  ) : (
+                    <div className="category-table-wrapper">
+                      {selectedCategory === 'employers' && (
+                        <table className="category-data-table">
+                          <thead>
+                            <tr>
+                              <SortableHeader column="companyName">Company Name</SortableHeader>
+                              <SortableHeader column="industry">Industry</SortableHeader>
+                              <SortableHeader column="email">Email</SortableHeader>
+                              <SortableHeader column="status">Status</SortableHeader>
+                              <SortableHeader column="applicationCount" isSortable={true}>Total Applications</SortableHeader>
+                              <SortableHeader column="dateRegistered" isSortable={true}>Date Registered</SortableHeader>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {getSortedData(categoryData as EmployerReportRow[]).map((employer) => (
+                              <tr key={employer.id}>
+                                <td className="company-name-cell">{employer.companyName}</td>
+                                <td className="industry-cell">{employer.industry}</td>
+                                <td className="email-cell">{employer.email}</td>
+                                <td className="status-cell">
+                                  <span className={`status-badge status-${employer.status.toLowerCase()}`}>
+                                    {employer.status}
+                                  </span>
+                                </td>
+                                <td className="count-cell">
+                                  <span className="count-badge">{employer.applicationCount}</span>
+                                </td>
+                                <td className="date-cell">{new Date(employer.dateRegistered).toLocaleDateString()}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
                       )}
-                      <td 
-                        className="report-name-cell"
-                        onClick={() => handleToggleReport(report.id)}
-                      >
-                        <div className="report-name-info">
-                          <span className="report-name">{report.name}</span>
+                      
+                      {selectedCategory === 'jobs' && (
+                        <table className="category-data-table">
+                          <thead>
+                            <tr>
+                              <SortableHeader column="jobTitle">Job Title</SortableHeader>
+                              <SortableHeader column="companyName">Company Name</SortableHeader>
+                              <SortableHeader column="department">Department</SortableHeader>
+                              <SortableHeader column="status">Status</SortableHeader>
+                              <SortableHeader column="applicationCount" isSortable={true}>Total Applications</SortableHeader>
+                              <SortableHeader column="postedDate" isSortable={true}>Posted Date</SortableHeader>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {getSortedData(categoryData as JobReportRow[]).map((job) => (
+                              <tr key={job.id}>
+                                <td className="job-title-cell">{job.jobTitle}</td>
+                                <td className="company-name-cell">{job.companyName}</td>
+                                <td className="department-cell">{job.department}</td>
+                                <td className="status-cell">
+                                  <span className={`status-badge status-${job.status.toLowerCase()}`}>
+                                    {job.status}
+                                  </span>
+                                </td>
+                                <td className="count-cell">
+                                  <span className="count-badge">{job.applicationCount}</span>
+                                </td>
+                                <td className="date-cell">{new Date(job.postedDate).toLocaleDateString()}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      )}
+                      
+                      {selectedCategory === 'jobseekers' && (
+                        <table className="category-data-table">
+                          <thead>
+                            <tr>
+                              <SortableHeader column="firstName">First Name</SortableHeader>
+                              <SortableHeader column="lastName">Last Name</SortableHeader>
+                              <SortableHeader column="email">Email</SortableHeader>
+                              <SortableHeader column="status">Status</SortableHeader>
+                              <SortableHeader column="registrationDate" isSortable={true}>Registration Date</SortableHeader>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {getSortedData(categoryData as JobseekerReportRow[]).map((jobseeker) => (
+                              <tr key={jobseeker.id}>
+                                <td className="name-cell">{jobseeker.firstName}</td>
+                                <td className="name-cell">{jobseeker.lastName}</td>
+                                <td className="email-cell">{jobseeker.email}</td>
+                                <td className="status-cell">
+                                  <span className={`status-badge status-${jobseeker.status.toLowerCase()}`}>
+                                    {jobseeker.status}
+                                  </span>
+                                </td>
+                                <td className="date-cell">{new Date(jobseeker.registrationDate).toLocaleDateString()}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      )}
+                      
+                      {selectedCategory === 'hiring' && (
+                        <table className="category-data-table">
+                          <thead>
+                            <tr>
+                              <SortableHeader column="companyName">Company Name</SortableHeader>
+                              <SortableHeader column="hiredCount" isSortable={true}>Total Hired</SortableHeader>
+                              <SortableHeader column="latestHireDate" isSortable={true}>Latest Hire Date</SortableHeader>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {getSortedData(categoryData as HiringReportRow[]).map((hiring) => (
+                              <tr key={hiring.id}>
+                                <td className="company-name-cell">{hiring.companyName}</td>
+                                <td className="hired-count-cell">
+                                  <span className="count-badge">{hiring.hiredCount}</span>
+                                </td>
+                                <td className="date-cell">{new Date(hiring.latestHireDate).toLocaleDateString()}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      )}
+                      
+                      {categoryData.length === 0 && !tableLoading && (
+                        <div className="no-data">
+                          {!filters.startDate && !filters.endDate ? (
+                            <p>Please select a date range to view {category?.name.toLowerCase()} data</p>
+                          ) : (
+                            <p>No {category?.name.toLowerCase()} found for the selected date range</p>
+                          )}
                         </div>
-                      </td>
-                      <td 
-                        className="report-description-cell"
-                        onClick={() => handleToggleReport(report.id)}
-                      >
-                        <span className="report-description">{report.description}</span>
-                      </td>
-                    </tr>
-                  );
-                });
-              })}
-            </tbody>
-            </table>
-          </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
+            );
+          })()}
         </div>
-        ) : (
-          <div className="no-reports">
-            <p>No reports available</p>
-          </div>
-        )}
       </div>
 
       {/* Report Preview Modal */}
@@ -1071,3 +1721,4 @@ const ReportsTab: React.FC = () => {
 };
 
 export default ReportsTab;
+

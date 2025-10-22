@@ -9,7 +9,7 @@ const path = require('path');
 
 class PDFReportService {
   constructor() {
-    this.logoPath = path.join(__dirname, '../assets/logo.png'); // Add your logo here
+    this.logoPath = path.join(__dirname, '../../frontend/public/peso-logo.png');
     this.colors = {
       primary: '#2563eb',
       secondary: '#64748b',
@@ -22,7 +22,7 @@ class PDFReportService {
     };
   }
 
-  async generateReportPDF(reportData, reportName = 'Report') {
+  async generateReportPDF(reportData, reportName = 'Report', sortConfig = null) {
     if (!PDFDocument) {
       throw new Error('PDFKit library not available. Please install it with: npm install pdfkit');
     }
@@ -42,7 +42,7 @@ class PDFReportService {
         this.addHeader(doc, reportName, reportData.reportMetadata);
         
         // Add content based on report type
-        this.addReportContent(doc, reportData);
+        this.addReportContent(doc, reportData, sortConfig);
         
         // Add footer
         this.addFooter(doc, reportData.reportMetadata);
@@ -55,64 +55,91 @@ class PDFReportService {
   }
 
   addHeader(doc, reportName, metadata) {
-    // Simple header with title and basic info
+    const pageWidth = doc.page.width;
+    const logoSize = 80;
+    const logoX = pageWidth - logoSize - 50;
+    const logoY = 30;
+    
+    // Add PESO logo
+    try {
+      if (fs.existsSync(this.logoPath)) {
+        doc.image(this.logoPath, logoX, logoY, { width: logoSize, height: logoSize });
+      } else {
+        // Fallback placeholder if logo not found
+        doc.rect(logoX, logoY, logoSize, logoSize)
+           .stroke('#cccccc')
+           .lineWidth(1);
+        
+        doc.fontSize(8)
+           .font('Helvetica')
+           .fill('#666666')
+           .text('PESO\nLOGO', logoX + 15, logoY + 25);
+      }
+    } catch (error) {
+      // Logo loading failed, show placeholder
+      doc.rect(logoX, logoY, logoSize, logoSize)
+         .stroke('#cccccc')
+         .lineWidth(1);
+      
+      doc.fontSize(8)
+         .font('Helvetica')
+         .fill('#666666')
+         .text('PESO\nLOGO', logoX + 15, logoY + 25);
+    }
+    
+    // Report title - larger and bold
     doc.fontSize(20)
        .font('Helvetica-Bold')
        .fill('#000000')
-       .text(reportName, 50, 60);
-
-    doc.fontSize(12)
-       .font('Helvetica')
-       .fill('#666666')
-       .text('Public Employment Service Office (PESO)', 50, 90);
-
-    // Simple report info
-    doc.fontSize(10)
+       .text(reportName, 50, 35);
+    
+    // Office name - smaller, below title
+    doc.fontSize(14)
        .font('Helvetica')
        .fill('#333333')
-       .text(`Generated: ${new Date(metadata.generatedAt).toLocaleDateString()}`, 50, 115)
-       .text(`Period: ${metadata.startDate} to ${metadata.endDate}`, 50, 130);
+       .text('Public Employment Service Office (PESO)', 50, 60);
     
-    if (metadata.generatedBy) {
-      doc.text(`By: ${metadata.generatedBy}`, 50, 145);
+    // Generation details
+    if (metadata) {
+      const generatedDate = new Date(metadata.generatedAt).toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit'
+      });
+      
+      doc.fontSize(10)
+         .font('Helvetica')
+         .fill('#666666')
+         .text(`Generated: ${generatedDate}`, 50, 85)
+         .text(`Period: ${metadata.startDate} to ${metadata.endDate}`, 50, 100);
+      
+      if (metadata.generatedBy) {
+        doc.text(`By: ${metadata.generatedBy}`, 50, 115);
+      }
     }
 
-    // Add a simple line separator
-    doc.moveTo(50, 170)
-       .lineTo(doc.page.width - 50, 170)
-       .stroke('#cccccc');
+    // Header separator line
+    doc.moveTo(50, 140)
+       .lineTo(doc.page.width - 50, 140)
+       .stroke('#cccccc')
+       .lineWidth(1);
 
-    doc.y = 190;
+    doc.y = 160;
   }
 
-  addReportContent(doc, reportData) {
+  addReportContent(doc, reportData, sortConfig = null) {
     const { data } = reportData;
     const reportType = reportData.reportMetadata.reportType;
     
-    // Summary Section
-    if (data.summary) {
-      this.addSummarySection(doc, data.summary);
-    }
-
-    // Add report-specific sections
-    switch (reportType) {
-      case 'registered-jobseekers':
-        this.addJobseekerSpecificSections(doc, data);
-        break;
-      case 'employers-companies':
-        this.addEmployerSpecificSections(doc, data);
-        break;
-      case 'job-postings':
-        this.addJobPostingSpecificSections(doc, data);
-        break;
-      case 'job-demand-analytics':
-        this.addJobDemandSpecificSections(doc, data);
-        break;
-    }
-
-    // Detailed Data Section (skip for employers as they have custom cards)
-    if (data.details && data.details.length > 0 && reportType !== 'employers-companies') {
-      this.addDetailsSection(doc, data.details);
+    // Only add the data table - skip all other sections
+    if (data.details && data.details.length > 0) {
+      this.addDetailsSection(doc, data.details, sortConfig);
+    } else {
+      // If no details, show a simple message
+      doc.fontSize(12)
+         .font('Helvetica')
+         .fill('#666666')
+         .text('No data available for the selected date range and filters.', 50, doc.y + 20);
     }
   }
 
@@ -176,8 +203,11 @@ class PDFReportService {
     doc.y += 40;
   }
 
-  addDetailsSection(doc, details) {
+  addDetailsSection(doc, details, sortConfig = null) {
     if (!details || details.length === 0) return;
+    
+    // Sort details data - use custom sortConfig if provided, otherwise use default sorting
+    const sortedDetails = sortConfig ? this.applySortConfig(details, sortConfig) : this.sortDetailsData(details);
     
     const startY = doc.y + 20;
     
@@ -190,18 +220,18 @@ class PDFReportService {
     doc.y = startY + 25;
 
     // Define proper column headers based on data type
-    const sampleItem = details[0];
+    const sampleItem = sortedDetails[0];
     const headers = this.getProperHeaders(sampleItem);
     const pageWidth = doc.page.width - 100;
     
     // Calculate simple column widths for better readability
-    const columnWidths = this.calculateSimpleColumnWidths(headers, details, pageWidth);
+    const columnWidths = this.calculateSimpleColumnWidths(headers, sortedDetails, pageWidth);
     
     // Table header with better formatting
     const headerY = doc.y;
     
     // Header background
-    doc.rect(50, headerY, pageWidth, 25)
+    doc.rect(50, headerY, pageWidth, 35)
        .fill('#f5f5f5')
        .stroke('#cccccc')
        .lineWidth(1);
@@ -229,11 +259,11 @@ class PDFReportService {
       currentX += columnWidths[index];
     });
 
-    doc.y = headerY + 30;
+    doc.y = headerY + 40;
 
     // Simple data rows with better formatting
     const maxRows = 20;
-    details.slice(0, maxRows).forEach((row, rowIndex) => {
+    sortedDetails.slice(0, maxRows).forEach((row, rowIndex) => {
       const rowY = doc.y;
       
       doc.fontSize(9)
@@ -253,7 +283,7 @@ class PDFReportService {
         currentX += columnWidths[index];
       });
 
-      doc.y = rowY + 20;
+      doc.y = rowY + 30;
       
       // Add subtle row separator
       if (rowIndex < maxRows - 1) {
@@ -304,68 +334,221 @@ class PDFReportService {
       }
     });
 
-    if (details.length > maxRows) {
+    if (sortedDetails.length > maxRows) {
       doc.fontSize(10)
          .font('Helvetica-Oblique')
          .fill(this.colors.secondary)
-         .text(`... and ${details.length - maxRows} more records (showing first ${maxRows})`, 50, doc.y + 10);
+         .text(`... and ${sortedDetails.length - maxRows} more records (showing first ${maxRows})`, 50, doc.y + 10);
     }
 
     doc.y += 40;
   }
 
+  sortDetailsData(details) {
+    if (!details || details.length === 0) return details;
+    
+    // Create a copy to avoid mutating original data
+    const sortedDetails = [...details];
+    
+    // Determine data type and apply appropriate sorting
+    const sampleItem = details[0];
+    
+    // For hiring analytics data (has totalHired field)
+    if (sampleItem.totalHired !== undefined) {
+      return sortedDetails.sort((a, b) => {
+        // Primary sort: totalHired (descending)
+        if (b.totalHired !== a.totalHired) {
+          return b.totalHired - a.totalHired;
+        }
+        // Secondary sort: totalApplications (descending)
+        if (b.totalApplications !== a.totalApplications) {
+          return b.totalApplications - a.totalApplications;
+        }
+        // Tertiary sort: company name (ascending)
+        return (a.companyName || '').localeCompare(b.companyName || '');
+      });
+    }
+    
+    // For employer data (has accountStatus field)
+    if (sampleItem.accountStatus !== undefined) {
+      return sortedDetails.sort((a, b) => {
+        // Primary sort: createdAt (descending - newest first)
+        const dateA = new Date(a.createdAt || 0);
+        const dateB = new Date(b.createdAt || 0);
+        if (dateB.getTime() !== dateA.getTime()) {
+          return dateB.getTime() - dateA.getTime();
+        }
+        // Secondary sort: company name (ascending)
+        return (a.companyName || '').localeCompare(b.companyName || '');
+      });
+    }
+    
+    // For job data (has status field and title)
+    if (sampleItem.status !== undefined && sampleItem.title !== undefined) {
+      return sortedDetails.sort((a, b) => {
+        // Primary sort: postedDate or createdAt (descending - newest first)
+        const dateA = new Date(a.postedDate || a.createdAt || 0);
+        const dateB = new Date(b.postedDate || b.createdAt || 0);
+        if (dateB.getTime() !== dateA.getTime()) {
+          return dateB.getTime() - dateA.getTime();
+        }
+        // Secondary sort: job title (ascending)
+        return (a.title || '').localeCompare(b.title || '');
+      });
+    }
+    
+    // For jobseeker data (has firstName/lastName or email)
+    if (sampleItem.firstName !== undefined || sampleItem.email !== undefined) {
+      return sortedDetails.sort((a, b) => {
+        // Primary sort: createdAt or registrationDate (descending - newest first)
+        const dateA = new Date(a.createdAt || a.registrationDate || 0);
+        const dateB = new Date(b.createdAt || b.registrationDate || 0);
+        if (dateB.getTime() !== dateA.getTime()) {
+          return dateB.getTime() - dateA.getTime();
+        }
+        // Secondary sort: name or email (ascending)
+        const nameA = `${a.firstName || ''} ${a.lastName || ''}`.trim() || a.email || '';
+        const nameB = `${b.firstName || ''} ${b.lastName || ''}`.trim() || b.email || '';
+        return nameA.localeCompare(nameB);
+      });
+    }
+    
+    // For application data (has appliedDate)
+    if (sampleItem.appliedDate !== undefined || sampleItem.applicationDate !== undefined) {
+      return sortedDetails.sort((a, b) => {
+        // Primary sort: appliedDate (descending - newest first)
+        const dateA = new Date(a.appliedDate || a.applicationDate || a.createdAt || 0);
+        const dateB = new Date(b.appliedDate || b.applicationDate || b.createdAt || 0);
+        if (dateB.getTime() !== dateA.getTime()) {
+          return dateB.getTime() - dateA.getTime();
+        }
+        // Secondary sort: applicant name (ascending)
+        return (a.applicantName || a.name || '').localeCompare(b.applicantName || b.name || '');
+      });
+    }
+    
+    // Default sorting: by createdAt (descending) or first available date field
+    return sortedDetails.sort((a, b) => {
+      const dateA = new Date(a.createdAt || a.updatedAt || a.date || 0);
+      const dateB = new Date(b.createdAt || b.updatedAt || b.date || 0);
+      return dateB.getTime() - dateA.getTime();
+    });
+  }
+
+  applySortConfig(details, sortConfig) {
+    if (!details || details.length === 0 || !sortConfig) return details;
+    
+    console.log('PDF Service - Applying sort config:', sortConfig);
+    console.log('PDF Service - Sample data keys:', Object.keys(details[0] || {}));
+    console.log('PDF Service - Sample data item:', JSON.stringify(details[0], null, 2));
+    
+    // Create a copy to avoid mutating original data
+    const sortedDetails = [...details];
+    
+    return sortedDetails.sort((a, b) => {
+      let aValue = a[sortConfig.key];
+      let bValue = b[sortConfig.key];
+      
+      // Handle specific column mappings for common report fields
+      // Check all possible field variations
+      if (sortConfig.key === 'totalApplications' || sortConfig.key === 'applicationCount') {
+        aValue = a.totalApplications || a.applicationCount || a.applications || 0;
+        bValue = b.totalApplications || b.applicationCount || b.applications || 0;
+      }
+      
+      if (sortConfig.key === 'totalHired' || sortConfig.key === 'hiredCount') {
+        aValue = a.totalHired || a.hiredCount || a.hired || 0;
+        bValue = b.totalHired || b.hiredCount || b.hired || 0;
+      }
+      
+      if (sortConfig.key === 'registrationDate' || sortConfig.key === 'createdAt') {
+        aValue = a.registrationDate || a.createdAt || a.registeredAt || a.dateRegistered;
+        bValue = b.registrationDate || b.createdAt || b.registeredAt || b.dateRegistered;
+      }
+      
+      if (sortConfig.key === 'postedDate' || sortConfig.key === 'datePosted') {
+        aValue = a.postedDate || a.datePosted || a.createdAt || a.publishedAt;
+        bValue = b.postedDate || b.datePosted || b.createdAt || b.publishedAt;
+      }
+      
+      if (sortConfig.key === 'latestHired' || sortConfig.key === 'lastHiredDate') {
+        aValue = a.latestHired || a.lastHiredDate || a.recentHire || a.mostRecentHire;
+        bValue = b.latestHired || b.lastHiredDate || b.recentHire || b.mostRecentHire;
+      }
+      
+      console.log(`PDF Service - Sorting by ${sortConfig.key}: ${aValue} vs ${bValue} (after mapping)`);
+      
+      // Handle numbers
+      if (typeof aValue === 'number' && typeof bValue === 'number') {
+        const result = sortConfig.direction === 'asc' ? aValue - bValue : bValue - aValue;
+        console.log(`PDF Service - Number sort result: ${result}`);
+        return result;
+      }
+      
+      // Handle dates
+      if (sortConfig.key.includes('Date') || sortConfig.key.includes('date') || 
+          sortConfig.key === 'createdAt' || sortConfig.key === 'updatedAt' ||
+          sortConfig.key === 'registrationDate' || sortConfig.key === 'postedDate' || 
+          sortConfig.key === 'latestHired') {
+        const aDate = new Date(aValue).getTime();
+        const bDate = new Date(bValue).getTime();
+        const result = sortConfig.direction === 'asc' ? aDate - bDate : bDate - aDate;
+        console.log(`PDF Service - Date sort result: ${result}`);
+        return result;
+      }
+      
+      // Handle strings (fallback)
+      const aStr = String(aValue || '').toLowerCase();
+      const bStr = String(bValue || '').toLowerCase();
+      if (aStr < bStr) return sortConfig.direction === 'asc' ? -1 : 1;
+      if (aStr > bStr) return sortConfig.direction === 'asc' ? 1 : -1;
+      return 0;
+    });
+  }
+
   getProperHeaders(sampleItem) {
-    // Define proper headers based on the data structure - check job data first
-    if (sampleItem.title && sampleItem.totalApplications !== undefined) {
-      // Job demand analytics data - has title and totalApplications
+    // Check for hiring analytics data first
+    if (sampleItem.totalHired !== undefined) {
       return [
         { key: 'companyName', label: 'Company Name' },
-        { key: 'title', label: 'Job Title' },
-        { key: 'totalApplications', label: 'Total Applications' }
+        { key: 'totalHired', label: 'Total Hired' },
+        { key: 'latestHired', label: 'Latest Hired' }
       ];
-    } else if (sampleItem.title && (sampleItem.department !== undefined || sampleItem.salary !== undefined || sampleItem.status !== undefined)) {
-      // Job data - has title and job-specific fields
+    }
+    // Check for job data
+    else if (sampleItem.jobTitle !== undefined) {
       return [
-        { key: 'title', label: 'Job Title' },
-        { key: 'companyName', label: 'Company' },
+        { key: 'jobTitle', label: 'Job Title' },
+        { key: 'companyName', label: 'Company Name' },
         { key: 'department', label: 'Department' },
         { key: 'status', label: 'Status' },
-        { key: 'salary', label: 'Salary' },
-        { key: 'createdAt', label: 'Posted Date' }
+        { key: 'totalApplications', label: 'Total Applications' },
+        { key: 'postedDate', label: 'Posted Date' }
       ];
-    } else if (sampleItem.firstName || sampleItem.lastName) {
-      // JobSeeker data
+    }
+    // Check for jobseeker data
+    else if (sampleItem.firstName !== undefined && sampleItem.lastName !== undefined) {
       return [
-        { key: 'email', label: 'Email' },
         { key: 'firstName', label: 'First Name' },
         { key: 'lastName', label: 'Last Name' },
-        { key: 'phoneNumber', label: 'Phone Number' },
-        { key: 'dateOfBirth', label: 'Birthday' },
-        { key: 'age', label: 'Age' },
-        { key: 'isActive', label: 'Active' },
-        { key: 'createdAt', label: 'Registration Date' }
+        { key: 'email', label: 'Email' },
+        { key: 'status', label: 'Status' },
+        { key: 'registrationDate', label: 'Registration Date' }
       ];
-    } else if (sampleItem.companyName && (sampleItem.industry !== undefined || sampleItem.accountStatus !== undefined)) {
-      // Employer data - has companyName and employer-specific fields
+    }
+    // Check for employer data
+    else if (sampleItem.companyName !== undefined && sampleItem.industry !== undefined) {
       return [
         { key: 'companyName', label: 'Company Name' },
-        { key: 'contactPerson.firstName', label: 'Contact First Name' },
-        { key: 'contactPerson.lastName', label: 'Contact Last Name' },
-        { key: 'contactPerson.position', label: 'Contact Position' },
-        { key: 'contactPerson.email', label: 'Contact Email' },
-        { key: 'contactPerson.phoneNumber', label: 'Contact Phone' },
         { key: 'industry', label: 'Industry' },
-        { key: 'companySize', label: 'Company Size' },
-        { key: 'address.city', label: 'City' },
-        { key: 'address.province', label: 'Province' },
-        { key: 'website', label: 'Website' },
-        { key: 'accountStatus', label: 'Status' },
-        { key: 'totalJobPostings', label: 'Total Jobs' },
-        { key: 'activeJobPostings', label: 'Active Jobs' },
-        { key: 'createdAt', label: 'Registration Date' }
+        { key: 'email', label: 'Email' },
+        { key: 'status', label: 'Status' },
+        { key: 'totalApplications', label: 'Total Applications' },
+        { key: 'dateRegistered', label: 'Date Registered' }
       ];
-    } else {
-      // Generic fallback
+    }
+    // Generic fallback
+    else {
       const keys = Object.keys(sampleItem).filter(key => 
         !key.startsWith('_') && 
         key !== '__v' && 
@@ -605,19 +788,13 @@ class PDFReportService {
 
   addFooter(doc, metadata) {
     const pageHeight = doc.page.height;
-    const footerY = pageHeight - 60;
+    const footerY = pageHeight - 40;
 
-    // Simple footer line
-    doc.moveTo(50, footerY)
-       .lineTo(doc.page.width - 50, footerY)
-       .stroke('#cccccc');
-
-    // Simple footer text
+    // Minimal footer with just generation date
     doc.fontSize(8)
        .font('Helvetica')
-       .fill('#666666')
-       .text('Public Employment Service Office (PESO)', 50, footerY + 10)
-       .text(`Generated: ${new Date(metadata.generatedAt).toLocaleDateString()}`, 50, footerY + 22);
+       .fill('#999999')
+       .text(`Generated: ${new Date(metadata.generatedAt).toLocaleDateString()}`, 50, footerY, { align: 'center', width: doc.page.width - 100 });
   }
 
   formatLabel(key) {
@@ -692,13 +869,7 @@ class PDFReportService {
         doc.on('data', chunk => chunks.push(chunk));
         doc.on('end', () => resolve(Buffer.concat(chunks)));
 
-        // Cover page
-        this.addCoverPage(doc, allReportsData.metadata);
-
-        // Table of contents
-        this.addTableOfContents(doc, allReportsData.reports);
-
-        // Individual reports
+        // Individual reports only - skip cover page and table of contents
         allReportsData.reports.forEach((report, index) => {
           if (index > 0) doc.addPage();
           
@@ -1283,7 +1454,7 @@ class PDFReportService {
         currentX += columnWidths[colIndex];
       });
 
-      doc.y = rowY + 20;
+      doc.y = rowY + 30;
       
       // Add row separator
       if (index < sortedCategories.length - 1) {
@@ -1375,7 +1546,7 @@ class PDFReportService {
         currentX += columnWidths[colIndex];
       });
 
-      doc.y = rowY + 20;
+      doc.y = rowY + 30;
       
       // Add row separator
       if (index < topJobs.length - 1) {
@@ -1476,7 +1647,7 @@ class PDFReportService {
         currentX += columnWidths[colIndex];
       });
 
-      doc.y = rowY + 20;
+      doc.y = rowY + 30;
       
       // Add row separator
       if (index < sortedTrends.length - 1) {

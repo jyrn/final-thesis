@@ -891,9 +891,329 @@ router.put('/employers/:employerId/documents/bulk-verify', verifyToken, adminMid
       allRequiredApproved
     });
 
-  } catch (error) {    res.status(500).json({ 
+  } catch (error) {
+    res.status(500).json({ 
       success: false, 
       message: 'Error updating documents status' 
+    });
+  }
+});
+
+// ===== REPORT DATA ENDPOINTS =====
+
+// Get employers data for reports
+router.get('/reports/employers-data', verifyToken, adminMiddleware, async (req, res) => {
+  try {
+    const { startDate, endDate, status } = req.query;
+    
+    console.log('Employers endpoint - Filters received:', { startDate, endDate, status });
+    
+    // Build filter query
+    let query = {};
+    
+    // Date filtering
+    if (startDate || endDate) {
+      query.createdAt = {};
+      if (startDate) {
+        // Parse date in UTC to avoid timezone issues
+        const startDateTime = new Date(startDate + 'T00:00:00.000Z');
+        query.createdAt.$gte = startDateTime;
+        console.log('Start date filter:', startDateTime);
+      }
+      if (endDate) {
+        // Parse date in UTC to avoid timezone issues
+        const endDateTime = new Date(endDate + 'T23:59:59.999Z');
+        query.createdAt.$lte = endDateTime;
+        console.log('End date filter:', endDateTime);
+      }
+    }
+    
+    // Status filtering
+    if (status && status !== 'all') {
+      query.accountStatus = status;
+      console.log('Status filter:', status);
+    }
+    
+    console.log('MongoDB query:', JSON.stringify(query, null, 2));
+
+    const employers = await Employer.find(query)
+      .select('companyName industry email accountStatus createdAt uid')
+      .sort({ createdAt: -1 });
+
+    console.log('Found employers:', employers.length);
+
+    // Debug: Log first few employer dates to check filtering
+    if (employers.length > 0) {
+      console.log('Sample employer dates:');
+      employers.slice(0, 3).forEach((emp, idx) => {
+        console.log(`  ${idx + 1}. ${emp.companyName}: ${emp.createdAt} (${emp.createdAt.toISOString()})`);
+      });
+    }
+
+    // Get application counts for each employer
+    const Application = require('../models/Application');
+    const employerIds = employers.map(emp => emp.uid || emp._id);
+    
+    const applicationCounts = await Application.aggregate([
+      { $match: { employerUid: { $in: employerIds } } },
+      { $group: { _id: '$employerUid', applicationCount: { $sum: 1 } } }
+    ]);
+    
+    const applicationCountMap = {};
+    applicationCounts.forEach(count => {
+      applicationCountMap[count._id] = count.applicationCount;
+    });
+
+    const formattedData = employers.map(employer => ({
+      id: employer._id,
+      companyName: employer.companyName || 'N/A',
+      industry: employer.industry || 'N/A',
+      email: employer.email || 'N/A',
+      status: employer.accountStatus || 'pending',
+      dateRegistered: employer.createdAt,
+      applicationCount: applicationCountMap[employer.uid || employer._id] || 0
+    }));
+
+    res.json({
+      success: true,
+      data: formattedData,
+      count: formattedData.length,
+      query: query
+    });
+
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching employers data',
+      error: error.message
+    });
+  }
+});
+
+// Get jobs data for reports
+router.get('/reports/jobs-data', verifyToken, adminMiddleware, async (req, res) => {
+  try {
+    const { startDate, endDate, status } = req.query;
+    
+    console.log('Jobs endpoint - Filters received:', { startDate, endDate, status });
+    
+    // Build filter query
+    let query = {};
+    
+    // Date filtering
+    if (startDate || endDate) {
+      query.postedDate = {};
+      if (startDate) {
+        // Parse date in UTC to avoid timezone issues
+        const startDateTime = new Date(startDate + 'T00:00:00.000Z');
+        query.postedDate.$gte = startDateTime;
+        console.log('Start date filter:', startDateTime);
+      }
+      if (endDate) {
+        // Parse date in UTC to avoid timezone issues
+        const endDateTime = new Date(endDate + 'T23:59:59.999Z');
+        query.postedDate.$lte = endDateTime;
+        console.log('End date filter:', endDateTime);
+      }
+    }
+    
+    // Status filtering
+    if (status && status !== 'all') {
+      query.status = status;
+      console.log('Status filter:', status);
+    }
+    
+    console.log('MongoDB query:', JSON.stringify(query, null, 2));
+
+    const jobs = await Job.find(query)
+      .select('title companyName department status postedDate')
+      .sort({ postedDate: -1 });
+
+    console.log('Found jobs:', jobs.length);
+
+    // Get application counts for each job
+    const Application = require('../models/Application');
+    const jobIds = jobs.map(job => job._id);
+    
+    const applicationCounts = await Application.aggregate([
+      { $match: { jobId: { $in: jobIds } } },
+      { $group: { _id: '$jobId', applicationCount: { $sum: 1 } } }
+    ]);
+    
+    const applicationCountMap = {};
+    applicationCounts.forEach(count => {
+      applicationCountMap[count._id.toString()] = count.applicationCount;
+    });
+
+    const formattedData = jobs.map(job => ({
+      id: job._id,
+      jobTitle: job.title || 'N/A',
+      companyName: job.companyName || 'N/A',
+      department: job.department || 'N/A',
+      status: job.status || 'active',
+      postedDate: job.postedDate,
+      applicationCount: applicationCountMap[job._id.toString()] || 0
+    }));
+
+    res.json({
+      success: true,
+      data: formattedData,
+      count: formattedData.length,
+      query: query
+    });
+
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching jobs data',
+      error: error.message
+    });
+  }
+});
+
+// Get jobseekers data for reports
+router.get('/reports/jobseekers-data', verifyToken, adminMiddleware, async (req, res) => {
+  try {
+    const { startDate, endDate, status } = req.query;
+    
+    console.log('JobSeekers endpoint - Filters received:', { startDate, endDate, status });
+    
+    // Build filter query
+    let query = {};
+    
+    // Date filtering
+    if (startDate || endDate) {
+      query.createdAt = {};
+      if (startDate) {
+        // Parse date in UTC to avoid timezone issues
+        const startDateTime = new Date(startDate + 'T00:00:00.000Z');
+        query.createdAt.$gte = startDateTime;
+        console.log('Start date filter:', startDateTime);
+      }
+      if (endDate) {
+        // Parse date in UTC to avoid timezone issues
+        const endDateTime = new Date(endDate + 'T23:59:59.999Z');
+        query.createdAt.$lte = endDateTime;
+        console.log('End date filter:', endDateTime);
+      }
+    }
+    
+    // Status filtering for jobseekers
+    if (status && status !== 'all') {
+      if (status === 'active') {
+        query.isActive = true;
+      } else if (status === 'inactive') {
+        query.isActive = false;
+      }
+      console.log('Status filter:', status);
+    }
+    
+    console.log('MongoDB query:', JSON.stringify(query, null, 2));
+
+    const jobseekers = await JobSeeker.find(query)
+      .select('firstName lastName email isActive createdAt')
+      .sort({ createdAt: -1 });
+
+    console.log('Found jobseekers:', jobseekers.length);
+
+    const formattedData = jobseekers.map(jobseeker => ({
+      id: jobseeker._id,
+      firstName: jobseeker.firstName || 'N/A',
+      lastName: jobseeker.lastName || 'N/A',
+      email: jobseeker.email || 'N/A',
+      status: jobseeker.isActive ? 'active' : 'inactive',
+      registrationDate: jobseeker.createdAt
+    }));
+
+    res.json({
+      success: true,
+      data: formattedData,
+      count: formattedData.length,
+      query: query
+    });
+
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching jobseekers data',
+      error: error.message
+    });
+  }
+});
+
+// Get hiring analytics data for reports
+router.get('/reports/hiring-analytics-data', verifyToken, adminMiddleware, async (req, res) => {
+  try {
+    const { startDate, endDate } = req.query;
+    
+    console.log('Fetching hiring analytics data with filters:', { startDate, endDate });
+    
+    // Build query for applications with "hired" status
+    let query = { status: 'hired' };
+    
+    // Add date filtering based on appliedDate or updatedAt (when they were hired)
+    if (startDate || endDate) {
+      query.updatedAt = {};
+      if (startDate) {
+        const startDateTime = new Date(startDate + 'T00:00:00.000Z');
+        query.updatedAt.$gte = startDateTime;
+      }
+      if (endDate) {
+        const endDateTime = new Date(endDate + 'T23:59:59.999Z');
+        query.updatedAt.$lte = endDateTime;
+      }
+    }
+    
+    console.log('MongoDB query:', JSON.stringify(query, null, 2));
+
+    // Aggregate to get hiring count by employer
+    const Application = require('../models/Application');
+    const Job = require('../models/Job');
+    
+    const hiringData = await Application.aggregate([
+      { $match: query },
+      {
+        $lookup: {
+          from: 'jobs',
+          localField: 'jobId',
+          foreignField: '_id',
+          as: 'jobDetails'
+        }
+      },
+      { $unwind: '$jobDetails' },
+      {
+        $group: {
+          _id: '$employerUid',
+          companyName: { $first: '$jobDetails.companyName' },
+          hiredCount: { $sum: 1 },
+          latestHireDate: { $max: '$updatedAt' }
+        }
+      },
+      { $sort: { hiredCount: -1 } }
+    ]);
+
+    console.log('Found hiring data:', hiringData.length, 'companies');
+
+    const formattedData = hiringData.map(item => ({
+      id: item._id,
+      companyName: item.companyName || 'N/A',
+      hiredCount: item.hiredCount,
+      latestHireDate: item.latestHireDate
+    }));
+
+    res.json({
+      success: true,
+      data: formattedData,
+      count: formattedData.length,
+      query: query
+    });
+
+  } catch (error) {
+    console.error('Error fetching hiring analytics data:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching hiring analytics data',
+      error: error.message
     });
   }
 });
@@ -1277,7 +1597,8 @@ router.get('/analytics/system', verifyToken, superAdminMiddleware, async (req, r
       }
     });
 
-  } catch (error) {    res.status(500).json({ 
+  } catch (error) {
+    res.status(500).json({ 
       success: false, 
       message: 'Error fetching system analytics' 
     });
@@ -1287,8 +1608,9 @@ router.get('/analytics/system', verifyToken, superAdminMiddleware, async (req, r
 // Report Generation Endpoints
 router.post('/reports/generate', verifyToken, superAdminMiddleware, async (req, res) => {
   try {
-    const { reportType, startDate, endDate, format, includeDetails } = req.body;
+    const { reportType, startDate, endDate, format = 'json', includeDetails = true, status, sortConfig } = req.body;
     
+    console.log('Report generation - sortConfig received:', sortConfig);
     
     let reportData = {};
     const start = new Date(startDate);
@@ -1298,27 +1620,32 @@ router.post('/reports/generate', verifyToken, superAdminMiddleware, async (req, 
     switch (reportType) {
       case 'registered-jobseekers':
         // Registered Jobseekers Report - Total registered jobseekers, demographics, profile completeness, and activity status
+        const baseQuery = { 
+          createdAt: { $gte: start, $lte: end },
+          ...(status && status !== 'all' ? { isActive: status === 'active' } : {})
+        };
+        
         const [totalJobseekers, activeJobseekers, profileCompleteJobseekers, jobseekersWithResumes, jobseekersByGender, jobseekersByAge] = await Promise.all([
-          JobSeeker.countDocuments({ createdAt: { $gte: start, $lte: end } }),
+          JobSeeker.countDocuments(baseQuery),
           JobSeeker.countDocuments({ 
-            isActive: true, 
-            createdAt: { $gte: start, $lte: end } 
+            ...baseQuery,
+            isActive: true
           }),
           JobSeeker.countDocuments({ 
-            profileComplete: true,
-            createdAt: { $gte: start, $lte: end } 
+            ...baseQuery,
+            profileComplete: true
           }),
           JobSeeker.countDocuments({ 
-            currentResumeId: { $exists: true, $ne: null },
-            createdAt: { $gte: start, $lte: end } 
+            ...baseQuery,
+            currentResumeId: { $exists: true, $ne: null }
           }),
           JobSeeker.aggregate([
-            { $match: { createdAt: { $gte: start, $lte: end } } },
+            { $match: baseQuery },
             { $group: { _id: '$gender', count: { $sum: 1 } } }
           ]),
           JobSeeker.aggregate([
             { $match: { 
-              createdAt: { $gte: start, $lte: end },
+              ...baseQuery,
               dateOfBirth: { $exists: true, $ne: null }
             }},
             { 
@@ -1380,8 +1707,13 @@ router.post('/reports/generate', verifyToken, superAdminMiddleware, async (req, 
             },
             { $sort: { '_id.year': 1, '_id.month': 1, '_id.day': 1 } }
           ]),
-          details: includeDetails ? await JobSeeker.aggregate([
-            { $match: { createdAt: { $gte: start, $lte: end } } },
+          details: await JobSeeker.aggregate([
+            { 
+              $match: { 
+                createdAt: { $gte: start, $lte: end },
+                ...(status && status !== 'all' ? { isActive: status === 'active' } : {})
+              } 
+            },
             {
               $lookup: {
                 from: 'applications',
@@ -1392,66 +1724,50 @@ router.post('/reports/generate', verifyToken, superAdminMiddleware, async (req, 
             },
             {
               $lookup: {
-                from: 'resumes',
-                localField: '_id',
-                foreignField: 'jobSeekerId',
-                as: 'resume'
-              }
-            },
-            {
-              $lookup: {
                 from: 'users',
                 localField: 'userId',
                 foreignField: '_id',
-                as: 'userId'
+                as: 'userInfo'
               }
             },
-            { $unwind: { path: '$userId', preserveNullAndEmptyArrays: true } },
-            { $unwind: { path: '$resume', preserveNullAndEmptyArrays: true } },
+            { $unwind: { path: '$userInfo', preserveNullAndEmptyArrays: true } },
             {
               $project: {
-                email: 1,
                 firstName: 1,
                 lastName: 1,
-                phoneNumber: { 
-                  $ifNull: ['$phoneNumber', '$resume.personalInfo.phone'] 
-                },
-                dateOfBirth: { 
-                  $ifNull: ['$dateOfBirth', '$resume.personalInfo.birthday'] 
-                },
-                createdAt: 1,
-                isActive: 1,
-                applications: { $size: '$applications' },
-                'userId.lastLoginAt': 1
+                email: '$userInfo.email',
+                status: { $cond: { if: '$isActive', then: 'active', else: 'inactive' } },
+                registrationDate: { $dateToString: { format: "%Y-%m-%d", date: "$createdAt" } }
               }
-            }
-          ]) : []
+            },
+            { $sort: { createdAt: -1 } }
+          ])
         };
         break;
 
       case 'employers-companies':
         // Employers/Companies Report - Registered employers, company profiles, verification status, and activity metrics
-        const [totalEmployers, verifiedEmployers, pendingEmployers, rejectedEmployers, activeEmployers, employersByIndustry] = await Promise.all([
-          User.countDocuments({ role: 'employer', createdAt: { $gte: start, $lte: end } }),
+        const employerBaseQuery = { 
+          createdAt: { $gte: start, $lte: end },
+          ...(status && status !== 'all' ? { accountStatus: status } : {})
+        };
+        
+        const [totalEmployers, activeEmployers, verifiedEmployers, rejectedEmployers, employersByIndustry] = await Promise.all([
+          Employer.countDocuments(employerBaseQuery),
           Employer.countDocuments({ 
-            accountStatus: 'verified',
-            verifiedAt: { $gte: start, $lte: end }
+            ...employerBaseQuery,
+            accountStatus: 'active'
           }),
           Employer.countDocuments({ 
-            accountStatus: 'pending',
-            createdAt: { $gte: start, $lte: end }
+            ...employerBaseQuery,
+            isVerified: true
           }),
           Employer.countDocuments({ 
-            accountStatus: 'rejected',
-            updatedAt: { $gte: start, $lte: end }
-          }),
-          User.countDocuments({ 
-            role: 'employer', 
-            isActive: true, 
-            lastLoginAt: { $gte: start, $lte: end } 
+            ...employerBaseQuery,
+            accountStatus: 'rejected'
           }),
           Employer.aggregate([
-            { $match: { createdAt: { $gte: start, $lte: end } } },
+            { $match: employerBaseQuery },
             { $group: { _id: '$industry', count: { $sum: 1 } } },
             { $sort: { count: -1 } }
           ])
@@ -1461,7 +1777,6 @@ router.post('/reports/generate', verifyToken, superAdminMiddleware, async (req, 
           summary: { 
             totalEmployers,
             verifiedEmployers, 
-            pendingEmployers,
             rejectedEmployers,
             activeEmployers,
             verificationRate: totalEmployers > 0 ? ((verifiedEmployers / totalEmployers) * 100).toFixed(2) : 0,
@@ -1482,8 +1797,13 @@ router.post('/reports/generate', verifyToken, superAdminMiddleware, async (req, 
             },
             { $sort: { '_id.year': 1, '_id.month': 1, '_id.day': 1 } }
           ]),
-          details: includeDetails ? await Employer.aggregate([
-            { $match: { createdAt: { $gte: start, $lte: end } } },
+          details: await Employer.aggregate([
+            { 
+              $match: { 
+                createdAt: { $gte: start, $lte: end },
+                ...(status && status !== 'all' ? { accountStatus: status } : {})
+              } 
+            },
             {
               $lookup: {
                 from: 'users',
@@ -1517,12 +1837,11 @@ router.post('/reports/generate', verifyToken, superAdminMiddleware, async (req, 
                   { $unwind: '$job' },
                   {
                     $match: {
-                      $expr: { $eq: ['$job.employerId', '$$employerId'] },
-                      status: 'hired'
+                      $expr: { $eq: ['$job.employerId', '$$employerId'] }
                     }
                   }
                 ],
-                as: 'hiredApplicants'
+                as: 'allApplications'
               }
             },
             {
@@ -1596,12 +1915,19 @@ router.post('/reports/generate', verifyToken, superAdminMiddleware, async (req, 
                   }
                 },
                 
-                // Hiring Statistics
-                hiredApplicantsCount: { $size: '$hiredApplicants' }
+                // Application Statistics
+                totalApplications: { $size: '$allApplications' }
               }
             },
             { $sort: { createdAt: -1 } }
-          ]) : []
+          ]).then(employers => employers.map(emp => ({
+            companyName: emp.companyName || 'N/A',
+            industry: emp.industry || 'N/A', 
+            email: emp.email || 'N/A',
+            status: emp.accountStatus || 'pending',
+            totalApplications: emp.totalApplications || 0,
+            dateRegistered: emp.createdAt ? new Date(emp.createdAt).toLocaleDateString() : 'N/A'
+          })))
         };
         break;
 
@@ -2014,12 +2340,81 @@ router.post('/reports/generate', verifyToken, superAdminMiddleware, async (req, 
             },
             { $sort: { '_id.year': 1, '_id.month': 1, '_id.day': 1 } }
           ]),
-          details: includeDetails ? await Job.find({
-            createdAt: { $gte: start, $lte: end }
-          }).select('title companyName department status salary createdAt expiryDate') : []
+          details: await Job.aggregate([
+            { 
+              $match: { 
+                createdAt: { $gte: start, $lte: end },
+                ...(status && status !== 'all' ? { status: status } : {})
+              } 
+            },
+            {
+              $lookup: {
+                from: 'applications',
+                localField: '_id',
+                foreignField: 'jobId',
+                as: 'applications'
+              }
+            },
+            {
+              $project: {
+                jobTitle: '$title',
+                companyName: 1,
+                department: 1,
+                status: 1,
+                totalApplications: { $size: '$applications' },
+                postedDate: { $dateToString: { format: "%Y-%m-%d", date: "$createdAt" } }
+              }
+            },
+            { $sort: { createdAt: -1 } }
+          ])
         };
         break;
 
+      case 'hiring-analytics':
+        // Hiring Analytics Report - Use same data as frontend preview
+        let hiringQuery = { status: 'hired' };
+        if (startDate && endDate) {
+          hiringQuery.updatedAt = { $gte: start, $lte: end };
+        }
+
+        const hiringAnalyticsData = await Application.aggregate([
+          { $match: hiringQuery },
+          {
+            $lookup: {
+              from: 'jobs',
+              localField: 'jobId',
+              foreignField: '_id',
+              as: 'jobDetails'
+            }
+          },
+          { $unwind: '$jobDetails' },
+          {
+            $group: {
+              _id: '$employerUid',
+              companyName: { $first: '$jobDetails.companyName' },
+              hiredCount: { $sum: 1 },
+              latestHireDate: { $max: '$updatedAt' }
+            }
+          },
+          { $sort: { hiredCount: -1 } }
+        ]);
+
+        const formattedHiringData = hiringAnalyticsData.map(item => ({
+          companyName: item.companyName || 'N/A',
+          totalHired: item.hiredCount,
+          latestHired: item.latestHireDate ? new Date(item.latestHireDate).toLocaleDateString() : 'N/A'
+        }));
+
+        reportData = {
+          summary: {
+            totalCompaniesHiring: hiringAnalyticsData.length,
+            totalHires: hiringAnalyticsData.reduce((sum, company) => sum + company.hiredCount, 0),
+            averageHiresPerCompany: hiringAnalyticsData.length > 0 ? (hiringAnalyticsData.reduce((sum, company) => sum + company.hiredCount, 0) / hiringAnalyticsData.length).toFixed(2) : 0,
+            topHiringCompany: hiringAnalyticsData[0]?.companyName || 'N/A'
+          },
+          details: formattedHiringData
+        };
+        break;
         
       default:
         return res.status(400).json({
@@ -2044,10 +2439,15 @@ router.post('/reports/generate', verifyToken, superAdminMiddleware, async (req, 
     
     // Handle PDF generation
     if (format === 'pdf') {
-      try {        const reportName = getReportDisplayName(reportType);        const pdfBuffer = await pdfReportService.generateReportPDF(finalReportData, reportName);        res.setHeader('Content-Type', 'application/pdf');
+      try {        
+        const reportName = getReportDisplayName(reportType);        
+        const pdfBuffer = await pdfReportService.generateReportPDF(finalReportData, reportName, sortConfig);
+        res.setHeader('Content-Type', 'application/pdf');
         res.setHeader('Content-Disposition', `attachment; filename="${reportName}_${startDate}_to_${endDate}.pdf"`);
-        res.setHeader('Content-Length', pdfBuffer.length);        return res.send(pdfBuffer);
-      } catch (pdfError) {        // Fallback to JSON response if PDF generation fails
+        res.setHeader('Content-Length', pdfBuffer.length);        
+        return res.send(pdfBuffer);
+      } catch (pdfError) {        
+        // Fallback to JSON response if PDF generation fails
         return res.json({
           success: true,
           report: finalReportData,
@@ -2106,7 +2506,9 @@ router.post('/reports/generate', verifyToken, superAdminMiddleware, async (req, 
       message: 'Report generated successfully'
     });
     
-  } catch (error) {    res.status(500).json({
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({
       success: false,
       message: 'Error generating report'
     });
@@ -2119,56 +2521,8 @@ function getReportDisplayName(reportType) {
     'registered-jobseekers': 'Registered Jobseekers Report',
     'employers-companies': 'Employers Companies Report',
     'job-postings': 'Job Postings Report',
-    'job-demand-analytics': 'Job Demand Analytics Report'
-  };
-  
-  return displayNames[reportType] || reportType.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
-}
-
-// Get report history (for future implementation)
-router.get('/reports/history', verifyToken, superAdminMiddleware, async (req, res) => {
-  try {
-    // For now, return empty array - can be implemented with a Reports collection later
-    res.json({
-      success: true,
-      reports: [],
-      message: 'Report history retrieved successfully'
-    });
-  } catch (error) {    res.status(500).json({
-      success: false,
-      message: 'Error fetching report history'
-    });
-  }
-});
-
-// Helper function to get report display names
-function getReportDisplayName(reportType) {
-  const displayNames = {
-    // New dashboard-aligned reports
-    'dashboard-overview': 'Dashboard Overview Report',
-    'employer-verification': 'Employer Verification Report',
-    'employer-documents': 'Employer Documents Report',
-    'job-postings': 'Job Postings Report',
     'job-demand-analytics': 'Job Demand Analytics Report',
-    'jobseekers-summary': 'Jobseekers Summary Report',
-    'jobseeker-resumes': 'Resume Analytics Report',
-    'compliance-overview': 'Compliance Overview Report',
-    'admin-activity': 'Admin Activity Report',
-    'admin-permissions': 'Admin Permissions Report',
-    'system-health': 'System Health Report',
-    'system-settings': 'System Configuration Report',
-    
-    // Legacy reports (kept for backward compatibility)
-    'user-summary': 'User Summary Report',
-    'user-registration': 'User Registration Trends',
-    'user-activity': 'User Activity Analysis',
-    'job-performance': 'Job Performance Metrics',
-    'employer-activity': 'Employer Activity Report',
-    'application-summary': 'Application Summary',
-    'application-trends': 'Application Trends Analysis',
-    'verification-report': 'Verification Status Report',
-    'platform-analytics': 'Platform Analytics',
-    'revenue-analytics': 'Revenue Analytics'
+    'hiring-analytics': 'Hiring Analytics Report'
   };
   
   return displayNames[reportType] || reportType.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
@@ -2177,8 +2531,15 @@ function getReportDisplayName(reportType) {
 // Bulk report generation endpoint
 router.post('/reports/generate-all', verifyToken, superAdminMiddleware, async (req, res) => {
   try {
-    const { startDate, endDate, format, includeDetails } = req.body;
+    const { startDate, endDate, format, includeDetails, status, sortConfig } = req.body;
     
+    console.log('Bulk report generation - Received parameters:', {
+      startDate,
+      endDate,
+      format,
+      includeDetails,
+      status
+    });
     
     const start = new Date(startDate);
     const end = new Date(endDate);
@@ -2208,6 +2569,74 @@ router.post('/reports/generate-all', verifyToken, superAdminMiddleware, async (r
         let reportData = {};
         
         switch (reportType) {
+          case 'registered-jobseekers':
+            const jobseekerBaseQuery = { 
+              createdAt: { $gte: start, $lte: end },
+              ...(status && status !== 'all' ? { isActive: status === 'active' } : {})
+            };
+            
+            const [totalJobseekers, activeJobseekers, profileCompleteJobseekers, jobseekersWithResumes] = await Promise.all([
+              JobSeeker.countDocuments(jobseekerBaseQuery),
+              JobSeeker.countDocuments({ 
+                ...jobseekerBaseQuery,
+                isActive: true
+              }),
+              JobSeeker.countDocuments({ 
+                ...jobseekerBaseQuery,
+                profileComplete: true
+              }),
+              JobSeeker.countDocuments({ 
+                ...jobseekerBaseQuery,
+                currentResumeId: { $exists: true, $ne: null }
+              })
+            ]);
+            
+            reportData = {
+              summary: { 
+                totalJobseekers,
+                activeJobseekers, 
+                profileCompleteJobseekers, 
+                jobseekersWithResumes 
+              },
+              details: includeDetails ? await JobSeeker.find(jobseekerBaseQuery)
+                .select('firstName lastName email isActive profileComplete createdAt') : []
+            };
+            break;
+            
+          case 'employers-companies':
+            const employerBaseQuery = { 
+              createdAt: { $gte: start, $lte: end },
+              ...(status && status !== 'all' ? { accountStatus: status } : {})
+            };
+            
+            const [totalEmployers, activeEmployers, verifiedEmployers, employersWithJobs] = await Promise.all([
+              Employer.countDocuments(employerBaseQuery),
+              Employer.countDocuments({ 
+                ...employerBaseQuery,
+                accountStatus: 'active'
+              }),
+              Employer.countDocuments({ 
+                ...employerBaseQuery,
+                isVerified: true
+              }),
+              Employer.countDocuments({ 
+                ...employerBaseQuery,
+                accountStatus: 'verified'
+              })
+            ]);
+            
+            reportData = {
+              summary: { 
+                totalEmployers,
+                activeEmployers, 
+                verifiedEmployers, 
+                employersWithJobs 
+              },
+              details: includeDetails ? await Employer.find(employerBaseQuery)
+                .select('companyName industry email accountStatus isVerified createdAt') : []
+            };
+            break;
+            
           case 'user-summary':
             const [totalUsers, jobseekers, employers, activeUsers] = await Promise.all([
               User.countDocuments({ createdAt: { $gte: start, $lte: end } }),
@@ -2228,23 +2657,38 @@ router.post('/reports/generate-all', verifyToken, superAdminMiddleware, async (r
             break;
             
           case 'job-postings':
-            const [totalJobs, activeJobs, expiredJobs] = await Promise.all([
-              Job.countDocuments({ createdAt: { $gte: start, $lte: end } }),
+            const jobBaseQuery = { 
+              createdAt: { $gte: start, $lte: end },
+              ...(status && status !== 'all' ? { status: status } : {})
+            };
+        
+            const [totalJobs, activeJobs, closedJobs, jobsWithApplications, jobsByDepartment, jobsByStatus] = await Promise.all([
+              Job.countDocuments(jobBaseQuery),
               Job.countDocuments({ 
-                status: 'active', 
-                createdAt: { $gte: start, $lte: end } 
+                createdAt: { $gte: start, $lte: end },
+                status: 'active'
               }),
               Job.countDocuments({ 
-                status: 'expired', 
-                createdAt: { $gte: start, $lte: end } 
+                createdAt: { $gte: start, $lte: end },
+                status: 'closed'
+              }),
+              Job.countDocuments({ 
+                ...jobBaseQuery,
+                applications: { $gt: 0 }
+              }),
+              Job.countDocuments({ 
+                ...jobBaseQuery,
+                department: { $ne: null }
+              }),
+              Job.countDocuments({ 
+                ...jobBaseQuery,
+                status: { $ne: null }
               })
             ]);
             
             reportData = {
-              summary: { totalJobs, activeJobs, expiredJobs },
-              details: includeDetails ? await Job.find({ 
-                createdAt: { $gte: start, $lte: end } 
-              }).populate('employerUid', 'email companyName') : []
+              summary: { totalJobs, activeJobs, closedJobs },
+              details: includeDetails ? await Job.find(jobBaseQuery).populate('employerUid', 'email companyName') : []
             };
             break;
             
