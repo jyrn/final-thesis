@@ -1557,7 +1557,7 @@ class EmailService {
       console.log(`📤 Sending OTP email via Resend to ${email}...`);
       
       const { data, error } = await this.resend.emails.send({
-        from: `SkillSync <${process.env.EMAIL_USER || 'onboarding@resend.dev'}>`,
+        from: 'SkillSync <onboarding@resend.dev>',
         to: [email],
         subject: 'SkillSync - Email Verification Code',
         html: `
