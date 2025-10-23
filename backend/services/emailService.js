@@ -24,19 +24,19 @@ class EmailService {
       console.log('📧 Using Gmail service for:', process.env.EMAIL_USER);
 
       try {
-        this.transporter = nodemailer.createTransport(emailConfig);
-        this.isConfigured = true;
-        console.log('✅ Email service configured successfully');
-        
-        // Test the connection asynchronously (non-blocking)
-        this.transporter.verify((error, success) => {
-          if (error) {
-            console.error('⚠️ Email service verification warning:', error.message);
-            console.log('📧 Will attempt to send emails anyway...');
-          } else {
-            console.log('✅ Email service verified and ready to send emails');
-          }
+        this.transporter = nodemailer.createTransporter({
+          service: 'gmail',
+          auth: {
+            user: process.env.EMAIL_USER,
+            pass: process.env.EMAIL_PASS
+          },
+          pool: true,
+          maxConnections: 1,
+          rateDelta: 20000,
+          rateLimit: 5
         });
+        this.isConfigured = true;
+        console.log('✅ Email service configured successfully (no verification)');
       } catch (error) {
         console.error('❌ Failed to create email transporter:', error.message);
         this.transporter = null;
