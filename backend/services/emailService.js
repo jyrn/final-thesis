@@ -1,4 +1,5 @@
 const nodemailer = require('nodemailer');
+const { Resend } = require('resend');
 
 class EmailService {
   constructor() {
@@ -7,8 +8,19 @@ class EmailService {
     console.log('🔧 Initializing Email Service...');
     console.log('EMAIL_USER:', process.env.EMAIL_USER ? 'SET' : 'NOT SET');
     console.log('EMAIL_PASS:', process.env.EMAIL_PASS ? 'SET' : 'NOT SET');
+    console.log('RESEND_API_KEY:', process.env.RESEND_API_KEY ? 'SET' : 'NOT SET');
     
-    // Check if email configuration is provided
+    // Check if Resend API key is available for production
+    if (process.env.RESEND_API_KEY && process.env.NODE_ENV === 'production') {
+      console.log('📧 Using Resend HTTP API for production email service');
+      this.resend = new Resend(process.env.RESEND_API_KEY);
+      this.isConfigured = true;
+      this.useResend = true;
+      console.log('✅ Resend email service configured successfully');
+      return;
+    }
+    
+    // Fallback to SMTP for development
     if (process.env.EMAIL_USER && process.env.EMAIL_PASS) {
       // Configure transporter - supports both Gmail and custom SMTP
       const emailConfig = {
@@ -24,21 +36,31 @@ class EmailService {
       console.log('📧 Using Gmail service for:', process.env.EMAIL_USER);
 
       try {
-        // Check if Brevo API key is available for production
-        if (process.env.BREVO_API_KEY) {
+        // Disable Brevo temporarily - revert to Gmail with different port
+        if (false && process.env.BREVO_API_KEY && process.env.NODE_ENV === 'production') {
           console.log('📧 Using Brevo SMTP for production email service');
           console.log('📧 Brevo Login:', process.env.BREVO_LOGIN || process.env.EMAIL_USER);
           console.log('📧 Brevo API Key exists:', !!process.env.BREVO_API_KEY);
+          
           this.transporter = nodemailer.createTransport({
             host: 'smtp-relay.brevo.com',
             port: 587,
             secure: false,
-            connectionTimeout: 60000,
-            greetingTimeout: 30000,
-            socketTimeout: 60000,
             auth: {
               user: process.env.BREVO_LOGIN || process.env.EMAIL_USER,
               pass: process.env.BREVO_API_KEY
+            }
+          });
+        } else if (process.env.NODE_ENV === 'production') {
+          // Try Gmail with port 465 for production
+          console.log('📧 Using Gmail SMTP (Port 465) for production');
+          this.transporter = nodemailer.createTransport({
+            host: 'smtp.gmail.com',
+            port: 465,
+            secure: true,
+            auth: {
+              user: process.env.EMAIL_USER,
+              pass: process.env.EMAIL_PASS
             }
           });
         } else {
@@ -626,10 +648,23 @@ class EmailService {
 
     try {
       console.log(`📤 Sending OTP email to ${email}...`);
-      console.log(`📧 Using transporter configured for: ${this.transporter.options?.service || this.transporter.options?.host}`);
-      const result = await this.transporter.sendMail(mailOptions);
-      console.log(`✅ OTP email sent successfully to ${email}, MessageID: ${result.messageId}`);
-      return { success: true, messageId: result.messageId };
+      
+      if (this.useResend) {
+        console.log('📧 Using Resend HTTP API');
+        const result = await this.resend.emails.send({
+          from: 'SkillSync <onboarding@resend.dev>',
+          to: [email],
+          subject: mailOptions.subject,
+          html: mailOptions.html
+        });
+        console.log(`✅ OTP email sent successfully via Resend to ${email}, ID: ${result.data?.id}`);
+        return { success: true, messageId: result.data?.id };
+      } else {
+        console.log(`📧 Using transporter configured for: ${this.transporter.options?.service || this.transporter.options?.host}`);
+        const result = await this.transporter.sendMail(mailOptions);
+        console.log(`✅ OTP email sent successfully to ${email}, MessageID: ${result.messageId}`);
+        return { success: true, messageId: result.messageId };
+      }
     } catch (error) {
       console.error(`❌ Failed to send OTP email to ${email}:`, error.message);
       console.error(`❌ Error code:`, error.code);
