@@ -144,7 +144,9 @@ class EmailService {
 
   async sendOTPEmail(email, otp, userRole = 'user') {
     // If email service is not configured, just return success (OTP will be logged to console)
-    if (!this.isConfigured) {      return { success: true, message: 'Email service not configured - OTP logged to console' };
+    if (!this.isConfigured) {
+      console.log(`[EMAIL NOT CONFIGURED] OTP for ${email}: ${otp}`);
+      return { success: true, message: 'Email service not configured - OTP logged to console' };
     }
 
     const mailOptions = {
