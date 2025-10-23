@@ -8,6 +8,7 @@ const emailService = require('../services/emailService');
 const authController = {
   // Create user profile after Firebase registration
   async createUserProfile(req, res) {
+    const startTime = Date.now();
     try {
       const { uid, email, role, firstName, lastName, middleName, companyName, emailVerified } = req.body;
 
@@ -36,8 +37,12 @@ const authController = {
         }
       }
 
-      // Check if user already exists by UID
-      const existingUser = await User.findOne({ uid });
+      // Optimize: Check both user existence and email taken in parallel
+      const [existingUser, emailTaken] = await Promise.all([
+        User.findOne({ uid }),
+        User.isEmailTaken(email)
+      ]);
+      
       if (existingUser) {
         // If user already exists, return success with existing user data
         // This handles cases where Firebase user was created but profile creation was retried
@@ -54,8 +59,6 @@ const authController = {
         });
       }
 
-      // Check if email is already taken
-      const emailTaken = await User.isEmailTaken(email);
       if (emailTaken) {
         return res.status(400).json({
           success: false,
@@ -82,16 +85,15 @@ const authController = {
         userData.companyName = companyName?.trim();
       }
 
+      // Optimize: Create user and role profile in parallel after user creation
       const user = await User.create(userData);
       
-      // Generate email verification token
+      // Generate email verification token and create role profile in parallel
       const verificationToken = user.generateVerificationToken();
-      await user.save();
-
-      // Create role-specific profile with authentication data
-      let roleProfile = null;
+      
+      let roleProfilePromise = null;
       if (role === 'jobseeker') {
-        roleProfile = await JobSeeker.create({
+        roleProfilePromise = JobSeeker.create({
           userId: user._id,
           uid: user.uid,
           firstName: firstName?.trim(),
@@ -100,27 +102,40 @@ const authController = {
           email: email
         });
       } else if (role === 'employer') {
-        roleProfile = await Employer.create({
+        roleProfilePromise = Employer.create({
           userId: user._id,
           uid: user.uid,
           email: email,
           companyName: companyName?.trim()
         });
       }
+      
+      // Execute user save and role profile creation in parallel
+      const [savedUser, roleProfile] = await Promise.all([
+        user.save(),
+        roleProfilePromise
+      ]);
 
-      // Return filtered data based on role
-      const responseData = {
-        ...user.toObject(),
-        roleProfile: roleProfile ? roleProfile.toObject() : null
-      };
-
+      // Log performance metrics
+      const endTime = Date.now();
+      const duration = endTime - startTime;
+      console.log(`Registration completed in ${duration}ms for user: ${user.uid}`);
+      
+      // Optimize: Return minimal response data to reduce payload size
       res.status(201).json({
         success: true,
         message: 'User profile created successfully. Please verify your email before logging in.',
         user: {
-          ...responseData,
+          uid: user.uid,
+          email: user.email,
+          role: user.role,
+          emailVerified: user.emailVerified,
+          registrationStatus: user.registrationStatus,
           requiresEmailVerification: true,
           verificationToken: verificationToken
+        },
+        performanceMetrics: {
+          registrationTime: duration
         }
       });
 
