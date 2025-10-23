@@ -5,7 +5,7 @@ class EmailService {
   constructor() {
     this.isConfigured = false;
     
-    console.log('🔧 Initializing Email Service...');
+    console.log('🔧 Initializing Email Service with Resend...');
     console.log('EMAIL_USER:', process.env.EMAIL_USER ? 'SET' : 'NOT SET');
     console.log('EMAIL_PASS:', process.env.EMAIL_PASS ? 'SET' : 'NOT SET');
     console.log('RESEND_API_KEY:', process.env.RESEND_API_KEY ? 'SET' : 'NOT SET');
