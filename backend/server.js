@@ -110,7 +110,8 @@ process.on('SIGINT', async () => {
 // Start server
 const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => {
-  console.log(`✅ Server is running on port ${PORT}`);
+  console.log('✅ Server is running on port', PORT);
+  console.log('🔄 FORCE REBUILD - Cache cleared v2.0');
   console.log(`🔗 API available at http://localhost:${PORT}`);
   if (process.env.ENABLE_ML_SERVICES !== 'false') {
     console.log('⏳ ML services are starting in the background...');
