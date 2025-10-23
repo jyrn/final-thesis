@@ -144,7 +144,9 @@ const authController = {
           await user.save();
           
           // Send OTP email asynchronously
+          console.log('🔍 CONTROLLER DEBUG: About to call emailService.sendOTPEmail');
           const emailResult = await emailService.sendOTPEmail(user.email, otp, user.role);
+          console.log('🔍 CONTROLLER DEBUG: emailService.sendOTPEmail returned:', emailResult);
           if (!emailResult.success) {
             console.error('Failed to send OTP email:', emailResult.error);
           }
