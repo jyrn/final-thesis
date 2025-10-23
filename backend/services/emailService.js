@@ -14,9 +14,27 @@ class EmailService {
     if (process.env.RESEND_API_KEY && process.env.NODE_ENV === 'production') {
       console.log('📧 Using Resend HTTP API for production email service');
       this.resend = new Resend(process.env.RESEND_API_KEY);
-      this.isConfigured = true;
       this.useResend = true;
       console.log('✅ Resend email service configured successfully');
+      
+      // Also configure SMTP fallback for sandbox limitations
+      if (process.env.EMAIL_USER && process.env.EMAIL_PASS) {
+        console.log('📧 Configuring SMTP fallback for Resend sandbox limitations...');
+        try {
+          this.transporter = nodemailer.createTransporter({
+            service: 'gmail',
+            auth: {
+              user: process.env.EMAIL_USER,
+              pass: process.env.EMAIL_PASS
+            }
+          });
+          console.log('✅ SMTP fallback configured successfully');
+        } catch (error) {
+          console.error('❌ Failed to configure SMTP fallback:', error.message);
+        }
+      }
+      
+      this.isConfigured = true;
       return;
     }
     
@@ -318,14 +336,32 @@ class EmailService {
       if (result.error) {
         console.error('❌ Resend API Error:', result.error);
         if (result.error.name === 'validation_error') {
-          console.log('🔍 RESEND SANDBOX MODE: Can only send to verified email addresses');
-          console.log('📧 For production, verify a domain at resend.com/domains');
-          console.log(`📝 OTP for ${email}: ${otp} (logged due to sandbox limitation)`);
-          return { 
-            success: true, 
-            message: 'Email service in sandbox mode - OTP logged to console',
-            sandboxMode: true 
-          };
+          console.log('🔍 RESEND SANDBOX MODE: Falling back to SMTP for unverified emails');
+          console.log('📧 Attempting to send via Gmail SMTP fallback...');
+          
+          // Fallback to SMTP for sandbox limitation
+          if (this.transporter) {
+            try {
+              const result = await this.transporter.sendMail(mailOptions);
+              console.log(`✅ OTP email sent via SMTP fallback to ${email}, MessageID: ${result.messageId}`);
+              return { success: true, messageId: result.messageId, method: 'smtp_fallback' };
+            } catch (smtpError) {
+              console.error('❌ SMTP fallback also failed:', smtpError.message);
+              console.log(`📝 OTP for ${email}: ${otp} (both Resend and SMTP failed)`);
+              return { 
+                success: true, 
+                message: 'Email service in sandbox mode - OTP logged to console',
+                sandboxMode: true 
+              };
+            }
+          } else {
+            console.log(`📝 OTP for ${email}: ${otp} (logged due to sandbox limitation)`);
+            return { 
+              success: true, 
+              message: 'Email service in sandbox mode - OTP logged to console',
+              sandboxMode: true 
+            };
+          }
         }
         return { success: false, error: result.error.message };
       }
