@@ -228,14 +228,4 @@ UserSchema.statics.isEmailTaken = async function(email, excludeUid = null) {
   return !!existingUser;
 };
 
-// Add database indexes for performance optimization
-UserSchema.index({ uid: 1 }); // Already unique, but explicit index
-UserSchema.index({ email: 1 }); // Already unique, but explicit index
-UserSchema.index({ role: 1 }); // For role-based queries
-UserSchema.index({ emailVerified: 1, registrationStatus: 1 }); // For login validation
-UserSchema.index({ verificationToken: 1, verificationTokenExpires: 1 }); // For email verification
-UserSchema.index({ emailVerificationOTP: 1, emailVerificationOTPExpires: 1 }); // For OTP verification
-UserSchema.index({ createdAt: -1 }); // For sorting by registration date
-UserSchema.index({ lastLoginAt: -1 }); // For activity tracking
-
 module.exports = mongoose.model('User', UserSchema);
