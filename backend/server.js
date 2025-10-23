@@ -19,6 +19,14 @@ const app = express();
 // Connect to MongoDB
 connectDB();
 
+// Initialize Email Service and log status
+console.log('🚀 Server starting - checking email service...');
+console.log('Environment check - NODE_ENV:', process.env.NODE_ENV);
+console.log('Environment check - EMAIL_USER exists:', !!process.env.EMAIL_USER);
+console.log('Environment check - EMAIL_PASS exists:', !!process.env.EMAIL_PASS);
+const emailService = require('./services/emailService');
+console.log('📧 Email service initialization completed');
+
 // Initialize ML Service Manager (auto-starts Python services)
 const mlServiceManager = getMLServiceManager();
 let mlServicesEnabled = false;
