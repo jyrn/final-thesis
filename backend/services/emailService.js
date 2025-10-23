@@ -761,8 +761,21 @@ class EmailService {
     };
 
     try {
-      const result = await this.transporter.sendMail(mailOptions);
-      return { success: true, messageId: result.messageId };
+      if (this.useResend) {
+        const result = await this.resend.emails.send({
+          from: 'SkillSync <onboarding@resend.dev>',
+          to: [mailOptions.to],
+          subject: mailOptions.subject,
+          html: mailOptions.html
+        });
+        return { success: true, messageId: result.data?.id };
+      } else {
+        if (!this.transporter) {
+          return { success: false, error: 'Email transporter not configured' };
+        }
+        const result = await this.transporter.sendMail(mailOptions);
+        return { success: true, messageId: result.messageId };
+      }
     } catch (error) {
       return { success: false, error: error.message };
     }
@@ -829,8 +842,21 @@ class EmailService {
     };
 
     try {
-      const result = await this.transporter.sendMail(mailOptions);
-      return { success: true, messageId: result.messageId };
+      if (this.useResend) {
+        const result = await this.resend.emails.send({
+          from: 'SkillSync <onboarding@resend.dev>',
+          to: [mailOptions.to],
+          subject: mailOptions.subject,
+          html: mailOptions.html
+        });
+        return { success: true, messageId: result.data?.id };
+      } else {
+        if (!this.transporter) {
+          return { success: false, error: 'Email transporter not configured' };
+        }
+        const result = await this.transporter.sendMail(mailOptions);
+        return { success: true, messageId: result.messageId };
+      }
     } catch (error) {
       return { success: false, error: error.message };
     }
@@ -906,8 +932,21 @@ class EmailService {
     };
 
     try {
-      const result = await this.transporter.sendMail(mailOptions);
-      return { success: true, messageId: result.messageId };
+      if (this.useResend) {
+        const result = await this.resend.emails.send({
+          from: 'SkillSync <onboarding@resend.dev>',
+          to: [mailOptions.to],
+          subject: mailOptions.subject,
+          html: mailOptions.html
+        });
+        return { success: true, messageId: result.data?.id };
+      } else {
+        if (!this.transporter) {
+          return { success: false, error: 'Email transporter not configured' };
+        }
+        const result = await this.transporter.sendMail(mailOptions);
+        return { success: true, messageId: result.messageId };
+      }
     } catch (error) {
       return { success: false, error: error.message };
     }
@@ -1082,8 +1121,21 @@ class EmailService {
     };
 
     try {
-      const result = await this.transporter.sendMail(mailOptions);
-      return { success: true, messageId: result.messageId };
+      if (this.useResend) {
+        const result = await this.resend.emails.send({
+          from: 'SkillSync <onboarding@resend.dev>',
+          to: [mailOptions.to],
+          subject: mailOptions.subject,
+          html: mailOptions.html
+        });
+        return { success: true, messageId: result.data?.id };
+      } else {
+        if (!this.transporter) {
+          return { success: false, error: 'Email transporter not configured' };
+        }
+        const result = await this.transporter.sendMail(mailOptions);
+        return { success: true, messageId: result.messageId };
+      }
     } catch (error) {
       return { success: false, error: error.message };
     }
@@ -1249,8 +1301,21 @@ class EmailService {
     };
 
     try {
-      const result = await this.transporter.sendMail(mailOptions);
-      return { success: true, messageId: result.messageId };
+      if (this.useResend) {
+        const result = await this.resend.emails.send({
+          from: 'SkillSync <onboarding@resend.dev>',
+          to: [mailOptions.to],
+          subject: mailOptions.subject,
+          html: mailOptions.html
+        });
+        return { success: true, messageId: result.data?.id };
+      } else {
+        if (!this.transporter) {
+          return { success: false, error: 'Email transporter not configured' };
+        }
+        const result = await this.transporter.sendMail(mailOptions);
+        return { success: true, messageId: result.messageId };
+      }
     } catch (error) {
       return { success: false, error: error.message };
     }
@@ -1418,8 +1483,21 @@ class EmailService {
     };
 
     try {
-      const result = await this.transporter.sendMail(mailOptions);
-      return { success: true, messageId: result.messageId };
+      if (this.useResend) {
+        const result = await this.resend.emails.send({
+          from: 'SkillSync <onboarding@resend.dev>',
+          to: [mailOptions.to],
+          subject: mailOptions.subject,
+          html: mailOptions.html
+        });
+        return { success: true, messageId: result.data?.id };
+      } else {
+        if (!this.transporter) {
+          return { success: false, error: 'Email transporter not configured' };
+        }
+        const result = await this.transporter.sendMail(mailOptions);
+        return { success: true, messageId: result.messageId };
+      }
     } catch (error) {
       return { success: false, error: error.message };
     }
@@ -1582,8 +1660,21 @@ class EmailService {
     };
 
     try {
-      const result = await this.transporter.sendMail(mailOptions);
-      return { success: true, messageId: result.messageId };
+      if (this.useResend) {
+        const result = await this.resend.emails.send({
+          from: 'SkillSync <onboarding@resend.dev>',
+          to: [mailOptions.to],
+          subject: mailOptions.subject,
+          html: mailOptions.html
+        });
+        return { success: true, messageId: result.data?.id };
+      } else {
+        if (!this.transporter) {
+          return { success: false, error: 'Email transporter not configured' };
+        }
+        const result = await this.transporter.sendMail(mailOptions);
+        return { success: true, messageId: result.messageId };
+      }
     } catch (error) {
       return { success: false, error: error.message };
     }
