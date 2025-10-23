@@ -127,7 +127,7 @@ const firebaseAuthService = {
         });
       }
       
-      await sendEmailVerification(user);
+      // Don't send Firebase email verification - we use OTP system instead
       
       await saveUserToDatabase({
         uid: user.uid,
@@ -139,7 +139,7 @@ const firebaseAuthService = {
       return {
         success: true,
         user,
-        message: 'Registration successful! Please verify your email.'
+        message: 'Registration successful! Please verify your email with the OTP code.'
       };
     } catch (error: any) {      return {
         success: false,
