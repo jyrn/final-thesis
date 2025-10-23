@@ -265,7 +265,7 @@ class EmailService {
     
     try {
       const mailOptions = {
-        from: process.env.EMAIL_USER || 'noreply.pesogov@gmail.com',
+        from: process.env.EMAIL_USER || 'noreply@skill-sync.org',
         to: email,
         subject: 'SkillSync - Email Verification Code',
         html: `
@@ -326,7 +326,7 @@ class EmailService {
         return { success: false, error: 'Resend service not initialized' };
       }
       const result = await this.resend.emails.send({
-        from: 'SkillSync <noreply.pesogov@gmail.com>',
+        from: 'SkillSync <noreply@skill-sync.org>',
         to: [email],
         subject: mailOptions.subject,
         html: mailOptions.html
