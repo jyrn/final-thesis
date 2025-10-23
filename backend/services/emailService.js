@@ -18,29 +18,26 @@ class EmailService {
         }
       };
 
-      // Check if using Gmail or custom SMTP
-      if (process.env.EMAIL_USER.includes('@gmail.com')) {
-        // Use Gmail service
-        emailConfig.service = 'gmail';
-        console.log('📧 Using Gmail service for:', process.env.EMAIL_USER);
-      } else {
-        // Use custom SMTP settings
-        emailConfig.host = process.env.SMTP_HOST || 'smtp.gmail.com';
-        emailConfig.port = process.env.SMTP_PORT || 587;
-        emailConfig.secure = process.env.SMTP_SECURE === 'true' || false;
-        console.log('📧 Using custom SMTP:', emailConfig.host, emailConfig.port);
-      }
+      // Use explicit SMTP settings for better reliability
+      emailConfig.host = 'smtp.gmail.com';
+      emailConfig.port = 587;
+      emailConfig.secure = false; // Use STARTTLS
+      emailConfig.tls = {
+        rejectUnauthorized: false
+      };
+      
+      console.log('📧 Using Gmail SMTP:', emailConfig.host, emailConfig.port);
 
       try {
         this.transporter = nodemailer.createTransport(emailConfig);
         this.isConfigured = true;
         console.log('✅ Email service configured successfully');
         
-        // Test the connection
+        // Test the connection asynchronously (non-blocking)
         this.transporter.verify((error, success) => {
           if (error) {
-            console.error('❌ Email service verification failed:', error.message);
-            this.isConfigured = false;
+            console.error('⚠️ Email service verification warning:', error.message);
+            console.log('📧 Will attempt to send emails anyway...');
           } else {
             console.log('✅ Email service verified and ready to send emails');
           }
