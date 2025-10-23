@@ -24,17 +24,31 @@ class EmailService {
       console.log('📧 Using Gmail service for:', process.env.EMAIL_USER);
 
       try {
-        this.transporter = nodemailer.createTransport({
-          host: 'smtp.gmail.com',
-          port: 465,
-          secure: true,
-          auth: {
-            user: process.env.EMAIL_USER,
-            pass: process.env.EMAIL_PASS
-          }
-        });
+        // Check if Brevo API key is available for production
+        if (process.env.BREVO_API_KEY) {
+          console.log('📧 Using Brevo SMTP for production email service');
+          this.transporter = nodemailer.createTransport({
+            host: 'smtp-relay.brevo.com',
+            port: 587,
+            secure: false,
+            auth: {
+              user: process.env.BREVO_LOGIN || process.env.EMAIL_USER,
+              pass: process.env.BREVO_API_KEY
+            }
+          });
+        } else {
+          // Fallback to Gmail for development
+          console.log('📧 Using Gmail for development email service');
+          this.transporter = nodemailer.createTransport({
+            service: 'gmail',
+            auth: {
+              user: process.env.EMAIL_USER,
+              pass: process.env.EMAIL_PASS
+            }
+          });
+        }
         this.isConfigured = true;
-        console.log('✅ Email service configured successfully (Port 465 SSL)');
+        console.log('✅ Email service configured successfully');
       } catch (error) {
         console.error('❌ Failed to create email transporter:', error.message);
         this.transporter = null;
