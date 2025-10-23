@@ -18,15 +18,10 @@ class EmailService {
         }
       };
 
-      // Use explicit SMTP settings for better reliability
-      emailConfig.host = 'smtp.gmail.com';
-      emailConfig.port = 587;
-      emailConfig.secure = false; // Use STARTTLS
-      emailConfig.tls = {
-        rejectUnauthorized: false
-      };
+      // Use Gmail service for better compatibility
+      emailConfig.service = 'gmail';
       
-      console.log('📧 Using Gmail SMTP:', emailConfig.host, emailConfig.port);
+      console.log('📧 Using Gmail service for:', process.env.EMAIL_USER);
 
       try {
         this.transporter = nodemailer.createTransport(emailConfig);
