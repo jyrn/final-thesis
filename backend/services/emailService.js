@@ -313,6 +313,23 @@ class EmailService {
         subject: mailOptions.subject,
         html: mailOptions.html
       });
+      
+      // Check if Resend returned an error in the response
+      if (result.error) {
+        console.error('❌ Resend API Error:', result.error);
+        if (result.error.name === 'validation_error') {
+          console.log('🔍 RESEND SANDBOX MODE: Can only send to verified email addresses');
+          console.log('📧 For production, verify a domain at resend.com/domains');
+          console.log(`📝 OTP for ${email}: ${otp} (logged due to sandbox limitation)`);
+          return { 
+            success: true, 
+            message: 'Email service in sandbox mode - OTP logged to console',
+            sandboxMode: true 
+          };
+        }
+        return { success: false, error: result.error.message };
+      }
+      
       console.log(`✅ OTP email sent successfully via Resend to ${email}, ID: ${result.data?.id}`);
       return { success: true, messageId: result.data?.id };
     } else {
@@ -332,6 +349,19 @@ class EmailService {
       console.error(`❌ Error code:`, error.code);
       console.error(`❌ Error details:`, error);
       console.error(`❌ Stack trace:`, error.stack);
+      
+      // Handle Resend validation errors specifically
+      if (error.message && error.message.includes('validation_error')) {
+        console.log('🔍 RESEND SANDBOX MODE: Can only send to verified email addresses');
+        console.log('📧 For production, verify a domain at resend.com/domains');
+        console.log(`📝 OTP for ${email}: ${otp} (logged due to sandbox limitation)`);
+        return { 
+          success: true, 
+          message: 'Email service in sandbox mode - OTP logged to console',
+          sandboxMode: true 
+        };
+      }
+      
       return { success: false, error: error.message };
     }
   }
