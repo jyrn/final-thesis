@@ -614,19 +614,11 @@ class EmailService {
 
     try {
       console.log(`📤 Sending OTP email to ${email}...`);
-      
-      // Add timeout to prevent hanging
-      const sendMailPromise = this.transporter.sendMail(mailOptions);
-      const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('Email send timeout after 30 seconds')), 30000)
-      );
-      
-      const result = await Promise.race([sendMailPromise, timeoutPromise]);
+      const result = await this.transporter.sendMail(mailOptions);
       console.log(`✅ OTP email sent successfully to ${email}, MessageID: ${result.messageId}`);
       return { success: true, messageId: result.messageId };
     } catch (error) {
       console.error(`❌ Failed to send OTP email to ${email}:`, error.message);
-      console.error(`❌ Error details:`, error);
       return { success: false, error: error.message };
     }
   }
