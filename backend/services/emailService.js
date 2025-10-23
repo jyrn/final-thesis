@@ -654,9 +654,14 @@ class EmailService {
 
     try {
       console.log(`📤 Sending OTP email to ${email}...`);
+      console.log(`🔍 DEBUG: useResend=${this.useResend}, resend=${!!this.resend}, transporter=${!!this.transporter}`);
       
       if (this.useResend) {
-        console.log('📧 Using Resend HTTP API');
+        console.log('📧 Using Resend HTTP API - PRODUCTION PATH');
+        if (!this.resend) {
+          console.error('❌ CRITICAL: Resend object is null/undefined!');
+          return { success: false, error: 'Resend service not initialized' };
+        }
         const result = await this.resend.emails.send({
           from: 'SkillSync <onboarding@resend.dev>',
           to: [email],
@@ -666,6 +671,7 @@ class EmailService {
         console.log(`✅ OTP email sent successfully via Resend to ${email}, ID: ${result.data?.id}`);
         return { success: true, messageId: result.data?.id };
       } else {
+        console.log('📧 Using SMTP fallback - DEVELOPMENT PATH');
         // Check if transporter exists for SMTP fallback
         if (!this.transporter) {
           console.error('❌ No transporter configured for SMTP fallback');
@@ -680,6 +686,7 @@ class EmailService {
       console.error(`❌ Failed to send OTP email to ${email}:`, error.message);
       console.error(`❌ Error code:`, error.code);
       console.error(`❌ Error details:`, error);
+      console.error(`❌ Stack trace:`, error.stack);
       return { success: false, error: error.message };
     }
   }
