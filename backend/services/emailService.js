@@ -201,10 +201,16 @@ class EmailService {
   async sendOTPEmail(email, otp, userRole = 'user') {
     console.log(`📧 Attempting to send OTP to ${email}, Service configured: ${this.isConfigured}`);
     
-    // If email service is not configured, just return success (OTP will be logged to console)
+    // Check if email service is not configured, just log the action
     if (!this.isConfigured) {
-      console.log(`[EMAIL NOT CONFIGURED] OTP for ${email}: ${otp}`);
+      console.log('[EMAIL NOT CONFIGURED] OTP for', email + ':', otp);
       return { success: true, message: 'Email service not configured - OTP logged to console' };
+    }
+
+    // If using Resend but not configured properly
+    if (this.useResend && !this.resend) {
+      console.error('❌ Resend is enabled but not properly configured');
+      return { success: false, error: 'Resend service not properly configured' };
     }
 
     const mailOptions = {
@@ -660,6 +666,11 @@ class EmailService {
         console.log(`✅ OTP email sent successfully via Resend to ${email}, ID: ${result.data?.id}`);
         return { success: true, messageId: result.data?.id };
       } else {
+        // Check if transporter exists for SMTP fallback
+        if (!this.transporter) {
+          console.error('❌ No transporter configured for SMTP fallback');
+          return { success: false, error: 'Email transporter not configured' };
+        }
         console.log(`📧 Using transporter configured for: ${this.transporter.options?.service || this.transporter.options?.host}`);
         const result = await this.transporter.sendMail(mailOptions);
         console.log(`✅ OTP email sent successfully to ${email}, MessageID: ${result.messageId}`);
