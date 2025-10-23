@@ -27,10 +27,15 @@ class EmailService {
         // Check if Brevo API key is available for production
         if (process.env.BREVO_API_KEY) {
           console.log('📧 Using Brevo SMTP for production email service');
+          console.log('📧 Brevo Login:', process.env.BREVO_LOGIN || process.env.EMAIL_USER);
+          console.log('📧 Brevo API Key exists:', !!process.env.BREVO_API_KEY);
           this.transporter = nodemailer.createTransport({
             host: 'smtp-relay.brevo.com',
             port: 587,
             secure: false,
+            connectionTimeout: 60000,
+            greetingTimeout: 30000,
+            socketTimeout: 60000,
             auth: {
               user: process.env.BREVO_LOGIN || process.env.EMAIL_USER,
               pass: process.env.BREVO_API_KEY
@@ -621,11 +626,14 @@ class EmailService {
 
     try {
       console.log(`📤 Sending OTP email to ${email}...`);
+      console.log(`📧 Using transporter configured for: ${this.transporter.options?.service || this.transporter.options?.host}`);
       const result = await this.transporter.sendMail(mailOptions);
       console.log(`✅ OTP email sent successfully to ${email}, MessageID: ${result.messageId}`);
       return { success: true, messageId: result.messageId };
     } catch (error) {
       console.error(`❌ Failed to send OTP email to ${email}:`, error.message);
+      console.error(`❌ Error code:`, error.code);
+      console.error(`❌ Error details:`, error);
       return { success: false, error: error.message };
     }
   }
