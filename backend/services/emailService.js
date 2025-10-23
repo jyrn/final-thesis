@@ -4,6 +4,10 @@ class EmailService {
   constructor() {
     this.isConfigured = false;
     
+    console.log('🔧 Initializing Email Service...');
+    console.log('EMAIL_USER:', process.env.EMAIL_USER ? 'SET' : 'NOT SET');
+    console.log('EMAIL_PASS:', process.env.EMAIL_PASS ? 'SET' : 'NOT SET');
+    
     // Check if email configuration is provided
     if (process.env.EMAIL_USER && process.env.EMAIL_PASS) {
       // Configure transporter - supports both Gmail and custom SMTP
@@ -18,16 +22,37 @@ class EmailService {
       if (process.env.EMAIL_USER.includes('@gmail.com')) {
         // Use Gmail service
         emailConfig.service = 'gmail';
+        console.log('📧 Using Gmail service for:', process.env.EMAIL_USER);
       } else {
         // Use custom SMTP settings
         emailConfig.host = process.env.SMTP_HOST || 'smtp.gmail.com';
         emailConfig.port = process.env.SMTP_PORT || 587;
         emailConfig.secure = process.env.SMTP_SECURE === 'true' || false;
+        console.log('📧 Using custom SMTP:', emailConfig.host, emailConfig.port);
       }
 
-      this.transporter = nodemailer.createTransport(emailConfig);
-      this.isConfigured = true;
-    } else {      this.transporter = null;
+      try {
+        this.transporter = nodemailer.createTransport(emailConfig);
+        this.isConfigured = true;
+        console.log('✅ Email service configured successfully');
+        
+        // Test the connection
+        this.transporter.verify((error, success) => {
+          if (error) {
+            console.error('❌ Email service verification failed:', error.message);
+            this.isConfigured = false;
+          } else {
+            console.log('✅ Email service verified and ready to send emails');
+          }
+        });
+      } catch (error) {
+        console.error('❌ Failed to create email transporter:', error.message);
+        this.transporter = null;
+        this.isConfigured = false;
+      }
+    } else {
+      console.log('⚠️ Email service not configured - missing EMAIL_USER or EMAIL_PASS');
+      this.transporter = null;
     }
   }
 
@@ -143,6 +168,8 @@ class EmailService {
   }
 
   async sendOTPEmail(email, otp, userRole = 'user') {
+    console.log(`📧 Attempting to send OTP to ${email}, Service configured: ${this.isConfigured}`);
+    
     // If email service is not configured, just return success (OTP will be logged to console)
     if (!this.isConfigured) {
       console.log(`[EMAIL NOT CONFIGURED] OTP for ${email}: ${otp}`);
@@ -589,8 +616,13 @@ class EmailService {
     };
 
     try {
-      const result = await this.transporter.sendMail(mailOptions);      return { success: true, messageId: result.messageId };
-    } catch (error) {      return { success: false, error: error.message };
+      console.log(`📤 Sending OTP email to ${email}...`);
+      const result = await this.transporter.sendMail(mailOptions);
+      console.log(`✅ OTP email sent successfully to ${email}, MessageID: ${result.messageId}`);
+      return { success: true, messageId: result.messageId };
+    } catch (error) {
+      console.error(`❌ Failed to send OTP email to ${email}:`, error.message);
+      return { success: false, error: error.message };
     }
   }
 
