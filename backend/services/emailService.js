@@ -213,6 +213,7 @@ class EmailService {
       return { success: false, error: 'Resend service not properly configured' };
     }
 
+    console.log('🔍 DEBUG: Creating mailOptions...');
     const mailOptions = {
       from: process.env.EMAIL_USER || 'noreply@skillsync.com',
       to: email,
