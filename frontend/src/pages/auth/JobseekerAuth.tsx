@@ -476,13 +476,8 @@ const JobseekerAuth: React.FC = () => {
         throw new Error(profileResponse.error || "Failed to create user profile")
       }
 
-      // Send OTP for email verification
-      const otpResponse = await apiService.sendOTP(formData.email);
-      if (!otpResponse.success) {
-        throw new Error(otpResponse.error || "Failed to send verification OTP");
-      }
-      
-      // Redirect to OTP verification page
+      // Redirect to OTP verification page immediately
+      // OTP is generated and sent asynchronously by the backend
       navigate(`/auth/verify-otp?email=${encodeURIComponent(formData.email)}&role=jobseeker`)
       
     } catch (error: any) {

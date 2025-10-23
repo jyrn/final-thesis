@@ -36,11 +36,14 @@ const authController = {
         }
       }
 
-      // Check if user already exists by UID
-      const existingUser = await User.findOne({ uid });
+      // Parallel check for existing user and email availability
+      const [existingUser, emailTaken] = await Promise.all([
+        User.findOne({ uid }),
+        User.isEmailTaken(email)
+      ]);
+      
       if (existingUser) {
         // If user already exists, return success with existing user data
-        // This handles cases where Firebase user was created but profile creation was retried
         return res.status(200).json({
           success: true,
           message: 'User profile already exists',
@@ -54,8 +57,6 @@ const authController = {
         });
       }
 
-      // Check if email is already taken
-      const emailTaken = await User.isEmailTaken(email);
       if (emailTaken) {
         return res.status(400).json({
           success: false,
@@ -82,30 +83,37 @@ const authController = {
         userData.companyName = companyName?.trim();
       }
 
+      // Create user and role profile in parallel
       const user = await User.create(userData);
       
-      // Generate email verification token
-      const verificationToken = user.generateVerificationToken();
-      await user.save();
-
-      // Create role-specific profile with authentication data
-      let roleProfile = null;
+      // Prepare role profile data
+      let roleProfileData = null;
       if (role === 'jobseeker') {
-        roleProfile = await JobSeeker.create({
+        roleProfileData = {
           userId: user._id,
           uid: user.uid,
           firstName: firstName?.trim(),
           lastName: lastName?.trim(),
           middleName: middleName?.trim() || '',
           email: email
-        });
+        };
       } else if (role === 'employer') {
-        roleProfile = await Employer.create({
+        roleProfileData = {
           userId: user._id,
           uid: user.uid,
           email: email,
           companyName: companyName?.trim()
-        });
+        };
+      }
+
+      // Create role profile (User.create already saves, no need for user.save())
+      let roleProfile = null;
+      if (roleProfileData) {
+        if (role === 'jobseeker') {
+          roleProfile = await JobSeeker.create(roleProfileData);
+        } else if (role === 'employer') {
+          roleProfile = await Employer.create(roleProfileData);
+        }
       }
 
       // Return filtered data based on role
@@ -114,18 +122,50 @@ const authController = {
         roleProfile: roleProfile ? roleProfile.toObject() : null
       };
 
+      // Send response immediately without waiting for OTP generation
       res.status(201).json({
         success: true,
-        message: 'User profile created successfully. Please verify your email before logging in.',
+        message: 'User profile created successfully. OTP will be sent to your email shortly.',
         user: {
           ...responseData,
           requiresEmailVerification: true,
-          verificationToken: verificationToken
+          requiresOTPVerification: true
+        }
+      });
+
+      // Generate and send OTP asynchronously (don't wait for it)
+      setImmediate(async () => {
+        try {
+          const otp = Math.floor(100000 + Math.random() * 900000).toString();
+          const otpExpires = new Date(Date.now() + 10 * 60 * 1000);
+          
+          user.emailVerificationOTP = otp;
+          user.emailVerificationOTPExpires = otpExpires;
+          await user.save();
+          
+          // Send OTP email asynchronously
+          const emailResult = await emailService.sendOTPEmail(user.email, otp, user.role);
+          if (!emailResult.success) {
+            console.error('Failed to send OTP email:', emailResult.error);
+          }
+          
+          console.log(`OTP for ${user.email}: ${otp}`);
+        } catch (otpError) {
+          console.error('Failed to generate/send OTP:', otpError);
         }
       });
 
     } catch (error) {
       console.error('Create user profile error:', error);
+      
+      // If user was created but role profile failed, clean up
+      if (error.message && error.message.includes('role profile')) {
+        try {
+          await User.findOneAndDelete({ uid: req.body.uid });
+        } catch (cleanupError) {
+          console.error('Failed to cleanup user after role profile error:', cleanupError);
+        }
+      }
       
       // Handle validation errors
       if (error.name === 'ValidationError') {
@@ -457,14 +497,29 @@ const authController = {
         });
       }
 
-      // Generate new verification token
-      const verificationToken = user.generateVerificationToken();
+      // Generate 6-digit OTP instead of token
+      const otp = Math.floor(100000 + Math.random() * 900000).toString();
+      const otpExpires = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+
+      // Store OTP in user record
+      user.emailVerificationOTP = otp;
+      user.emailVerificationOTPExpires = otpExpires;
       await user.save();
+
+      // Send OTP via email
+      const emailResult = await emailService.sendOTPEmail(user.email, otp, user.role);
+      
+      if (!emailResult.success) {
+        console.error('Failed to send OTP email:', emailResult.error);
+      }
+
+      console.log(`OTP for ${user.email}: ${otp}`); // Keep for development
 
       res.json({
         success: true,
-        message: 'Verification email sent successfully',
-        verificationToken: verificationToken
+        message: 'OTP sent successfully to your email',
+        // Remove this in production - only for development
+        developmentOTP: process.env.NODE_ENV === 'development' ? otp : undefined
       });
 
     } catch (error) {
