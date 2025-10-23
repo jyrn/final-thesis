@@ -1,30 +1,15 @@
 const nodemailer = require('nodemailer');
-const { Resend } = require('resend');
 
 class EmailService {
   constructor() {
     this.isConfigured = false;
-    this.useResend = false;
     
     console.log('🔧 Initializing Email Service...');
     console.log('EMAIL_USER:', process.env.EMAIL_USER ? 'SET' : 'NOT SET');
     console.log('EMAIL_PASS:', process.env.EMAIL_PASS ? 'SET' : 'NOT SET');
-    console.log('RESEND_API_KEY:', process.env.RESEND_API_KEY ? 'SET' : 'NOT SET');
     
-    // Check if Resend is available (preferred for production)
-    if (process.env.RESEND_API_KEY) {
-      try {
-        this.resend = new Resend(process.env.RESEND_API_KEY);
-        this.useResend = true;
-        this.isConfigured = true;
-        console.log('✅ Resend email service configured successfully');
-      } catch (error) {
-        console.error('❌ Failed to initialize Resend:', error.message);
-      }
-    }
-    
-    // Fallback to Gmail if Resend not available
-    if (!this.isConfigured && process.env.EMAIL_USER && process.env.EMAIL_PASS) {
+    // Check if email configuration is provided
+    if (process.env.EMAIL_USER && process.env.EMAIL_PASS) {
       // Configure transporter - supports both Gmail and custom SMTP
       const emailConfig = {
         auth: {
@@ -175,17 +160,12 @@ class EmailService {
   }
 
   async sendOTPEmail(email, otp, userRole = 'user') {
-    console.log(`📧 Attempting to send OTP to ${email}, Service configured: ${this.isConfigured}, Using Resend: ${this.useResend}`);
+    console.log(`📧 Attempting to send OTP to ${email}, Service configured: ${this.isConfigured}`);
     
     // If email service is not configured, just return success (OTP will be logged to console)
     if (!this.isConfigured) {
       console.log(`[EMAIL NOT CONFIGURED] OTP for ${email}: ${otp}`);
       return { success: true, message: 'Email service not configured - OTP logged to console' };
-    }
-
-    // Use Resend if available
-    if (this.useResend) {
-      return await this.sendOTPWithResend(email, otp, userRole);
     }
 
     const mailOptions = {
@@ -1552,74 +1532,6 @@ class EmailService {
     }
   }
 
-  async sendOTPWithResend(email, otp, userRole = 'user') {
-    try {
-      console.log(`📤 Sending OTP email via Resend to ${email}...`);
-      
-      const { data, error } = await this.resend.emails.send({
-        from: 'SkillSync <onboarding@resend.dev>',
-        to: [email],
-        subject: 'SkillSync - Email Verification Code',
-        html: `
-          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-            <div style="background-color: #3b82f6; color: white; padding: 20px; text-align: center;">
-              <h1>Email Verification</h1>
-            </div>
-            
-            <div style="padding: 30px; background-color: #f9f9f9;">
-              <h2>Verify Your Email Address</h2>
-              
-              <p>Thank you for registering with SkillSync! To complete your ${userRole} account setup, please verify your email address using the code below:</p>
-              
-              <div style="background-color: white; padding: 30px; border-radius: 8px; margin: 30px 0; text-align: center; border: 2px solid #3b82f6;">
-                <h2 style="color: #3b82f6; font-size: 36px; letter-spacing: 8px; margin: 0; font-family: 'Courier New', monospace;">
-                  ${otp}
-                </h2>
-                <p style="color: #666; margin: 10px 0 0 0; font-size: 14px;">
-                  Enter this 6-digit code in the verification page
-                </p>
-              </div>
-              
-              <div style="background-color: #fef3c7; border-left: 4px solid #f59e0b; padding: 15px; margin: 20px 0;">
-                <p style="margin: 0; color: #92400e;">
-                  <strong>⏰ Important:</strong> This code will expire in 10 minutes for security reasons.
-                </p>
-              </div>
-              
-              <div style="background-color: white; padding: 20px; border-radius: 8px; margin: 20px 0;">
-                <h3>Security Tips:</h3>
-                <ul>
-                  <li> Never share this code with anyone</li>
-                  <li> SkillSync staff will never ask for your verification code</li>
-                  <li> If you didn't request this code, please ignore this email</li>
-                </ul>
-              </div>
-              
-              <p>If you're having trouble with verification, you can request a new code from the verification page.</p>
-              
-              <hr style="margin: 30px 0; border: none; border-top: 1px solid #ddd;">
-              
-              <p style="color: #666; font-size: 14px;">
-                This is an automated message from SkillSync. Please do not reply to this email.<br>
-                If you need assistance, please contact our support team.
-              </p>
-            </div>
-          </div>
-        `
-      });
-
-      if (error) {
-        console.error(`❌ Resend error:`, error);
-        return { success: false, error: error.message };
-      }
-
-      console.log(`✅ OTP email sent successfully via Resend to ${email}, ID: ${data.id}`);
-      return { success: true, messageId: data.id };
-    } catch (error) {
-      console.error(`❌ Failed to send OTP email via Resend to ${email}:`, error.message);
-      return { success: false, error: error.message };
-    }
-  }
 }
 
 module.exports = new EmailService();
