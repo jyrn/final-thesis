@@ -352,7 +352,7 @@ export const JobsListView: React.FC<JobsListViewProps> = ({
                 </div>
               </div>
               
-              <div className={styles.skillsCell}>
+              <div className={styles.skillsCell} data-label="Required Skills">
                 {job.requirements && job.requirements.length > 0 ? (
                   <div className={styles.skillsList}>
                     {job.requirements.slice(0, 3).map((skill, i) => (
@@ -369,7 +369,7 @@ export const JobsListView: React.FC<JobsListViewProps> = ({
                 )}
               </div>
               
-              <div className={styles.skillsCell}>
+              <div className={styles.skillsCell} data-label="My Skills">
                 {jobseekerSkills && jobseekerSkills.length > 0 ? (
                   <div className={styles.skillsList}>
                     {jobseekerSkills.slice(0, 3).map((skill, i) => (
@@ -386,7 +386,7 @@ export const JobsListView: React.FC<JobsListViewProps> = ({
                 )}
               </div>
               
-              <div className={styles.matchCell}>
+              <div className={styles.matchCell} data-label="Match Score">
                 <div className={styles.matchScore}>
                   <div className={styles.matchBar}>
                     <div 

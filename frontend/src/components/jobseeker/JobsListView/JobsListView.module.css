@@ -412,50 +412,200 @@
   font-style: italic;
 }
 
-/* Responsive adjustments */
+/* Mobile-first responsive design */
 @media (max-width: 768px) {
-  .listHeader,
-  .listRow {
-    grid-template-columns: 1fr;
-    gap: 8px;
+  .listContainer {
+    border: none;
+    background: transparent;
   }
   
-  .headerCell {
+  .listHeader {
     display: none;
   }
   
-  .listRow {
-    padding: 12px;
+  .listBody {
+    max-height: none;
     display: flex;
     flex-direction: column;
-    align-items: stretch;
+    gap: 16px;
+    padding: 0 4px;
+  }
+  
+  .listRow {
+    display: block;
+    grid-template-columns: none;
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 16px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    position: relative;
+  }
+  
+  .listRow:hover {
+    background: white;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
   }
   
   .numberCell {
     position: absolute;
     top: 12px;
-    left: 12px;
+    right: 12px;
+    border: none;
+    padding: 0;
   }
   
   .rowNumber {
     width: 24px;
     height: 24px;
     font-size: 12px;
+    background: #6366f1;
   }
   
   .companyCell {
-    margin-bottom: 8px;
-    margin-left: 40px;
+    border: none;
+    padding: 0;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
   }
   
-  .skillsCell,
-  .matchCell,
-  .actionsCell {
-    padding-right: 0;
-    margin-bottom: 8px;
+  .avatar {
+    width: 48px;
+    height: 48px;
+    font-size: 16px;
+  }
+  
+  .companyInfo {
+    flex: 1;
+  }
+  
+  .companyName {
+    font-size: 16px;
+    font-weight: 600;
+    margin-bottom: 4px;
+    white-space: normal;
+  }
+  
+  .jobTitle {
+    font-size: 14px;
+    margin-bottom: 6px;
+  }
+  
+  .postedDate {
+    font-size: 12px;
+  }
+  
+  .skillsCell {
+    border: none;
+    padding: 0;
+    margin-bottom: 12px;
+  }
+  
+  .skillsCell:before {
+    content: attr(data-label);
+    display: block;
+    font-weight: 600;
+    font-size: 12px;
+    color: #6b7280;
+    margin-bottom: 6px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  
+  .matchCell {
+    border: none;
+    padding: 0;
+    margin-bottom: 12px;
+  }
+  
+  .matchCell:before {
+    content: attr(data-label);
+    display: block;
+    font-weight: 600;
+    font-size: 12px;
+    color: #6b7280;
+    margin-bottom: 6px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  
+  .matchScore {
+    gap: 12px;
+  }
+  
+  .matchBar {
+    width: 80px;
+    height: 8px;
+  }
+  
+  .matchText {
+    font-size: 14px;
+    font-weight: 700;
   }
   
   .actionsCell {
+    border: none;
+    padding: 0;
     justify-content: flex-start;
+    gap: 8px;
+    margin-top: 16px;
+    padding-top: 12px;
+    border-top: 1px solid #f3f4f6;
+  }
+  
+  .saveButton,
+  .viewButton,
+  .applyButton {
+    height: 36px;
+    font-size: 12px;
+  }
+  
+  .applyButton {
+    min-width: 80px;
+    width: auto;
+    padding: 8px 12px;
+  }
+  
+  .saveButton {
+    width: 36px;
+    min-width: 36px;
+  }
+  
+  .viewButton {
+    min-width: 36px;
+    padding: 8px 10px;
+  }
+}
+
+/* Tablet adjustments */
+@media (max-width: 1024px) and (min-width: 769px) {
+  .listHeader,
+  .listRow {
+    grid-template-columns: 40px 1.2fr 0.8fr 0.8fr 0.7fr 140px;
+  }
+  
+  .companyName {
+    font-size: 12px;
+  }
+  
+  .skillTag {
+    font-size: 9px;
+    padding: 2px 5px;
+  }
+  
+  .matchBar {
+    width: 40px;
+  }
+  
+  .actionsCell {
+    gap: 2px;
+  }
+  
+  .applyButton {
+    min-width: 60px;
+    width: 60px;
+    font-size: 9px;
   }
 }

@@ -716,8 +716,7 @@ const Dashboard: React.FC = () => {
           userProfilePicture={userProfile?.profilePicture}
           onMenuClick={() => setIsSidebarOpen(!isSidebarOpen)}
           onProfileClick={() => setActiveTab('profile')}
-          onFilterClick={activeTab === 'jobs' ? () => setShowFilterModal(true) : undefined}
-              showSearch={activeTab === 'jobs'}
+          showSearch={activeTab === 'jobs'}
           searchComponent={activeTab === 'jobs' ? (
             <SearchBar 
               value={searchQuery}

@@ -1795,22 +1795,87 @@
   }
 }
 
+/* Medium screens - tablets in portrait */
+@media (max-width: 1024px) and (min-width: 769px) {
+  .authCard {
+    max-width: 900px;
+  }
+
+  .leftPanel {
+    flex: 0 0 35%;
+  }
+
+  .visualContent {
+    padding: 32px 24px;
+  }
+
+  .skillsyncLogo {
+    width: 160px;
+    height: 160px;
+  }
+
+  .journeyText h2 {
+    font-size: 24px;
+  }
+
+  .journeyText p {
+    font-size: 15px;
+  }
+
+  .rightPanel {
+    padding: 32px 24px;
+  }
+}
+
 @media (max-width: 768px) {
   .container {
-    padding: 12px;
+    padding: 8px;
   }
 
   .authCard {
     border-radius: 16px;
     min-height: 500px;
+    flex-direction: column;
   }
 
   .leftPanel {
-    flex: 0 0 250px;
+    flex: 0 0 auto;
+    min-height: 200px;
+    width: 100%;
+  }
+
+  .visualContent {
+    padding: 24px 20px;
+    min-height: 200px;
+  }
+
+  .logoContainer {
+    margin-bottom: 16px;
+  }
+
+  .skillsyncLogo {
+    width: 120px;
+    height: 120px;
+  }
+
+  .journeyText {
+    margin-bottom: 20px;
+  }
+
+  .journeyText h2 {
+    font-size: 20px;
+    margin-bottom: 8px;
+  }
+
+  .journeyText p {
+    font-size: 14px;
+    max-width: 100%;
+    line-height: 1.4;
   }
 
   .rightPanel {
-    padding: 32px 20px;
+    flex: 1;
+    padding: 24px 20px;
   }
 
   .formTitle {
@@ -1819,15 +1884,6 @@
 
   .formSubtitle {
     font-size: 13px;
-  }
-
-  .journeyText h2 {
-    font-size: 20px;
-  }
-
-  .journeyText p {
-    font-size: 13px;
-    max-width: 240px;
   }
 
   .modalContent {
@@ -1857,20 +1913,53 @@
 
 @media (max-width: 480px) {
   .container {
-    padding: 8px;
+    padding: 4px;
   }
 
   .authCard {
     border-radius: 12px;
     min-height: 450px;
+    flex-direction: column;
   }
 
   .leftPanel {
-    flex: 0 0 200px;
+    flex: 0 0 auto;
+    min-height: 160px;
+    width: 100%;
+  }
+
+  .visualContent {
+    padding: 20px 16px;
+    min-height: 160px;
+  }
+
+  .logoContainer {
+    margin-bottom: 12px;
+  }
+
+  .skillsyncLogo {
+    width: 80px;
+    height: 80px;
+  }
+
+  .journeyText {
+    margin-bottom: 16px;
+  }
+
+  .journeyText h2 {
+    font-size: 16px;
+    margin-bottom: 6px;
+  }
+
+  .journeyText p {
+    font-size: 12px;
+    max-width: 100%;
+    line-height: 1.3;
   }
 
   .rightPanel {
-    padding: 24px 16px;
+    flex: 1;
+    padding: 20px 16px;
   }
 
   .formTitle {
@@ -1879,15 +1968,6 @@
 
   .formSubtitle {
     font-size: 12px;
-  }
-
-  .journeyText h2 {
-    font-size: 18px;
-  }
-
-  .journeyText p {
-    font-size: 12px;
-    max-width: 200px;
   }
 
   .modalContent {

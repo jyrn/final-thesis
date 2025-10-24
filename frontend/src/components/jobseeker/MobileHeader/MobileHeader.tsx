@@ -1,5 +1,5 @@
 import React from 'react'
-import { FiSliders, FiMenu, FiBell } from 'react-icons/fi'
+import { FiMenu } from 'react-icons/fi'
 import styles from './MobileHeader.module.css'
 import { getImageSrc } from '../../../utils/imageUtils'
 
@@ -8,10 +8,8 @@ interface MobileHeaderProps {
   userName?: string
   userInitial?: string
   userProfilePicture?: string
-  onFilterClick?: () => void
   onMenuClick?: () => void
   onProfileClick?: () => void
-  notifications?: number
   showSearch?: boolean
   searchComponent?: React.ReactNode
 }
@@ -21,10 +19,8 @@ const MobileHeader: React.FC<MobileHeaderProps> = ({
   userName = 'User',
   userInitial = 'U',
   userProfilePicture,
-  onFilterClick,
   onMenuClick,
   onProfileClick,
-  notifications = 0,
   showSearch = false,
   searchComponent
 }) => {
@@ -47,27 +43,7 @@ const MobileHeader: React.FC<MobileHeaderProps> = ({
         </div>
         
         <div className={styles.headerRight}>
-          {onFilterClick && (
-            <button 
-              className={styles.filterButton} 
-              onClick={onFilterClick}
-              aria-label="Open filters"
-            >
-              <FiSliders />
-            </button>
-          )}
           
-          <button 
-            className={styles.notificationButton}
-            aria-label="Notifications"
-          >
-            <FiBell />
-            {notifications > 0 && (
-              <span className={styles.notificationBadge}>
-                {notifications > 9 ? '9+' : notifications}
-              </span>
-            )}
-          </button>
           
           <button 
             className={styles.userAvatar} 
