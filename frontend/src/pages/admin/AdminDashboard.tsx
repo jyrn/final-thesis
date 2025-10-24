@@ -58,12 +58,23 @@ const AdminDashboard: React.FC = () => {
     }
   };
 
-  const handleEmployerAction = async (employerId: string, action: 'approve' | 'reject', reason?: string) => {
+  const handleEmployerAction = async (employerId: string, action: 'approve' | 'reject' | 'remove', reason?: string) => {
     try {
+      console.log('handleEmployerAction called with:', { employerId, action, reason });
       setLoading(true);
-      await adminService.verifyEmployer(employerId, action, reason);
+      if (action === 'remove') {
+        console.log('Calling completelyDeleteEmployer for employerId:', employerId);
+        const result = await adminService.completelyDeleteEmployer(employerId);
+        console.log('Delete result:', result);
+        alert('Employer removed successfully!');
+      } else {
+        await adminService.verifyEmployer(employerId, action, reason);
+      }
       await fetchDashboardData(); // Refresh data
-    } catch (error) {    } finally {
+    } catch (error) {
+      console.error('Error handling employer action:', error);
+      alert(`Error: ${error.message || 'Failed to perform action'}`);
+    } finally {
       setLoading(false);
     }
   };

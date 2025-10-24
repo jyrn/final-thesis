@@ -1,8 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import styles from './ForgotPasswordPage.module.css';
-import firebaseAuthService from '../../services/firebaseAuthService';
 
 const ResetPasswordPage: React.FC = () => {
   const [searchParams] = useSearchParams();
@@ -12,9 +11,30 @@ const ResetPasswordPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [isSuccess, setIsSuccess] = useState(false);
+  const [userRole, setUserRole] = useState<string>('');
 
   const token = searchParams.get('token');
   const email = searchParams.get('email');
+
+  // Fetch user role on component mount
+  useEffect(() => {
+    const fetchUserRole = async () => {
+      if (!email) return;
+      
+      try {
+        const response = await fetch(`${process.env.REACT_APP_API_URL || 'https://skillsync-backend-gwwo.onrender.com/api'}/auth/get-user-role?email=${encodeURIComponent(email)}`);
+        const data = await response.json();
+        
+        if (data.success && data.role) {
+          setUserRole(data.role);
+        }
+      } catch (error) {
+        console.error('Error fetching user role:', error);
+      }
+    };
+
+    fetchUserRole();
+  }, [email]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -39,22 +59,42 @@ const ResetPasswordPage: React.FC = () => {
     setIsLoading(true);
 
     try {
-      const response = await firebaseAuthService.confirmPasswordReset(token, password);
+      const response = await fetch(`${process.env.REACT_APP_API_URL || 'https://skillsync-backend-gwwo.onrender.com/api'}/auth/reset-password`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          token,
+          email,
+          newPassword: password
+        }),
+      });
+
+      const data = await response.json();
       
-      if (response.success) {
+      if (data.success) {
         setIsSuccess(true);
+        setUserRole(data.userRole);
         toast.success('Password has been reset successfully!');
-        // Redirect to login after 3 seconds
+        // Redirect to appropriate login page based on user role after 3 seconds
         setTimeout(() => {
-          navigate('/auth');
+          const role = data.userRole;
+          if (role === 'jobseeker') {
+            window.location.hash = '#/auth/jobseeker';
+          } else if (role === 'employer') {
+            window.location.hash = '#/auth/employer';
+          } else {
+            // Fallback to role selection if role is unknown
+            window.location.hash = '#/auth';
+          }
         }, 3000);
       } else {
-        setError(response.error || 'Failed to reset password');
-        toast.error(response.error || 'Failed to reset password');
+        setError(data.error || 'Failed to reset password. Please try again.');
       }
-    } catch (err) {
-      const error = err as Error;      setError(error.message || 'An unknown error occurred');
-      toast.error(error.message || 'Failed to reset password');
+    } catch (error: any) {
+      console.error('Password reset error:', error);
+      setError('Failed to reset password. Please try again.');
     } finally {
       setIsLoading(false);
     }
@@ -126,7 +166,7 @@ const ResetPasswordPage: React.FC = () => {
             <div className={styles.formHeader}>
               <h1 className={styles.formTitle}>Create New Password</h1>
               <p className={styles.formSubtitle}>
-                {email ? `Resetting password for ${email}` : 'Enter your new password below'}
+                Enter your new password below
               </p>
             </div>
 
@@ -187,7 +227,9 @@ const ResetPasswordPage: React.FC = () => {
             </form>
 
             <div className={styles.backToLogin}>
-              <Link to="/auth">Back to Login</Link>
+              <Link to={userRole === 'jobseeker' ? '/auth/jobseeker' : userRole === 'employer' ? '/auth/employer' : '/auth'}>
+                Back to Login
+              </Link>
             </div>
           </div>
         </div>

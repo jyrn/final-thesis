@@ -5,6 +5,10 @@ class AdminService {
 
   private getAuthHeaders() {
     const token = localStorage.getItem('adminToken');
+    console.log('Getting auth headers, token exists:', !!token);
+    if (token) {
+      console.log('Token preview:', token.substring(0, 20) + '...');
+    }
     return {
       'Content-Type': 'application/json',
       ...(token && { 'Authorization': `Bearer ${token}` })
@@ -106,6 +110,21 @@ class AdminService {
     
     if (!data.success) {
       throw new Error(data.message || 'Failed to completely delete jobseeker');
+    }
+
+    return data;
+  }
+
+  async suspendJobseeker(userId: string): Promise<any> {
+    const response = await fetch(`${this.baseUrl}/jobseekers/${userId}/suspend`, {
+      method: 'PUT',
+      headers: this.getAuthHeaders()
+    });
+    
+    const data = await response.json();
+    
+    if (!data.success) {
+      throw new Error(data.message || 'Failed to suspend jobseeker');
     }
 
     return data;
@@ -544,6 +563,30 @@ class AdminService {
     }
 
     return data.data;
+  }
+
+  // Complete employer removal
+  async completelyDeleteEmployer(employerId: string): Promise<any> {
+    console.log('adminService.completelyDeleteEmployer called with employerId:', employerId);
+    console.log('Making DELETE request to:', `${this.baseUrl}/employers/${employerId}/complete`);
+    console.log('Auth headers:', this.getAuthHeaders());
+    
+    const response = await fetch(`${this.baseUrl}/employers/${employerId}/complete`, {
+      method: 'DELETE',
+      headers: this.getAuthHeaders()
+    });
+    
+    console.log('Response status:', response.status);
+    console.log('Response headers:', response.headers);
+    
+    const data = await response.json();
+    console.log('Response data:', data);
+    
+    if (!data.success) {
+      throw new Error(data.message || 'Failed to remove employer');
+    }
+
+    return data;
   }
 
 }

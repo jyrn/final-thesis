@@ -6,6 +6,7 @@ import StatsCard from './StatsCard';
 import './JobseekersTab.css';
 interface Jobseeker {
   _id: string;
+  uid?: string; // Firebase UID for API calls
   firstName: string;
   lastName: string;
   email: string;
@@ -100,26 +101,24 @@ const JobseekersTab: React.FC = () => {
   };
 
   // Admin action handlers
-  const handleRemoveJobseeker = (jobseekerId: string) => {
+  const handleRemoveJobseeker = (jobseeker: Jobseeker) => {
     setConfirmModal({
       show: true,
       title: 'Completely Remove Jobseeker Account',
       message: `This action will PERMANENTLY and COMPLETELY delete the jobseeker from the entire system. This includes:
 
-• Complete removal from Firebase Authentication (user cannot sign in)
-• Permanent deletion of all user data from the database
-• Deletion of all job applications and resume data
-• Removal of all associated profile information
-
-This is typically done when:
-• The account has been inactive for an extended period and has not responded to reactivation requests.
-• The account shows clear evidence of fraudulent, misleading, or suspicious activity.
-• The account repeatedly violates platform policies despite prior warnings.
-• The account was identified as a duplicate and merged or removed for consistency.
+• Firebase Authentication (allows re-registration with same email)
+• All database records (User, JobSeeker, Resume, Applications)
+• All uploaded files and documents
+• Complete account history
 
 ⚠️ IMPORTANT: This deletion is irreversible and complete. The user will be able to register again with the same email address since their account will no longer exist in our system. The user will be automatically notified via email about this action.`,
       action: async () => {
-        try {          const response = await adminService.completelyDeleteJobseeker(jobseekerId);          await fetchAllData();
+        try {
+          // Use Firebase UID for API call
+          const userId = jobseeker.uid || jobseeker._id;
+          const response = await adminService.completelyDeleteJobseeker(userId);
+          await fetchAllData();
           setConfirmModal(prev => ({ ...prev, show: false }));
           
           // Show success message
@@ -129,7 +128,9 @@ This is typically done when:
             message: 'The jobseeker has been permanently and completely deleted from the entire system including Firebase Authentication and all database records. The user can now register again with the same email if they choose to. An email notification has been sent to the user.',
             icon: '✅'
           });
-        } catch (error) {          setConfirmModal(prev => ({ ...prev, show: false }));
+        } catch (error) {
+          console.error('Delete jobseeker error:', error);
+          setConfirmModal(prev => ({ ...prev, show: false }));
           alert('❌ Failed to completely remove jobseeker. Please try again.');
         }
       },
@@ -138,7 +139,7 @@ This is typically done when:
     });
   };
 
-  const handleSuspendJobseeker = (jobseekerId: string) => {
+  const handleSuspendJobseeker = (jobseeker: Jobseeker) => {
     setConfirmModal({
       show: true,
       title: 'Suspend Inactive Account',
@@ -152,7 +153,11 @@ The system will:
 
 This helps maintain database hygiene by managing inactive accounts while giving users a chance to reactivate if needed.`,
       action: async () => {
-        try {          const response = await adminService.updateUser(jobseekerId, { status: 'inactive' });          await fetchAllData();
+        try {
+          // Use Firebase UID for API call
+          const userId = jobseeker.uid || jobseeker._id;
+          const response = await adminService.suspendJobseeker(userId);
+          await fetchAllData();
           setConfirmModal(prev => ({ ...prev, show: false }));
           
           // Show success message
@@ -162,7 +167,9 @@ This helps maintain database hygiene by managing inactive accounts while giving 
             message: 'The inactive account has been suspended. An email notification has been sent to the user with instructions to reactivate by logging in within 30 days.',
             icon: '⏸️'
           });
-        } catch (error) {          setConfirmModal(prev => ({ ...prev, show: false }));
+        } catch (error) {
+          console.error('Suspend jobseeker error:', error);
+          setConfirmModal(prev => ({ ...prev, show: false }));
           alert('❌ Failed to suspend jobseeker account. Please try again.');
         }
       },
@@ -209,7 +216,8 @@ This helps maintain database hygiene by managing inactive accounts while giving 
         jobseeker: enhancedJobseeker,
         loading: false
       });
-    } catch (error) {      setViewModal({
+    } catch (error) {
+      setViewModal({
         show: true,
         jobseeker: jobseeker,
         loading: false
@@ -324,6 +332,7 @@ This helps maintain database hygiene by managing inactive accounts while giving 
         // Use JobSeeker data as primary, with User data as fallback
         const jobseekerData: Jobseeker = {
           _id: js._id || js.uid,
+          uid: js.uid, // Store Firebase UID for API calls
           firstName: js.firstName || userProfile?.firstName || 'Unknown',
           lastName: js.lastName || userProfile?.lastName || '',
           email: js.email || userProfile?.email || 'No email provided',
@@ -663,7 +672,7 @@ This helps maintain database hygiene by managing inactive accounts while giving 
                       <td className="status-cell">
                         <div className="jobseeker-status-badge" data-status={jobseeker.status}>
                           {jobseeker.status === 'active' ? 'ACTIVE' : 
-                           jobseeker.status === 'inactive' ? 'SUSPENDED' : 
+                           jobseeker.status === 'inactive' ? 'INACTIVE' : 
                            jobseeker.status === 'removed' ? 'REMOVED' : 'UNKNOWN'}
                         </div>
                       </td>
@@ -691,7 +700,7 @@ This helps maintain database hygiene by managing inactive accounts while giving 
                       <td className="actions-cell">
                         <div className="action-buttons">
                           <button 
-                            onClick={() => handleRemoveJobseeker(jobseeker._id)}
+                            onClick={() => handleRemoveJobseeker(jobseeker)}
                             className={`action-btn remove-btn ${jobseeker.status === 'removed' ? 'disabled' : ''}`}
                             title={jobseeker.status === 'removed' ? 'Account already removed' : 'Completely Delete Jobseeker (removes from Firebase & database)'}
                             disabled={jobseeker.status === 'removed'}
@@ -700,12 +709,12 @@ This helps maintain database hygiene by managing inactive accounts while giving 
                           </button>
                           
                           <button 
-                            onClick={() => handleSuspendJobseeker(jobseeker._id)}
-                            className={`action-btn pause-btn ${jobseeker.status === 'removed' ? 'disabled' : ''}`}
-                            title={jobseeker.status === 'removed' ? 'Account already removed' : 'Suspend inactive account (user can reactivate by logging in)'}
-                            disabled={jobseeker.status === 'removed'}
+                            onClick={() => handleSuspendJobseeker(jobseeker)}
+                            className={`action-btn pause-btn ${jobseeker.status === 'removed' || jobseeker.status === 'inactive' ? 'disabled' : ''}`}
+                            title={jobseeker.status === 'removed' ? 'Account already removed' : jobseeker.status === 'inactive' ? 'Account already suspended' : 'Suspend inactive account (user can reactivate by logging in)'}
+                            disabled={jobseeker.status === 'removed' || jobseeker.status === 'inactive'}
                           >
-                            Suspend
+                            {jobseeker.status === 'inactive' ? 'Suspended' : 'Suspend'}
                           </button>
                           
                           <button 
@@ -949,7 +958,7 @@ This helps maintain database hygiene by managing inactive accounts while giving 
                 <button 
                   onClick={() => {
                     setViewModal({ show: false, jobseeker: null, loading: false });
-                    handleRemoveJobseeker(viewModal.jobseeker._id);
+                    handleRemoveJobseeker(viewModal.jobseeker);
                   }}
                   className="modal-action-btn remove-btn"
                   title="Permanently Remove Account - User will be notified via email"
@@ -961,13 +970,13 @@ This helps maintain database hygiene by managing inactive accounts while giving 
                 <button 
                   onClick={() => {
                     setViewModal({ show: false, jobseeker: null, loading: false });
-                    handleSuspendJobseeker(viewModal.jobseeker._id);
+                    handleSuspendJobseeker(viewModal.jobseeker);
                   }}
                   className="modal-action-btn suspend-btn"
-                  title="Suspend Account - User will receive reactivation instructions via email"
+                  title={viewModal.jobseeker.status === 'inactive' ? 'Account already suspended' : 'Suspend Account - User will receive reactivation instructions via email'}
                   disabled={viewModal.jobseeker.status === 'inactive' || viewModal.jobseeker.status === 'removed'}
                 >
-                  Suspend Account
+                  {viewModal.jobseeker.status === 'inactive' ? 'Already Suspended' : 'Suspend Account'}
                 </button>
               </div>
             </div>

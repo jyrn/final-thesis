@@ -116,13 +116,23 @@ const authController = {
         }
       }
 
+      // Generate OTP synchronously before sending response
+      const otp = Math.floor(100000 + Math.random() * 900000).toString();
+      const otpExpires = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+      
+      user.emailVerificationOTP = otp;
+      user.emailVerificationOTPExpires = otpExpires;
+      await user.save();
+      
+      console.log(`Generated OTP for ${user.email}: ${otp}`);
+
       // Return filtered data based on role
       const responseData = {
         ...user.toObject(),
         roleProfile: roleProfile ? roleProfile.toObject() : null
       };
 
-      // Send response immediately without waiting for OTP generation
+      // Send response after OTP is generated and saved
       res.status(201).json({
         success: true,
         message: 'User profile created successfully. OTP will be sent to your email shortly.',
@@ -133,27 +143,17 @@ const authController = {
         }
       });
 
-      // Generate and send OTP asynchronously (don't wait for it)
+      // Send OTP email asynchronously after response is sent
       setImmediate(async () => {
         try {
-          const otp = Math.floor(100000 + Math.random() * 900000).toString();
-          const otpExpires = new Date(Date.now() + 10 * 60 * 1000);
-          
-          user.emailVerificationOTP = otp;
-          user.emailVerificationOTPExpires = otpExpires;
-          await user.save();
-          
-          // Send OTP email asynchronously
           console.log('🔍 CONTROLLER DEBUG: About to call emailService.sendOTPEmail');
           const emailResult = await emailService.sendOTPEmail(user.email, otp, user.role);
           console.log('🔍 CONTROLLER DEBUG: emailService.sendOTPEmail returned:', emailResult);
           if (!emailResult.success) {
             console.error('Failed to send OTP email:', emailResult.error);
           }
-          
-          console.log(`OTP for ${user.email}: ${otp}`);
         } catch (otpError) {
-          console.error('Failed to generate/send OTP:', otpError);
+          console.error('Failed to send OTP email:', otpError);
         }
       });
 
@@ -614,14 +614,32 @@ const authController = {
         });
       }
 
-      // Generate 6-digit OTP
-      const otp = Math.floor(100000 + Math.random() * 900000).toString();
-      const otpExpires = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+      // Check if user already has a valid OTP (within last 2 minutes)
+      const now = new Date();
+      const twoMinutesAgo = new Date(now.getTime() - 2 * 60 * 1000);
+      
+      let otp;
+      let otpExpires;
+      
+      if (user.emailVerificationOTP && 
+          user.emailVerificationOTPExpires && 
+          user.emailVerificationOTPExpires > now &&
+          user.updatedAt > twoMinutesAgo) {
+        // Use existing valid OTP if it was generated recently
+        otp = user.emailVerificationOTP;
+        otpExpires = user.emailVerificationOTPExpires;
+        console.log(`Using existing OTP for ${email}: ${otp}`);
+      } else {
+        // Generate new 6-digit OTP
+        otp = Math.floor(100000 + Math.random() * 900000).toString();
+        otpExpires = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
 
-      // Store OTP in user record
-      user.emailVerificationOTP = otp;
-      user.emailVerificationOTPExpires = otpExpires;
-      await user.save();
+        // Store OTP in user record
+        user.emailVerificationOTP = otp;
+        user.emailVerificationOTPExpires = otpExpires;
+        await user.save();
+        console.log(`Generated new OTP for ${email}: ${otp}`);
+      }
 
       // Send OTP via email
       const emailResult = await emailService.sendOTPEmail(email, otp, user.role);
@@ -681,14 +699,21 @@ const authController = {
       user.emailVerificationOTPExpires = undefined;
       await user.save();
 
-      // Also update Firebase user's email verification status
+      // Also update Firebase user's email verification status (if user exists)
       try {
+        // First check if Firebase user exists
+        await admin.auth().getUser(user.uid);
+        // If user exists, update their email verification status
         await admin.auth().updateUser(user.uid, {
           emailVerified: true
         });
-        console.log(` Firebase email verification updated for user: ${user.uid}`);
+        console.log(`✅ Firebase email verification updated for user: ${user.uid}`);
       } catch (firebaseError) {
-        console.error(' Failed to update Firebase email verification:', firebaseError);
+        if (firebaseError.code === 'auth/user-not-found') {
+          console.log(`ℹ️ Firebase user ${user.uid} not found - skipping Firebase email verification update (user may have been deleted during OAuth flow)`);
+        } else {
+          console.error('❌ Failed to update Firebase email verification:', firebaseError);
+        }
         // Don't fail the request if Firebase update fails, as database is already updated
       }
 
@@ -710,6 +735,148 @@ const authController = {
       res.status(500).json({
         success: false,
         error: error.message || 'Failed to verify OTP'
+      });
+    }
+  },
+
+  // Request password reset
+  async requestPasswordReset(req, res) {
+    try {
+      const { email } = req.body;
+
+      if (!email) {
+        return res.status(400).json({
+          success: false,
+          error: 'Email is required'
+        });
+      }
+
+      // Find user by email
+      const user = await User.findOne({ email: email.toLowerCase() });
+      if (!user) {
+        return res.status(404).json({
+          success: false,
+          error: 'No account found with this email address'
+        });
+      }
+
+      // Generate password reset token
+      const crypto = require('crypto');
+      const resetToken = crypto.randomBytes(32).toString('hex');
+      const resetTokenExpires = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
+
+      // Save reset token to user
+      user.passwordResetToken = resetToken;
+      user.passwordResetExpires = resetTokenExpires;
+      await user.save();
+
+      // Send password reset email
+      await emailService.sendPasswordResetEmail(email, resetToken, user.role);
+
+      res.json({
+        success: true,
+        message: 'Password reset email sent successfully'
+      });
+
+    } catch (error) {
+      console.error('Password reset request error:', error);
+      res.status(500).json({
+        success: false,
+        error: 'Failed to send password reset email'
+      });
+    }
+  },
+
+  // Reset password with token
+  async resetPassword(req, res) {
+    try {
+      const { token, email, newPassword } = req.body;
+
+      if (!token || !email || !newPassword) {
+        return res.status(400).json({
+          success: false,
+          error: 'Token, email, and new password are required'
+        });
+      }
+
+      // Find user with valid reset token
+      const user = await User.findOne({
+        email: email.toLowerCase(),
+        passwordResetToken: token,
+        passwordResetExpires: { $gt: new Date() }
+      });
+
+      if (!user) {
+        return res.status(400).json({
+          success: false,
+          error: 'Invalid or expired password reset token'
+        });
+      }
+
+      // Update password in Firebase
+      try {
+        await admin.auth().updateUser(user.uid, {
+          password: newPassword
+        });
+      } catch (firebaseError) {
+        console.error('Firebase password update error:', firebaseError);
+        return res.status(500).json({
+          success: false,
+          error: 'Failed to update password'
+        });
+      }
+
+      // Clear reset token
+      user.passwordResetToken = undefined;
+      user.passwordResetExpires = undefined;
+      await user.save();
+
+      res.json({
+        success: true,
+        message: 'Password reset successfully',
+        userRole: user.role
+      });
+
+    } catch (error) {
+      console.error('Password reset error:', error);
+      res.status(500).json({
+        success: false,
+        error: 'Failed to reset password'
+      });
+    }
+  },
+
+  // Get user role by email
+  async getUserRole(req, res) {
+    try {
+      const { email } = req.query;
+
+      if (!email) {
+        return res.status(400).json({
+          success: false,
+          error: 'Email is required'
+        });
+      }
+
+      const user = await User.findOne({ email: email.toLowerCase() });
+
+      if (!user) {
+        return res.status(404).json({
+          success: false,
+          error: 'User not found'
+        });
+      }
+
+      res.json({
+        success: true,
+        role: user.role
+      });
+
+    } catch (error) {
+      console.error('Get user role error:', error);
+      res.status(500).json({
+        success: false,
+        error: 'Failed to get user role'
       });
     }
   }

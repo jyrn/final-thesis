@@ -615,7 +615,7 @@ const EmployerDashboard: React.FC = () => {
 
   const handleLogout = () => {
     // Add logout logic here - clear tokens, redirect to login, etc.
-    window.location.href = '/auth';
+    window.location.hash = '#/auth/employer';
   };
 
   const handleApplicantFilterChange = (filterType: string, value: string) => {
@@ -1030,8 +1030,18 @@ const EmployerDashboard: React.FC = () => {
       
       // Convert Job data to backend format
       // Normalize job level to match backend enum values
-      const normalizedLevel = jobData.level === 'Entry-level' ? 'Entry Level' : 
-                           (jobData.level || 'Mid-level');
+      const levelMapping: { [key: string]: string } = {
+        'Entry-level': 'Entry Level',
+        'Senior-level': 'Senior',
+        'Mid-level': 'Mid-level', // This one matches
+        'Junior': 'Junior',
+        'Senior': 'Senior',
+        'Lead': 'Lead',
+        'Manager': 'Manager',
+        'Director': 'Director',
+        'Executive': 'Executive'
+      };
+      const normalizedLevel = levelMapping[jobData.level || 'Mid-level'] || 'Mid-level';
       
       // Format salary based on what's provided - handle empty strings properly
       const minSalary = jobData.salaryMin?.toString().trim() ? Number(jobData.salaryMin) : undefined;
@@ -1066,7 +1076,11 @@ const EmployerDashboard: React.FC = () => {
         status: jobData.status || 'active'
       };
 
+      console.log('Sending job data to backend:', JSON.stringify(backendJobData, null, 2));
+      
       const createdJob = await jobApiService.createJob(backendJobData);
+      
+      console.log('Received job response from backend:', JSON.stringify(createdJob, null, 2));
       
       // Convert created job to Job format and add to state
       const newJob: Job = {
@@ -1095,9 +1109,13 @@ const EmployerDashboard: React.FC = () => {
         workplaceType: createdJob.workplaceType || jobData.workplaceType || 'On-site'
       };
 
+      console.log('Adding new job to state:', JSON.stringify(newJob, null, 2));
       setJobPostings(prev => [...prev, newJob]);
     } catch (error) {
-      alert('Failed to create job. Please try again.');
+      console.error('Job creation error:', error);
+      console.error('Error message:', error.message);
+      console.error('Error stack:', error.stack);
+      alert(`Failed to create job: ${error.message || 'Unknown error'}. Please try again.`);
     } finally {
       setIsLoadingJobs(false);
     }
@@ -1113,8 +1131,18 @@ const EmployerDashboard: React.FC = () => {
       setIsLoadingJobs(true);
       
       // Normalize job level to match backend enum values
-      const normalizedLevel = jobData.level === 'Entry-level' ? 'Entry Level' : 
-                           (jobData.level || 'Mid-level');
+      const levelMapping: { [key: string]: string } = {
+        'Entry-level': 'Entry Level',
+        'Senior-level': 'Senior',
+        'Mid-level': 'Mid-level',
+        'Junior': 'Junior',
+        'Senior': 'Senior',
+        'Lead': 'Lead',
+        'Manager': 'Manager',
+        'Director': 'Director',
+        'Executive': 'Executive'
+      };
+      const normalizedLevel = levelMapping[jobData.level || 'Mid-level'] || 'Mid-level';
       
       // Convert Job data to backend format
       // Format salary based on what's provided - handle empty strings properly
@@ -1529,7 +1557,6 @@ const EmployerDashboard: React.FC = () => {
                 // Clear any stored authentication data
                 localStorage.removeItem('authToken');
                 sessionStorage.clear();
-                // Redirect to employer auth page
                 window.location.href = '/auth/employer';
               }}
             />

@@ -491,11 +491,18 @@ router.delete('/:id', verifyToken, requireRole('employer'), async (req, res) => 
       });
     }
 
+    // Delete the job
     await Job.findByIdAndDelete(req.params.id);
+
+    // Also delete all applications for this job
+    const Application = require('../models/Application');
+    await Application.deleteMany({ jobId: req.params.id });
+
+    console.log(`Job ${req.params.id} and its applications deleted successfully`);
 
     res.json({
       success: true,
-      message: 'Job deleted successfully'
+      message: 'Job and related applications deleted successfully'
     });
   } catch (error) {
     console.error('Error deleting job posting:', error);

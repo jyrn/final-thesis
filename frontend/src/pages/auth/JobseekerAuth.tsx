@@ -66,15 +66,15 @@ const JobseekerAuth: React.FC = () => {
           
           // If account exists in backend, this means user previously registered with email/password
           if (emailCheck.data?.exists) {
-            // Delete the newly created Google provider account from Firebase
-            try {
-              await response.user.delete()
-            } catch (deleteError) {
-              // If we can't delete, at least sign out
-              await firebaseAuthService.signOut()
-            }
-            
             if (emailCheck.data.crossRoleConflict) {
+              // Delete the newly created Google provider account from Firebase
+              try {
+                await response.user.delete()
+              } catch (deleteError) {
+                // If we can't delete, at least sign out
+                await firebaseAuthService.signOut()
+              }
+              
               setErrors(prev => ({ 
                 ...prev, 
                 general: `This email is already registered as an ${emailCheck.data.user.role}. Each email can only be used for one role. Please use a different email or login with the existing ${emailCheck.data.user.role} account.` 
@@ -84,15 +84,61 @@ const JobseekerAuth: React.FC = () => {
             
             const userData = emailCheck.data?.user || emailCheck.data
             if (userData?.emailVerified) {
+              // Delete the newly created Google provider account from Firebase
+              try {
+                await response.user.delete()
+              } catch (deleteError) {
+                // If we can't delete, at least sign out
+                await firebaseAuthService.signOut()
+              }
+              
               setErrors(prev => ({ 
                 ...prev, 
                 general: "An account with this email already exists. Please login with your email and password instead." 
               }))
             } else {
-              setErrors(prev => ({ 
-                ...prev, 
-                general: "An account with this email exists but is not verified. Please check your email for the verification code or try logging in with your email and password." 
-              }))
+              // For unverified users, keep the Google Firebase user and link it to existing database user
+              try {
+                // Update the existing database user with the new Firebase UID
+                const updateResponse = await apiService.updateUserFirebaseUID({
+                  uid: response.user.uid,
+                  email: response.user.email!,
+                  emailVerified: false
+                });
+                
+                if (updateResponse.success) {
+                  // Send OTP and redirect to verification page
+                  const otpResponse = await apiService.sendOTP(response.user.email!);
+                  if (otpResponse.success) {
+                    navigate(`/auth/verify-otp?email=${encodeURIComponent(response.user.email!)}&role=jobseeker`)
+                    return
+                  }
+                }
+                
+                // If update fails, fall back to deleting Firebase user
+                try {
+                  await response.user.delete()
+                } catch (deleteError) {
+                  await firebaseAuthService.signOut()
+                }
+                
+                setErrors(prev => ({ 
+                  ...prev, 
+                  general: "An account with this email exists but is not verified. Please try logging in with your email and password." 
+                }))
+              } catch (updateError) {
+                // If update fails, delete Firebase user and show error
+                try {
+                  await response.user.delete()
+                } catch (deleteError) {
+                  await firebaseAuthService.signOut()
+                }
+                
+                setErrors(prev => ({ 
+                  ...prev, 
+                  general: "An account with this email exists but is not verified. Please check your email for the verification code or try logging in with your email and password." 
+                }))
+              }
             }
             return
           }
@@ -636,7 +682,7 @@ const JobseekerAuth: React.FC = () => {
                   )}
                   {isLogin && (
                     <div className={styles.forgotPasswordContainer}>
-                      <Link to="/auth/forgot-password" className={styles.forgotPasswordLink}>
+                      <Link to="/auth/forgot-password?from=jobseeker" className={styles.forgotPasswordLink}>
                         Forgot Password?
                       </Link>
                     </div>
@@ -797,7 +843,7 @@ const JobseekerAuth: React.FC = () => {
                   )}
                   {isLogin && (
                     <div className={styles.forgotPasswordContainer}>
-                      <Link to="/auth/forgot-password" className={styles.forgotPasswordLink}>
+                      <Link to="/auth/forgot-password?from=jobseeker" className={styles.forgotPasswordLink}>
                         Forgot Password?
                       </Link>
                     </div>

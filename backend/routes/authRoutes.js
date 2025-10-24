@@ -27,6 +27,21 @@ router.get('/me', verifyToken, authController.getCurrentUser);
 // @access  Public
 router.get('/verify-email/:token', authController.verifyEmail);
 
+// @route   POST /api/auth/request-password-reset
+// @desc    Request password reset email
+// @access  Public
+router.post('/request-password-reset', authController.requestPasswordReset);
+
+// @route   POST /api/auth/reset-password
+// @desc    Reset password with token
+// @access  Public
+router.post('/reset-password', authController.resetPassword);
+
+// @route   GET /api/auth/get-user-role
+// @desc    Get user role by email
+// @access  Public
+router.get('/get-user-role', authController.getUserRole);
+
 // @route   POST /api/auth/resend-verification
 // @desc    Resend email verification
 // @access  Public

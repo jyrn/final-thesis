@@ -45,8 +45,7 @@ const checkUserExists = async (uid: string): Promise<boolean> => {
     const response = await fetch(`${API_BASE_URL}/users/check/${uid}`);
     const data = await response.json();
     return data.exists;
-  } catch (error) { 
-    return false;
+  } catch (error) {    return false;
   }
 };
 
@@ -54,7 +53,7 @@ const saveUserToDatabase = async (userData: Partial<UserData>): Promise<void> =>
   try {
     const token = await auth.currentUser?.getIdToken();
     
-    const response = await fetch(`${API_BASE_URL}/auth/create-profile`, { 
+    const response = await fetch(`${API_BASE_URL}/auth/create-profile`, { // Corrected endpoint
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -66,8 +65,7 @@ const saveUserToDatabase = async (userData: Partial<UserData>): Promise<void> =>
     if (!response.ok) {
       throw new Error('Failed to save user data to database');
     }
-  } catch (error) { 
-    // We don't throw here to prevent blocking the registration process
+  } catch (error) {    // We don't throw here to prevent blocking the registration process
   }
 };
 
@@ -86,8 +84,7 @@ const getUserFromDatabase = async (uid: string): Promise<UserData | null> => {
     
     const data = await response.json();
     return data.user;
-  } catch (error) { 
-    return null;
+  } catch (error) {    return null;
   }
 };
 
@@ -106,8 +103,7 @@ const updateUserInDatabase = async (uid: string, userData: Partial<UserData>): P
     if (!response.ok) {
       throw new Error('Failed to update user profile');
     }
-  } catch (error) { 
-    throw error;
+  } catch (error) {    throw error;
   }
 };
 
@@ -146,8 +142,7 @@ const firebaseAuthService = {
         user,
         message: 'Registration successful! Please verify your email with the OTP code.'
       };
-    } catch (error: any) { 
-      return {
+    } catch (error: any) {      return {
         success: false,
         error: error.message || 'Failed to register user'
       };
@@ -167,8 +162,7 @@ const firebaseAuthService = {
         user,
         message: 'Sign in successful!'
       };
-    } catch (error: any) { 
-      return {
+    } catch (error: any) {      return {
         success: false,
         error: error.message || 'Failed to sign in'
       };
@@ -183,8 +177,7 @@ const firebaseAuthService = {
         success: true,
         methods
       };
-    } catch (error: any) { 
-      return {
+    } catch (error: any) {      return {
         success: false,
         methods: [],
         error: error.message || 'Failed to check sign-in methods'
@@ -241,31 +234,22 @@ const firebaseAuthService = {
         success: true,
         message: 'Sign out successful!'
       };
-    } catch (error: any) { 
-      return {
+    } catch (error: any) {      return {
         success: false,
         error: error.message || 'Failed to sign out'
       };
-    }
-  },
   
-  // Send password reset email
-  async sendPasswordResetEmail(email: string): Promise<AuthResponse> {
-    try {
-      // First try without action code settings to ensure basic delivery works
-      await sendPasswordResetEmail(auth, email);
-      return {
-        success: true,
-        message: 'Password reset email sent!'
-      };
-    } catch (error: any) {
-      // Handle specific Firebase errors
-      let errorMessage = 'Failed to send password reset email';
-      
-      if (error.code === 'auth/user-not-found') {
-        errorMessage = 'No account found with this email address.';
-      } else if (error.code === 'auth/invalid-email') {
-        errorMessage = 'Please enter a valid email address.';
+return {
+success: true,
+user,
+message: 'Registration successful! Please verify your email with the OTP code.'
+};
+} catch (error: any) {    return {
+success: false,
+error: error.message || 'Failed to register user'
+};
+}
+},
       } else if (error.code === 'auth/too-many-requests') {
         errorMessage = 'Too many requests. Please try again later.';
       } else if (error.code === 'auth/missing-email') {
@@ -280,7 +264,7 @@ const firebaseAuthService = {
       };
     }
   },
-
+  
   // Resend verification email
   async resendVerificationEmail(): Promise<AuthResponse> {
     try {
@@ -298,8 +282,7 @@ const firebaseAuthService = {
         success: true,
         message: 'Verification email sent!'
       };
-    } catch (error: any) { 
-      return {
+    } catch (error: any) {      return {
         success: false,
         error: error.message || 'Failed to send verification email'
       };
@@ -314,13 +297,13 @@ const firebaseAuthService = {
   // Confirm password reset
   async confirmPasswordReset(code: string, newPassword: string): Promise<AuthResponse> {
     try {
+      const { confirmPasswordReset } = await import('firebase/auth');
       await confirmPasswordReset(auth, code, newPassword);
       return {
         success: true,
         message: 'Password reset successfully!'
       };
-    } catch (error: any) { 
-      return {
+    } catch (error: any) {      return {
         success: false,
         error: error.message || 'Failed to reset password'
       };
@@ -348,70 +331,47 @@ const firebaseAuthService = {
   async checkUserAuthMethods(): Promise<{ hasPassword: boolean; providers: string[] }> {
     try {
       const user = auth.currentUser;
-      if (!user || !user.email) { 
-        return { hasPassword: false, providers: [] };
-      } 
-      
-      const methods = await fetchSignInMethodsForEmail(auth, user.email); 
-      
-      // Check provider data for more reliable detection
+      if (!user || !user.email) {        return { hasPassword: false, providers: [] };
+      }      const methods = await fetchSignInMethodsForEmail(auth, user.email);      // Check provider data for more reliable detection
       const hasGoogleProvider = user.providerData.some(provider => provider.providerId === 'google.com');
-      const hasEmailProvider = user.providerData.some(provider => provider.providerId === 'password'); 
-      
-      // If fetchSignInMethodsForEmail returns empty but user exists, 
+      const hasEmailProvider = user.providerData.some(provider => provider.providerId === 'password');      // If fetchSignInMethodsForEmail returns empty but user exists, 
       // check if they have a password provider in providerData
       let hasPassword = methods.includes('password') || hasEmailProvider;
       
       // If no methods detected but user is authenticated with email, assume password auth
-      if (methods.length === 0 && !hasGoogleProvider && user.email) { 
-        hasPassword = true;
-      } 
-      
-      return {
+      if (methods.length === 0 && !hasGoogleProvider && user.email) {        hasPassword = true;
+      }      return {
         hasPassword: hasPassword,
         providers: methods
       };
-    } catch (error) { 
-      // If there's an error, assume they have password auth to show the form
+    } catch (error) {      // If there's an error, assume they have password auth to show the form
       return { hasPassword: true, providers: [] };
     }
   },
 
   // Update password
   async updatePassword(currentPassword: string, newPassword: string): Promise<AuthResponse> {
-    try { 
-      const user = auth.currentUser;
+    try {      const user = auth.currentUser;
       
-      if (!user || !user.email) { 
-        return {
+      if (!user || !user.email) {        return {
           success: false,
           error: 'No authenticated user found. Please sign in again.'
         };
       }
 
       // Check if user has password authentication
-      const authMethods = await this.checkUserAuthMethods(); 
-      
-      if (!authMethods.hasPassword) { 
-        return {
+      const authMethods = await this.checkUserAuthMethods();      if (!authMethods.hasPassword) {        return {
           success: false,
           error: 'Your account was created with Google sign-in. You cannot change your password here. Please use Google Account settings to manage your password.'
         };
-      } 
-      
-      // Re-authenticate user with current password
+      }      // Re-authenticate user with current password
       const credential = EmailAuthProvider.credential(user.email, currentPassword);
-      await reauthenticateWithCredential(user, credential); 
-      
-      // Update password
-      await updatePassword(user, newPassword); 
-      
-      return {
+      await reauthenticateWithCredential(user, credential);      // Update password
+      await updatePassword(user, newPassword);      return {
         success: true,
         message: 'Password updated successfully!'
       };
-    } catch (error: any) { 
-      let errorMessage = 'Failed to update password';
+    } catch (error: any) {      let errorMessage = 'Failed to update password';
       
       if (error.code === 'auth/wrong-password') {
         errorMessage = 'Current password is incorrect';
@@ -441,8 +401,7 @@ const firebaseAuthService = {
       if (auth.currentUser) {
         await reload(auth.currentUser);
       }
-    } catch (error) { 
-      throw error;
+    } catch (error) {      throw error;
     }
   }
 };

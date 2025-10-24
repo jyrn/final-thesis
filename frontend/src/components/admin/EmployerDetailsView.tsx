@@ -27,6 +27,7 @@ interface EmployerDetailsViewProps {
   onBack: () => void;
   onApprove: (reason?: string) => void;
   onReject: (reason?: string) => void;
+  onRemove: (reason?: string) => void;
   loading?: boolean;
 }
 
@@ -35,6 +36,7 @@ const EmployerDetailsView: React.FC<EmployerDetailsViewProps> = ({
   onBack,
   onApprove,
   onReject,
+  onRemove,
   loading = false
 }) => {
   const formatContactPersonName = () => {
@@ -331,24 +333,45 @@ const EmployerDetailsView: React.FC<EmployerDetailsViewProps> = ({
           </div>
         </div>
         
-        {employer.accountStatus === 'pending' && (
-          <div className="action-buttons">
-            <button 
-              className="decision-btn reject-btn" 
-              onClick={() => onReject()}
-              disabled={loading}
-            >
-              Reject Application
-            </button>
-            <button 
-              className="decision-btn approve-btn" 
-              onClick={() => onApprove()}
-              disabled={loading}
-            >
-              Approve Application
-            </button>
-          </div>
-        )}
+        <div className="action-buttons">
+          {employer.accountStatus === 'pending' && (
+            <>
+              <button 
+                className="decision-btn reject-btn" 
+                onClick={() => onReject()}
+                disabled={loading}
+              >
+                Reject Application
+              </button>
+              <button 
+                className="decision-btn approve-btn" 
+                onClick={() => onApprove()}
+                disabled={loading}
+              >
+                Approve Application
+              </button>
+            </>
+          )}
+          <button 
+            className="decision-btn remove-btn" 
+            onClick={() => {
+              console.log('Remove button clicked for employer:', employer._id);
+              if (window.confirm(`Are you sure you want to completely remove ${employer.companyDetails?.companyName || employer.userId.companyName}? This action cannot be undone and will delete all company data including jobs and applications.`)) {
+                console.log('Confirmation accepted, calling onRemove');
+                onRemove();
+              }
+            }}
+            disabled={loading}
+            style={{
+              backgroundColor: '#dc3545',
+              borderColor: '#dc3545',
+              color: 'white',
+              marginLeft: '10px'
+            }}
+          >
+            Remove Company
+          </button>
+        </div>
       </div>
     </div>
   );

@@ -1,31 +1,52 @@
-import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { Link, useSearchParams } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import styles from './ForgotPasswordPage.module.css';
-import firebaseAuthService from '../../services/firebaseAuthService';
 import apiService from '../../services/apiService';
 
 const ForgotPasswordPage: React.FC = () => {
+  const [searchParams] = useSearchParams();
   const [email, setEmail] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [error, setError] = useState('');
-  const navigate = useNavigate();
+  const [backToLoginPath, setBackToLoginPath] = useState('/auth');
+
+  // Determine the correct back to login path based on referrer or URL params
+  useEffect(() => {
+    const from = searchParams.get('from');
+    const referrer = document.referrer;
+    
+    if (from === 'jobseeker' || referrer.includes('/auth/jobseeker')) {
+      setBackToLoginPath('/auth/jobseeker');
+    } else if (from === 'employer' || referrer.includes('/auth/employer')) {
+      setBackToLoginPath('/auth/employer');
+    } else {
+      // Default to role selection if we can't determine the source
+      setBackToLoginPath('/auth');
+    }
+  }, [searchParams]);
+
+  const isValidEmail = (email: string) => {
+    return /\S+@\S+\.\S+/.test(email);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
     
-    // Basic email validation
-    if (!email || !/\S+@\S+\.\S+/.test(email)) {
-      const errorMsg = 'Please enter a valid email address';
-      setError(errorMsg);
-      toast.error(errorMsg);
+    if (!email) {
+      setError('Please enter your email address');
+      return;
+    }
+
+    if (!isValidEmail(email)) {
+      setError('Please enter a valid email address');
       return;
     }
 
     setIsLoading(true);
-    
+    setError('');
+
     try {
       // First check if email exists in our backend
       const emailCheckData = await apiService.checkEmailExists(email);
@@ -37,13 +58,22 @@ const ForgotPasswordPage: React.FC = () => {
         return;
       }
       
-      const response = await firebaseAuthService.sendPasswordResetEmail(email);
-      
-      if (response.success) {
+      // Send password reset email using our backend API
+      const response = await fetch(`${process.env.REACT_APP_API_URL || 'https://skillsync-backend-gwwo.onrender.com/api'}/auth/request-password-reset`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
         setIsSubmitted(true);
         toast.success('Password reset link has been sent to your email. Please check your inbox.');
       } else {
-        const errorMsg = response.error || 'Failed to send password reset email. Please try again later.';
+        const errorMsg = data.error || 'Failed to send password reset email. Please try again.';
         setError(errorMsg);
         toast.error(errorMsg);
       }
@@ -113,7 +143,7 @@ const ForgotPasswordPage: React.FC = () => {
                 </p>
               </div>
 
-              <Link to="/" className={styles.backToLogin}>
+              <Link to={backToLoginPath} className={styles.backToLogin}>
                 Back to Login
               </Link>
             </div>
@@ -203,7 +233,7 @@ const ForgotPasswordPage: React.FC = () => {
               </button>
             </form>
 
-            <Link to="/" className={styles.backToLogin}>
+            <Link to={backToLoginPath} className={styles.backToLogin}>
               Back to Login
             </Link>
           </div>

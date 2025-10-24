@@ -179,6 +179,19 @@ class ApiService {
     return this.handleResponse(response);
   }
 
+  // Update user Firebase UID (for Google OAuth linking) - no auth required
+  async updateUserFirebaseUID(userData: { uid: string; email: string; emailVerified?: boolean }): Promise<ApiResponse> {
+    const response = await fetch(`${API_BASE_URL}/users/update-firebase-uid`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(userData)
+    });
+    
+    return this.handleResponse(response);
+  }
+
   async uploadProfilePicture(file: File): Promise<ApiResponse> {
     const formData = new FormData();
     formData.append('profilePicture', file);

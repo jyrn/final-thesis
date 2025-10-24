@@ -25,6 +25,32 @@ export const JobsListView: React.FC<JobsListViewProps> = ({
   jobseekerSkills = [],
   jobseekerEducation,
 }) => {
+  // Levenshtein distance for fuzzy matching
+  const levenshteinDistance = (str1: string, str2: string): number => {
+    const matrix = [];
+    
+    for (let i = 0; i <= str2.length; i++) {
+      matrix[i] = [i];
+    }
+    
+    for (let j = 0; j <= str1.length; j++) {
+      matrix[0][j] = j;
+    }
+    
+    for (let i = 1; i <= str2.length; i++) {
+      for (let j = 1; j <= str1.length; j++) {
+        const indicator = str1[j - 1] === str2[i - 1] ? 0 : 1;
+        matrix[i][j] = Math.min(
+          matrix[i - 1][j] + 1,     // deletion
+          matrix[i][j - 1] + 1,     // insertion
+          matrix[i - 1][j - 1] + indicator // substitution
+        );
+      }
+    }
+    
+    return matrix[str2.length][str1.length];
+  };
+
   // Enhanced TF-IDF calculation including education factors
   const calculateMatchScore = (job: Job, jobseekerEducation?: string | Array<any> | { level?: string; field?: string; degrees?: Array<{degree?: string; school?: string; major?: string; course?: string}> }): number => {
     if (!jobseekerSkills || jobseekerSkills.length === 0) return 0;
@@ -44,6 +70,8 @@ export const JobsListView: React.FC<JobsListViewProps> = ({
     
     // Full credit when all required skills match, plus bonus for additional skills
     const skillsScore = (requiredSkillsMatchRate + (requiredSkillsMatchRate === 1.0 ? additionalSkillsBonus : 0)) * 0.7; // 70% weight for skills
+
+    // Skills matching calculation complete
     
     // Education matching (30% weight)
     let educationScore = 0;
@@ -71,18 +99,50 @@ export const JobsListView: React.FC<JobsListViewProps> = ({
       
       const educationLower = educationText.toLowerCase();
       
-      // Education level matching
+      // Education data processing complete
+      
+      // Education level matching with enhanced equivalence recognition
       if (job.educationLevel) {
         totalEducationFactors++;
-        const jobEducationLower = job.educationLevel.toLowerCase();
+        const requiredLevel = job.educationLevel.toLowerCase();
         
         // Check if education level matches
         let hasMatchingLevel = false;
-        if (jobEducationLower.includes('bachelor') && educationLower.includes('bachelor')) hasMatchingLevel = true;
-        if (jobEducationLower.includes('master') && educationLower.includes('master')) hasMatchingLevel = true;
-        if (jobEducationLower.includes('doctorate') && (educationLower.includes('doctorate') || educationLower.includes('phd'))) hasMatchingLevel = true;
-        if (jobEducationLower.includes('associate') && educationLower.includes('associate')) hasMatchingLevel = true;
-        if (jobEducationLower.includes('high school') && educationLower.includes('high school')) hasMatchingLevel = true;
+        
+        // Bachelor's degree variations
+        if (requiredLevel.includes('bachelor') && 
+            (educationLower.includes('bachelor') || educationLower.includes('bs ') || 
+             educationLower.includes('ba ') || educationLower.includes('undergraduate') ||
+             educationLower.includes('bsc') || educationLower.includes('b.s'))) {
+          hasMatchingLevel = true;
+        }
+        
+        // Master's degree variations
+        if (requiredLevel.includes('master') && 
+            (educationLower.includes('master') || educationLower.includes('ms ') || 
+             educationLower.includes('ma ') || educationLower.includes('graduate'))) {
+          hasMatchingLevel = true;
+        }
+        
+        // Doctorate variations
+        if (requiredLevel.includes('doctorate') && 
+            (educationLower.includes('doctorate') || educationLower.includes('phd') || 
+             educationLower.includes('ph.d'))) {
+          hasMatchingLevel = true;
+        }
+        
+        // Associate degree variations
+        if (requiredLevel.includes('associate') && 
+            (educationLower.includes('associate') || educationLower.includes('aa ') || 
+             educationLower.includes('as '))) {
+          hasMatchingLevel = true;
+        }
+        
+        // High school variations
+        if (requiredLevel.includes('high school') && 
+            (educationLower.includes('high school') || educationLower.includes('secondary'))) {
+          hasMatchingLevel = true;
+        }
         
         if (hasMatchingLevel) {
           educationMatch += 1.0;
@@ -98,16 +158,45 @@ export const JobsListView: React.FC<JobsListViewProps> = ({
         const jobKeywords = jobCourseLower.split(/[,\s]+/).filter(word => word.length > 2);
         const educationKeywords = educationLower.split(/[,\s]+/).filter(word => word.length > 2);
         
-        // Count matching keywords
+        // Count matching keywords with fuzzy matching for typos
         const matchingKeywords = jobKeywords.filter(jobWord => 
-          educationKeywords.some(eduWord => 
-            eduWord.includes(jobWord) || jobWord.includes(eduWord) ||
+          educationKeywords.some(eduWord => {
+            // Exact and partial matches
+            if (eduWord.includes(jobWord) || jobWord.includes(eduWord)) return true;
+            
             // Handle common abbreviations and variations
-            (jobWord === 'it' && (eduWord.includes('information') || eduWord.includes('technology'))) ||
-            (jobWord === 'cs' && (eduWord.includes('computer') || eduWord.includes('science'))) ||
-            (eduWord === 'it' && (jobWord.includes('information') || jobWord.includes('technology'))) ||
-            (eduWord === 'cs' && (jobWord.includes('computer') || jobWord.includes('science')))
-          )
+            if (jobWord === 'it' && (eduWord.includes('information') || eduWord.includes('technology'))) return true;
+            if (jobWord === 'cs' && (eduWord.includes('computer') || eduWord.includes('science'))) return true;
+            if (eduWord === 'it' && (jobWord.includes('information') || jobWord.includes('technology'))) return true;
+            if (eduWord === 'cs' && (jobWord.includes('computer') || jobWord.includes('science'))) return true;
+            
+            // Common typo mappings
+            const typoMappings: { [key: string]: string } = {
+              'pyschology': 'psychology',
+              'buisness': 'business',
+              'managment': 'management',
+              'enginnering': 'engineering',
+              'compuer': 'computer',
+              'scince': 'science',
+              'mathemtics': 'mathematics',
+              'litterature': 'literature'
+            };
+            
+            const normalizedJobWord = typoMappings[jobWord] || jobWord;
+            const normalizedEduWord = typoMappings[eduWord] || eduWord;
+            
+            if (normalizedJobWord !== jobWord && (eduWord.includes(normalizedJobWord) || normalizedJobWord.includes(eduWord))) return true;
+            if (normalizedEduWord !== eduWord && (jobWord.includes(normalizedEduWord) || normalizedEduWord.includes(jobWord))) return true;
+            
+            // Fuzzy matching for close spellings (allow 1-2 character differences for words > 4 chars)
+            if (jobWord.length > 4 && eduWord.length > 4) {
+              const distance = levenshteinDistance(jobWord, eduWord);
+              const maxDistance = Math.floor(Math.min(jobWord.length, eduWord.length) * 0.25); // Allow 25% character differences
+              return distance <= maxDistance;
+            }
+            
+            return false;
+          })
         );
         
         if (matchingKeywords.length > 0) {
@@ -123,6 +212,9 @@ export const JobsListView: React.FC<JobsListViewProps> = ({
     }
     
     const totalScore = (skillsScore + educationScore) * 100;
+    
+    // Final score calculation complete
+    
     return Math.min(100, Math.round(totalScore));
   };
 

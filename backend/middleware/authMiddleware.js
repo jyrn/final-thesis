@@ -44,14 +44,25 @@ const verifyToken = async (req, res, next) => {
     }
     
     // Auto-reactivate suspended users on login
-    if (user && user.status === 'inactive') {      await User.updateOne(
+    if (user && user.status === 'inactive') {
+      await User.updateOne(
         { uid: decodedToken.uid },
         { 
           status: 'active',
           suspendedAt: null,
           lastLoginAt: new Date()
         }
-      );    } else if (user && user.isActive === false) {
+      );
+      
+      // Also reactivate the jobseeker profile if it exists
+      const JobSeeker = require('../models/JobSeeker');
+      await JobSeeker.updateOne(
+        { uid: decodedToken.uid },
+        { 
+          isActive: true
+        }
+      );
+    } else if (user && user.isActive === false) {
       // Auto-reactivate deactivated users on login
       await User.updateOne(
         { uid: decodedToken.uid },

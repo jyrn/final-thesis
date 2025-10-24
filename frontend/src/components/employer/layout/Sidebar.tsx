@@ -64,7 +64,10 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
               <p>Company Name</p>
             </div>
           </div>
-          <button className={styles.logoutButton}>
+          <button 
+            className={styles.logoutButton}
+            onClick={() => window.location.hash = '#/auth/employer'}
+          >
             <span>🚪</span>
             <span>Logout</span>
           </button>

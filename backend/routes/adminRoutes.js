@@ -257,7 +257,7 @@ router.put('/employers/:employerId/verify', verifyToken, adminMiddleware, async 
   try {
 
     const { employerId } = req.params;
-    const { action, reason } = req.body; // action: 'approve' or 'reject'
+    const { action, reason } = req.body; // action: 'approve', 'reject', or 'remove'
 
     const employer = await Employer.findById(employerId).populate('userId', 'email uid');
     if (!employer) {
@@ -267,8 +267,52 @@ router.put('/employers/:employerId/verify', verifyToken, adminMiddleware, async 
       });
     }
 
+    // Handle complete removal action
+    if (action === 'remove') {
+      const userEmail = employer.userId.email;
+      const companyName = employer.companyDetails?.companyName || employer.userId.companyName;
 
-    // Update employer status
+      // Delete from Firebase Authentication
+      try {
+        await admin.auth().deleteUser(employer.userId.uid);
+        console.log(`✅ Firebase user deleted: ${employer.userId.uid}`);
+      } catch (firebaseError) {
+        console.error('❌ Firebase user deletion error:', firebaseError);
+        // Continue with database deletion even if Firebase fails
+      }
+
+      // Delete all related data from MongoDB
+      await Promise.all([
+        // Delete employer documents
+        EmployerDocument.deleteMany({ employerId: employerId }),
+        // Delete jobs posted by this employer
+        Job.deleteMany({ employerId: employerId }),
+        // Delete applications to jobs posted by this employer
+        Application.deleteMany({ employerId: employerId }),
+        // Delete the employer record
+        Employer.findByIdAndDelete(employerId),
+        // Delete the user record
+        User.findByIdAndDelete(employer.userId._id)
+      ]);
+
+      // Send notification email to the employer
+      try {
+        const emailService = require('../services/emailService');
+        await emailService.sendEmployerCompleteRemovalEmail(userEmail, companyName);
+        console.log(`✅ Removal notification email sent to: ${userEmail}`);
+      } catch (emailError) {
+        console.error('❌ Failed to send removal notification email:', emailError);
+        // Don't fail the request if email fails
+      }
+
+      return res.json({
+        success: true,
+        message: 'Employer completely removed from system',
+        action: 'removed'
+      });
+    }
+
+    // Update employer status for approve/reject actions
     employer.accountStatus = action === 'approve' ? 'verified' : 'rejected';
     if (reason) {
       employer.verificationNotes = reason;
@@ -1098,32 +1142,52 @@ router.get('/reports/jobseekers-data', verifyToken, adminMiddleware, async (req,
       }
     }
     
-    // Status filtering for jobseekers
-    if (status && status !== 'all') {
-      if (status === 'active') {
-        query.isActive = true;
-      } else if (status === 'inactive') {
-        query.isActive = false;
-      }
-      console.log('Status filter:', status);
-    }
-    
     console.log('MongoDB query:', JSON.stringify(query, null, 2));
 
+    // Get all jobseekers first (without status filtering)
     const jobseekers = await JobSeeker.find(query)
-      .select('firstName lastName email isActive createdAt')
+      .select('firstName lastName email isActive createdAt uid')
       .sort({ createdAt: -1 });
 
     console.log('Found jobseekers:', jobseekers.length);
 
-    const formattedData = jobseekers.map(jobseeker => ({
-      id: jobseeker._id,
-      firstName: jobseeker.firstName || 'N/A',
-      lastName: jobseeker.lastName || 'N/A',
-      email: jobseeker.email || 'N/A',
-      status: jobseeker.isActive ? 'active' : 'inactive',
-      registrationDate: jobseeker.createdAt
-    }));
+    // Get corresponding User data to check for accurate status
+    const jobseekerUids = jobseekers.map(js => js.uid).filter(Boolean);
+    const users = await User.find({ uid: { $in: jobseekerUids } })
+      .select('uid status isActive');
+
+    // Create a map for quick user lookup
+    const userMap = {};
+    users.forEach(user => {
+      userMap[user.uid] = user;
+    });
+
+    let formattedData = jobseekers.map(jobseeker => {
+      const userProfile = userMap[jobseeker.uid];
+      
+      // Determine status - prioritize User collection status over JobSeeker isActive
+      let finalStatus = 'active';
+      if (userProfile?.status) {
+        finalStatus = userProfile.status;
+      } else if (!jobseeker.isActive || userProfile?.disabled || !userProfile?.isActive) {
+        finalStatus = 'inactive';
+      }
+
+      return {
+        id: jobseeker._id,
+        firstName: jobseeker.firstName || 'N/A',
+        lastName: jobseeker.lastName || 'N/A',
+        email: jobseeker.email || 'N/A',
+        status: finalStatus,
+        registrationDate: jobseeker.createdAt
+      };
+    });
+
+    // Apply status filtering after determining accurate status
+    if (status && status !== 'all') {
+      formattedData = formattedData.filter(jobseeker => jobseeker.status === status);
+      console.log('Status filter applied:', status, 'Filtered count:', formattedData.length);
+    }
 
     res.json({
       success: true,
@@ -1605,8 +1669,97 @@ router.get('/analytics/system', verifyToken, superAdminMiddleware, async (req, r
   }
 });
 
+// Suspend jobseeker account (admin only) - marks as inactive with suspension timestamp
+router.put('/jobseekers/:userId/suspend', verifyToken, adminMiddleware, async (req, res) => {
+  try {
+    const { userId } = req.params;
+    
+    // Find user in User collection by UID
+    const user = await User.findOne({ uid: userId });
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'Jobseeker not found'
+      });
+    }
+
+    // Verify it's a jobseeker
+    if (user.role !== 'jobseeker') {
+      return res.status(400).json({
+        success: false,
+        message: 'User is not a jobseeker'
+      });
+    }
+
+    // Store original data for email notification
+    const originalStatus = user.status || 'active';
+    const userEmail = user.email;
+    const userName = `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.email;
+
+    // Update user status to inactive with suspension timestamp
+    const updatedUser = await User.findOneAndUpdate(
+      { uid: userId },
+      { 
+        status: 'inactive',
+        suspendedAt: new Date()
+      },
+      { new: true, runValidators: true }
+    );
+
+    if (!updatedUser) {
+      return res.status(404).json({
+        success: false,
+        message: 'Failed to update jobseeker status'
+      });
+    }
+
+    // Also update the JobSeeker collection's isActive field
+    try {
+      await JobSeeker.findOneAndUpdate(
+        { uid: userId },
+        { isActive: false },
+        { new: true }
+      );
+    } catch (jobseekerUpdateError) {
+      console.error('Failed to update JobSeeker isActive field:', jobseekerUpdateError);
+      // Don't fail the request if JobSeeker update fails
+    }
+
+    // Send suspension email notification
+    try {
+      const emailService = require('../services/emailService');
+      await emailService.sendJobseekerSuspensionEmail(
+        userEmail,
+        userName,
+        'Your account has been suspended due to inactivity (no login for over 1 year). Simply log in to reactivate your account within 30 days.'
+      );
+    } catch (emailError) {
+      console.error('Failed to send suspension email:', emailError);
+      // Don't fail the request if email fails
+    }
+
+    res.json({
+      success: true,
+      message: 'Jobseeker account suspended successfully',
+      data: {
+        uid: updatedUser.uid,
+        email: updatedUser.email,
+        status: updatedUser.status,
+        suspendedAt: updatedUser.suspendedAt
+      }
+    });
+
+  } catch (error) {
+    console.error('Suspend jobseeker error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error suspending jobseeker account'
+    });
+  }
+});
+
 // Report Generation Endpoints
-router.post('/reports/generate', verifyToken, superAdminMiddleware, async (req, res) => {
+router.post('/reports/generate', verifyToken, adminMiddleware, async (req, res) => {
   try {
     const { reportType, startDate, endDate, format = 'json', includeDetails = true, status, sortConfig } = req.body;
     
@@ -2529,7 +2682,7 @@ function getReportDisplayName(reportType) {
 }
 
 // Bulk report generation endpoint
-router.post('/reports/generate-all', verifyToken, superAdminMiddleware, async (req, res) => {
+router.post('/reports/generate-all', verifyToken, adminMiddleware, async (req, res) => {
   try {
     const { startDate, endDate, format, includeDetails, status, sortConfig } = req.body;
     
@@ -3234,7 +3387,7 @@ router.get('/job-demand-analytics', verifyToken, adminMiddleware, async (req, re
 });
 
 // Generate selected reports endpoint
-router.post('/reports/generate-selected', verifyToken, superAdminMiddleware, async (req, res) => {
+router.post('/reports/generate-selected', verifyToken, adminMiddleware, async (req, res) => {
   try {
     const { reportTypes, startDate, endDate, format, includeDetails } = req.body;
     
@@ -3703,6 +3856,70 @@ router.get('/jobseekers/validate', verifyToken, adminMiddleware, async (req, res
     res.status(500).json({
       success: false,
       message: 'Error validating jobseekers data',
+      error: error.message
+    });
+  }
+});
+
+// Complete employer removal endpoint
+router.delete('/employers/:employerId/complete', verifyToken, adminMiddleware, async (req, res) => {
+  try {
+    const { employerId } = req.params;
+
+    // Find the employer
+    const employer = await Employer.findById(employerId).populate('userId');
+    if (!employer) {
+      return res.status(404).json({
+        success: false,
+        message: 'Employer not found'
+      });
+    }
+
+    const userEmail = employer.userId.email;
+    const companyName = employer.companyDetails?.companyName || employer.userId.companyName;
+
+    // Delete from Firebase Authentication
+    try {
+      await admin.auth().deleteUser(employer.userId.uid);
+      console.log(`✅ Firebase user deleted: ${employer.userId.uid}`);
+    } catch (firebaseError) {
+      console.error('❌ Firebase user deletion error:', firebaseError);
+      // Continue with database deletion even if Firebase fails
+    }
+
+    // Delete all related data from MongoDB
+    await Promise.all([
+      // Delete employer documents
+      EmployerDocument.deleteMany({ employerId: employerId }),
+      // Delete jobs posted by this employer
+      Job.deleteMany({ employerId: employerId }),
+      // Delete applications to jobs posted by this employer
+      Application.deleteMany({ employerId: employerId }),
+      // Delete the employer record
+      Employer.findByIdAndDelete(employerId),
+      // Delete the user record
+      User.findByIdAndDelete(employer.userId._id)
+    ]);
+
+    // Send notification email to the employer
+    try {
+      await emailService.sendEmployerCompleteRemovalEmail(userEmail, companyName);
+      console.log(`✅ Removal notification email sent to: ${userEmail}`);
+    } catch (emailError) {
+      console.error('❌ Failed to send removal notification email:', emailError);
+      // Don't fail the request if email fails
+    }
+
+    res.json({
+      success: true,
+      message: `Employer ${companyName} has been completely removed from all systems`
+    });
+
+  } catch (error) {
+    console.error('Error completely removing employer:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to remove employer',
       error: error.message
     });
   }

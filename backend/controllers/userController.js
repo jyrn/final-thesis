@@ -153,6 +153,61 @@ const userController = {
         error: error.message || 'Failed to get user'
       });
     }
+  },
+
+  // Update user profile with new Firebase UID (for Google OAuth linking)
+  async updateUserFirebaseUID(req, res) {
+    try {
+      const { uid, email, emailVerified } = req.body;
+
+      if (!email) {
+        return res.status(400).json({
+          success: false,
+          error: 'Email is required'
+        });
+      }
+
+      if (!uid) {
+        return res.status(400).json({
+          success: false,
+          error: 'Firebase UID is required'
+        });
+      }
+
+      // Find user by email and update with new Firebase UID
+      const user = await User.findOneAndUpdate(
+        { email: email },
+        { 
+          uid: uid,
+          emailVerified: emailVerified !== undefined ? emailVerified : false
+        },
+        { new: true }
+      );
+
+      if (!user) {
+        return res.status(404).json({
+          success: false,
+          error: 'User not found'
+        });
+      }
+
+      res.json({
+        success: true,
+        message: 'User profile updated successfully',
+        user: {
+          uid: user.uid,
+          email: user.email,
+          emailVerified: user.emailVerified,
+          role: user.role
+        }
+      });
+
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        error: error.message || 'Failed to update user profile'
+      });
+    }
   }
 };
 

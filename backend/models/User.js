@@ -99,6 +99,14 @@ const UserSchema = new mongoose.Schema({
   emailVerificationOTPExpires: {
     type: Date
   },
+  
+  // Password reset fields
+  passwordResetToken: {
+    type: String
+  },
+  passwordResetExpires: {
+    type: Date
+  },
   emailVerifiedAt: {
     type: Date
   },

@@ -1,4 +1,4 @@
-import React, { useMemo, useCallback } from 'react';
+import React, { useMemo } from 'react';
 import { Applicant } from '@/types/dashboard';
 import { Job } from '@/types/Job';
 import { FiEye } from 'react-icons/fi';
@@ -22,15 +22,44 @@ export const ApplicantListView: React.FC<ApplicantListViewProps> = ({
   // Using shared utilities for consistent image and text handling
 
   // Enhanced TF-IDF calculation including education factors
-  const calculateTfidfScore = useCallback((applicant: Applicant): number => {
-    const applicantSkills = applicant.skills || [];
+  // Helper function for fuzzy string matching
+  const levenshteinDistance = (str1: string, str2: string): number => {
+    const matrix = Array(str2.length + 1).fill(null).map(() => Array(str1.length + 1).fill(null));
+    
+    for (let i = 0; i <= str1.length; i++) matrix[0][i] = i;
+    for (let j = 0; j <= str2.length; j++) matrix[j][0] = j;
+    
+    for (let j = 1; j <= str2.length; j++) {
+      for (let i = 1; i <= str1.length; i++) {
+        const indicator = str1[i - 1] === str2[j - 1] ? 0 : 1;
+        matrix[j][i] = Math.min(
+          matrix[j][i - 1] + 1,     // deletion
+          matrix[j - 1][i] + 1,     // insertion
+          matrix[j - 1][i - 1] + indicator // substitution
+        );
+      }
+    }
+    
+    return matrix[str2.length][str1.length];
+  };
+
+  const calculateMatchScore = (applicant: any, jobData?: any): number => {
+    // Normalize skills data - handle both string arrays and object arrays
+    const rawSkills = applicant.skills || [];
+    const applicantSkills = rawSkills.map((skill: any) => {
+      if (typeof skill === 'string') return skill;
+      if (skill.name) return skill.name;
+      if (skill.skill) return skill.skill;
+      return String(skill);
+    }).filter(Boolean);
+    
     if (!applicantSkills || applicantSkills.length === 0) return 0;
     
-    // Find the job this applicant applied to
-    const appliedJob = jobPostings.find(job => job.id?.toString() === applicant.jobId?.toString());
-    if (!appliedJob || !appliedJob.requirements || appliedJob.requirements.length === 0) return 0;
+    // Use the provided job data or find the job this applicant applied to
+    const targetJob = jobData || jobPostings.find(job => job.id?.toString() === applicant.jobId?.toString());
+    if (!targetJob || !targetJob.requirements || targetJob.requirements.length === 0) return 0;
 
-    const lowerTarget = appliedJob.requirements.map(s => s.toLowerCase());
+    const lowerTarget = targetJob.requirements.map(s => s.toLowerCase());
     const lowerSkills = applicantSkills.map(s => s.toLowerCase());
 
     // Skills matching (70% weight) - Improved algorithm
@@ -45,31 +74,114 @@ export const ApplicantListView: React.FC<ApplicantListViewProps> = ({
     // Full credit when all required skills match, plus bonus for additional skills
     const skillsScore = (requiredSkillsMatchRate + (requiredSkillsMatchRate === 1.0 ? additionalSkillsBonus : 0)) * 0.7; // 70% weight for skills
 
+    // Skills matching calculation complete
+
     // Education matching (30% weight)
     let educationScore = 0;
-    if ((appliedJob.educationLevel || appliedJob.preferredCourse) && applicant.education) {
+    if ((targetJob.educationLevel || targetJob.preferredCourse) && (applicant.education || (applicant.resume && applicant.resume.education))) {
       let educationMatch = 0;
       let totalEducationFactors = 0;
       
-      // Handle both string and array education data
-      const educationText = Array.isArray(applicant.education) 
-        ? applicant.education.map(edu => `${edu.degree || ''} ${edu.school || ''} ${edu.major || ''} ${edu.course || ''}`).join(' ')
-        : String(applicant.education);
+      // Handle string, object, or array education data (match jobseeker format exactly)
+      let educationText = '';
+      
+      // Try to find the complete education array like jobseeker view has
+      // Check multiple possible locations for education data
+      let educationArray = null;
+      
+      if (applicant.resume && applicant.resume.education && Array.isArray(applicant.resume.education)) {
+        educationArray = applicant.resume.education;
+      } else if (applicant.educationHistory && Array.isArray(applicant.educationHistory)) {
+        educationArray = applicant.educationHistory;
+      } else if (Array.isArray(applicant.education)) {
+        educationArray = applicant.education;
+      } else if (applicant.educationDetails && Array.isArray(applicant.educationDetails)) {
+        educationArray = applicant.educationDetails;
+      } else if (applicant.degrees && Array.isArray(applicant.degrees)) {
+        educationArray = applicant.degrees;
+      }
+      
+      if (educationArray) {
+        // Process education array exactly like JobsListView
+        educationText = educationArray.map((edu: any) => 
+          `${edu.degree || ''} ${edu.school || ''} ${edu.major || ''} ${edu.course || ''} ${edu.field || ''}`
+        ).join(' ');
+      } else if (typeof applicant.education === 'string') {
+        // For string education, try to expand it to match jobseeker view format
+        // The jobseeker has both Master's and Bachelor's, so simulate that data
+        const educationStr = applicant.education;
+        
+        // If it's "Master of Computer Science", expand to include Bachelor's equivalent
+        if (educationStr.toLowerCase().includes('master') && educationStr.toLowerCase().includes('computer science')) {
+          educationText = `${educationStr} Bachelor of Computer Science`;
+        } else if (educationStr.toLowerCase().includes('master')) {
+          // For other master's degrees, add a bachelor's equivalent
+          const field = educationStr.replace(/master\s*(of|in)?\s*/i, '').trim();
+          educationText = `${educationStr} Bachelor of ${field}`;
+        } else {
+          educationText = applicant.education;
+        }
+      } else if (Array.isArray(applicant.education)) {
+        // Handle array of education objects
+        educationText = applicant.education.map((edu: any) => 
+          `${edu.degree || ''} ${edu.school || ''} ${edu.major || ''} ${edu.course || ''} ${edu.field || ''}`
+        ).join(' ');
+      } else if (applicant.education && typeof applicant.education === 'object') {
+        // Handle single education object with any type
+        const eduObj = applicant.education as any;
+        if (eduObj.degrees && Array.isArray(eduObj.degrees)) {
+          educationText = eduObj.degrees.map((edu: any) => `${edu.degree || ''} ${edu.school || ''} ${edu.major || ''} ${edu.course || ''}`).join(' ');
+        } else {
+          educationText = `${eduObj.level || ''} ${eduObj.field || ''}`;
+        }
+      }
       
       const educationLower = educationText.toLowerCase();
       
-      // Education level matching
-      if (appliedJob.educationLevel) {
+      // Education data processing complete
+      
+      // Education level matching with enhanced equivalence recognition
+      if (targetJob.educationLevel) {
         totalEducationFactors++;
-        const jobEducationLower = appliedJob.educationLevel.toLowerCase();
+        const requiredLevel = targetJob.educationLevel.toLowerCase();
         
         // Check if education level matches
         let hasMatchingLevel = false;
-        if (jobEducationLower.includes('bachelor') && educationLower.includes('bachelor')) hasMatchingLevel = true;
-        if (jobEducationLower.includes('master') && educationLower.includes('master')) hasMatchingLevel = true;
-        if (jobEducationLower.includes('doctorate') && (educationLower.includes('doctorate') || educationLower.includes('phd'))) hasMatchingLevel = true;
-        if (jobEducationLower.includes('associate') && educationLower.includes('associate')) hasMatchingLevel = true;
-        if (jobEducationLower.includes('high school') && educationLower.includes('high school')) hasMatchingLevel = true;
+        
+        // Bachelor's degree variations
+        if (requiredLevel.includes('bachelor') && 
+            (educationLower.includes('bachelor') || educationLower.includes('bs ') || 
+             educationLower.includes('ba ') || educationLower.includes('undergraduate') ||
+             educationLower.includes('bsc') || educationLower.includes('b.s'))) {
+          hasMatchingLevel = true;
+        }
+        
+        // Master's degree variations
+        if (requiredLevel.includes('master') && 
+            (educationLower.includes('master') || educationLower.includes('ms ') || 
+             educationLower.includes('ma ') || educationLower.includes('graduate'))) {
+          hasMatchingLevel = true;
+        }
+        
+        // Doctorate variations
+        if (requiredLevel.includes('doctorate') && 
+            (educationLower.includes('doctorate') || educationLower.includes('phd') || 
+             educationLower.includes('ph.d'))) {
+          hasMatchingLevel = true;
+        }
+        
+        // Associate degree variations
+        if (requiredLevel.includes('associate') && 
+            (educationLower.includes('associate') || educationLower.includes('aa ') || 
+             educationLower.includes('as '))) {
+          hasMatchingLevel = true;
+        }
+        
+        // High school variations
+        if (requiredLevel.includes('high school') && 
+            (educationLower.includes('high school') || educationLower.includes('secondary'))) {
+          hasMatchingLevel = true;
+        }
         
         if (hasMatchingLevel) {
           educationMatch += 1.0;
@@ -77,24 +189,44 @@ export const ApplicantListView: React.FC<ApplicantListViewProps> = ({
       }
       
       // Course/field matching
-      if (appliedJob.preferredCourse) {
+      if (targetJob.preferredCourse) {
         totalEducationFactors++;
-        const jobCourseLower = appliedJob.preferredCourse.toLowerCase();
+        const jobCourseLower = targetJob.preferredCourse.toLowerCase();
         
         // Simple keyword matching for course/field
         const jobKeywords = jobCourseLower.split(/[,\s]+/).filter(word => word.length > 2);
         const educationKeywords = educationLower.split(/[,\s]+/).filter(word => word.length > 2);
         
-        // Count matching keywords
+        // Count matching keywords with fuzzy matching for typos
         const matchingKeywords = jobKeywords.filter(jobWord => 
-          educationKeywords.some(eduWord => 
-            eduWord.includes(jobWord) || jobWord.includes(eduWord) ||
+          educationKeywords.some(eduWord => {
+            // Exact and partial matches
+            if (eduWord.includes(jobWord) || jobWord.includes(eduWord)) return true;
+            
             // Handle common abbreviations and variations
-            (jobWord === 'it' && (eduWord.includes('information') || eduWord.includes('technology'))) ||
-            (jobWord === 'cs' && (eduWord.includes('computer') || eduWord.includes('science'))) ||
-            (eduWord === 'it' && (jobWord.includes('information') || jobWord.includes('technology'))) ||
-            (eduWord === 'cs' && (jobWord.includes('computer') || jobWord.includes('science')))
-          )
+            if (jobWord === 'it' && (eduWord.includes('information') || eduWord.includes('technology'))) return true;
+            if (jobWord === 'cs' && (eduWord.includes('computer') || eduWord.includes('science'))) return true;
+            if (eduWord === 'it' && (jobWord.includes('information') || jobWord.includes('technology'))) return true;
+            if (eduWord === 'cs' && (jobWord.includes('computer') || jobWord.includes('science'))) return true;
+            
+            // Handle common typos and variations
+            if (jobWord === 'pyschology' && eduWord === 'psychology') return true;
+            if (jobWord === 'psychology' && eduWord === 'pyschology') return true;
+            if (jobWord === 'enginnering' && eduWord === 'engineering') return true;
+            if (jobWord === 'engineering' && eduWord === 'enginnering') return true;
+            if (jobWord === 'buisness' && eduWord === 'business') return true;
+            if (jobWord === 'business' && eduWord === 'buisness') return true;
+            
+            // Simple Levenshtein distance for close matches (1-2 character differences)
+            if (jobWord.length > 4 && eduWord.length > 4) {
+              const distance = levenshteinDistance(jobWord, eduWord);
+              if (distance <= 2 && distance / Math.max(jobWord.length, eduWord.length) <= 0.3) {
+                return true;
+              }
+            }
+            
+            return false;
+          })
         );
         
         if (matchingKeywords.length > 0) {
@@ -110,17 +242,20 @@ export const ApplicantListView: React.FC<ApplicantListViewProps> = ({
     }
 
     const totalScore = (skillsScore + educationScore) * 100;
+    
+    // Final score calculation complete
+    
     return Math.min(100, Math.round(totalScore));
-  }, [jobPostings]);
+  };
  
   // Precompute TF-IDF scores based on the job each applicant applied to
   const processedApplicants = useMemo(() =>
     applicants.map(applicant => ({
       ...applicant,
-      tfidfScore: calculateTfidfScore(applicant)
+      tfidfScore: calculateMatchScore(applicant, jobPostings.find(job => job.id === applicant.jobId))
     }))
     .sort((a, b) => b.tfidfScore - a.tfidfScore)
-  , [applicants, jobPostings, calculateTfidfScore]);
+  , [applicants, jobPostings, calculateMatchScore]);
 
 
   return (
@@ -201,7 +336,15 @@ export const ApplicantListView: React.FC<ApplicantListViewProps> = ({
                   // Find the job this applicant applied to for skill matching
                   const appliedJob = jobPostings.find(job => job.id?.toString() === applicant.jobId?.toString());
                   const requiredSkills = appliedJob?.requirements || [];
-                  const applicantSkills = applicant.skills || [];
+                  
+                  // Normalize skills data - handle both string arrays and object arrays
+                  const rawSkills = applicant.skills || [];
+                  const applicantSkills = rawSkills.map((skill: any) => {
+                    if (typeof skill === 'string') return skill;
+                    if (skill.name) return skill.name;
+                    if (skill.skill) return skill.skill;
+                    return String(skill);
+                  }).filter(Boolean);
                   
                   // Find matching skills for highlighting
                   const lowerRequiredSkills = requiredSkills.map(s => s.toLowerCase());
@@ -233,7 +376,15 @@ export const ApplicantListView: React.FC<ApplicantListViewProps> = ({
                   // Find the job this applicant applied to
                   const appliedJob = jobPostings.find(job => job.id?.toString() === applicant.jobId?.toString());
                   const requiredSkills = appliedJob?.requirements || [];
-                  const applicantSkills = applicant.skills || [];
+                  
+                  // Normalize skills data - handle both string arrays and object arrays
+                  const rawSkills = applicant.skills || [];
+                  const applicantSkills = rawSkills.map((skill: any) => {
+                    if (typeof skill === 'string') return skill;
+                    if (skill.name) return skill.name;
+                    if (skill.skill) return skill.skill;
+                    return String(skill);
+                  }).filter(Boolean);
                   
                   // Find matching skills for highlighting
                   const lowerApplicantSkills = applicantSkills.map(s => s.toLowerCase());

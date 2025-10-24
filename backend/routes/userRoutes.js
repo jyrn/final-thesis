@@ -218,6 +218,9 @@ router.delete('/profile-picture-cloud', verifyToken, async (req, res) => {
   }
 });
 
+// Update user Firebase UID (for Google OAuth linking) - no auth required
+router.put('/update-firebase-uid', userController.updateUserFirebaseUID);
+
 // Legacy profile picture endpoints removed - use /profile-picture-cloud instead
 
 module.exports = router;

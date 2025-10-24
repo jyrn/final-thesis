@@ -7,6 +7,7 @@ import ResumeEditModal from '../../ResumeEditModal/ResumeEditModal';
 import { useNavigate } from 'react-router-dom';
 import PDFPreview from '../../shared/PDFPreview';
 import { getImageSrc } from '../../../utils/imageUtils';
+import API_BASE_URL from '../../../config/apiConfig';
 
 interface JobseekerProfile {
   _id?: string;
@@ -188,8 +189,22 @@ const SettingsTab: React.FC<SettingsTabProps> = ({ onNavigate }) => {
             const resumes: { generated?: { url: string; label: string }; uploaded?: { url: string; label: string } } = {};
             
             if (resumeResponse.data.fileUrl) {
+              // Construct proper URL - fileUrl already includes /uploads path
+              const baseUrl = API_BASE_URL.replace('/api', ''); // Remove /api suffix for file URLs
+              const fileUrl = resumeResponse.data.fileUrl.startsWith('/') 
+                ? resumeResponse.data.fileUrl 
+                : `/${resumeResponse.data.fileUrl}`;
+              const fullUrl = `${baseUrl}${fileUrl}`;
+              
+              console.log('🔧 Resume URL Debug:', {
+                baseUrl,
+                fileUrl: resumeResponse.data.fileUrl,
+                processedFileUrl: fileUrl,
+                fullUrl
+              });
+              
               resumes.generated = {
-                url: `https://skillsync-backend-gwwo.onrender.com${resumeResponse.data.fileUrl}`,
+                url: fullUrl,
                 label: 'Generated Resume'
               };
             }
@@ -495,21 +510,29 @@ const SettingsTab: React.FC<SettingsTabProps> = ({ onNavigate }) => {
   const switchResume = async (type: 'generated' | 'uploaded') => {
     try {
       if (type === 'generated' && availableResumes.generated) {
+        console.log('🔧 Switching to generated resume:', availableResumes.generated.url);
         try {
           const pdfResponse = await fetch(availableResumes.generated.url, { mode: 'cors' });
+          console.log('🔧 PDF fetch response status:', pdfResponse.status, pdfResponse.statusText);
+          
           if (pdfResponse.ok) {
             const arrayBuffer = await pdfResponse.arrayBuffer();
             const pdfBlob = new Blob([arrayBuffer], { type: 'application/pdf' });
             const blobUrl = URL.createObjectURL(pdfBlob);
             setResumePreviewUrl(blobUrl);
+            console.log('🔧 Successfully loaded PDF as blob');
           } else {
+            console.log('🔧 PDF fetch failed, using direct URL');
             setResumePreviewUrl(availableResumes.generated.url);
           }
         } catch (fetchError) {
+          console.error('🔧 PDF fetch error:', fetchError);
           setResumePreviewUrl(availableResumes.generated.url);
+          setError('Failed to load generated resume. The file may not exist or be accessible.');
         }
         setActiveResumeType('generated');
       } else if (type === 'uploaded' && availableResumes.uploaded) {
+        console.log('🔧 Switching to uploaded resume:', availableResumes.uploaded.url);
         try {
           const pdfResponse = await fetch(availableResumes.uploaded.url, { mode: 'cors' });
           if (pdfResponse.ok) {
@@ -521,11 +544,16 @@ const SettingsTab: React.FC<SettingsTabProps> = ({ onNavigate }) => {
             setResumePreviewUrl(availableResumes.uploaded.url);
           }
         } catch (fetchError) {
+          console.error('🔧 Uploaded PDF fetch error:', fetchError);
           setResumePreviewUrl(availableResumes.uploaded.url);
+          setError('Failed to load uploaded resume. The file may not exist or be accessible.');
         }
         setActiveResumeType('uploaded');
       }
-    } catch (error) {    }
+    } catch (error) {
+      console.error('🔧 Resume switch error:', error);
+      setError('Failed to switch resume view.');
+    }
   };
 
   const handleOriginalResumeVisibilityToggle = async (showToEmployers: boolean) => {

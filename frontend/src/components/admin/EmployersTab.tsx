@@ -8,7 +8,7 @@ import './EmployersTab.css';
 
 interface EmployersTabProps {
   pendingEmployers: PendingEmployer[];
-  onEmployerAction: (employerId: string, action: 'approve' | 'reject', reason?: string) => void;
+  onEmployerAction: (employerId: string, action: 'approve' | 'reject' | 'remove', reason?: string) => void;
   loading?: boolean;
 }
 
@@ -67,6 +67,10 @@ const EmployersTab: React.FC<EmployersTabProps> = ({
         }}
         onReject={(reason) => {
           onEmployerAction(selectedEmployer._id, 'reject', reason);
+          handleBackToList();
+        }}
+        onRemove={(reason) => {
+          onEmployerAction(selectedEmployer._id, 'remove', reason);
           handleBackToList();
         }}
         loading={loading}

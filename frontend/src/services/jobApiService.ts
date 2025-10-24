@@ -98,14 +98,22 @@ class JobApiService {
   // Employer Methods
   async createJob(jobData: JobPostingData): Promise<any> {
     try {
+      console.log('JobApiService: Creating job with data:', JSON.stringify(jobData, null, 2));
+      
       const response = await apiService.createJob(jobData);
       
+      console.log('JobApiService: Received response:', JSON.stringify(response, null, 2));
+      
       if (!response.success) {
+        console.error('JobApiService: Job creation failed:', response.error);
         throw new Error(response.error || 'Failed to create job posting');
       }
 
+      console.log('JobApiService: Job created successfully, returning data:', JSON.stringify(response.data, null, 2));
       return response.data;
-    } catch (error) {      throw error;
+    } catch (error) {
+      console.error('JobApiService: Exception during job creation:', error);
+      throw error;
     }
   }
 
