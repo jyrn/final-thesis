@@ -887,7 +887,7 @@ This helps maintain database hygiene by managing inactive accounts while giving 
                           <strong>Status:</strong> 
                           <span className={`status-badge ${viewModal.jobseeker.status}`} style={{marginLeft: '0.5rem'}}>
                             {viewModal.jobseeker.status === 'active' ? 'Active' : 
-                             viewModal.jobseeker.status === 'inactive' ? 'Suspended' : 
+                             viewModal.jobseeker.status === 'inactive' ? 'Inactive' : 
                              viewModal.jobseeker.status === 'removed' ? 'Removed' : 'Unknown'}
                           </span>
                         </div>

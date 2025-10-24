@@ -154,7 +154,7 @@ class EmailService {
     try {
       if (this.useResend) {
         const result = await this.resend.emails.send({
-          from: 'SkillSync <onboarding@resend.dev>',
+          from: 'SkillSync <noreply@skill-sync.org>',
           to: [mailOptions.to],
           subject: mailOptions.subject,
           html: mailOptions.html
@@ -228,7 +228,7 @@ class EmailService {
     try {
       if (this.useResend) {
         const result = await this.resend.emails.send({
-          from: 'SkillSync <onboarding@resend.dev>',
+          from: 'SkillSync <noreply@skill-sync.org>',
           to: [mailOptions.to],
           subject: mailOptions.subject,
           html: mailOptions.html
@@ -479,7 +479,7 @@ class EmailService {
     try {
       if (this.useResend) {
         const result = await this.resend.emails.send({
-          from: 'SkillSync <onboarding@resend.dev>',
+          from: 'SkillSync <noreply@skill-sync.org>',
           to: [mailOptions.to],
           subject: mailOptions.subject,
           html: mailOptions.html
@@ -573,7 +573,7 @@ class EmailService {
     try {
       if (this.useResend) {
         const result = await this.resend.emails.send({
-          from: 'SkillSync <onboarding@resend.dev>',
+          from: 'SkillSync <noreply@skill-sync.org>',
           to: [mailOptions.to],
           subject: mailOptions.subject,
           html: mailOptions.html
@@ -667,7 +667,7 @@ class EmailService {
     try {
       if (this.useResend) {
         const result = await this.resend.emails.send({
-          from: 'SkillSync <onboarding@resend.dev>',
+          from: 'SkillSync <noreply@skill-sync.org>',
           to: [mailOptions.to],
           subject: mailOptions.subject,
           html: mailOptions.html
@@ -755,7 +755,7 @@ class EmailService {
     try {
       if (this.useResend) {
         const result = await this.resend.emails.send({
-          from: 'SkillSync <onboarding@resend.dev>',
+          from: 'SkillSync <noreply@skill-sync.org>',
           to: [mailOptions.to],
           subject: mailOptions.subject,
           html: mailOptions.html
@@ -851,7 +851,7 @@ class EmailService {
     try {
       if (this.useResend) {
         const result = await this.resend.emails.send({
-          from: 'SkillSync <onboarding@resend.dev>',
+          from: 'SkillSync <noreply@skill-sync.org>',
           to: [mailOptions.to],
           subject: mailOptions.subject,
           html: mailOptions.html
@@ -949,7 +949,7 @@ class EmailService {
     try {
       if (this.useResend) {
         const result = await this.resend.emails.send({
-          from: 'SkillSync <onboarding@resend.dev>',
+          from: 'SkillSync <noreply@skill-sync.org>',
           to: [mailOptions.to],
           subject: mailOptions.subject,
           html: mailOptions.html
@@ -1030,7 +1030,7 @@ class EmailService {
     try {
       if (this.useResend) {
         const result = await this.resend.emails.send({
-          from: 'SkillSync <onboarding@resend.dev>',
+          from: 'SkillSync <noreply@skill-sync.org>',
           to: [mailOptions.to],
           subject: mailOptions.subject,
           html: mailOptions.html
@@ -1120,7 +1120,7 @@ class EmailService {
     try {
       if (this.useResend) {
         const result = await this.resend.emails.send({
-          from: 'SkillSync <onboarding@resend.dev>',
+          from: 'SkillSync <noreply@skill-sync.org>',
           to: [mailOptions.to],
           subject: mailOptions.subject,
           html: mailOptions.html
@@ -1309,7 +1309,7 @@ class EmailService {
     try {
       if (this.useResend) {
         const result = await this.resend.emails.send({
-          from: 'SkillSync <onboarding@resend.dev>',
+          from: 'SkillSync <noreply@skill-sync.org>',
           to: [mailOptions.to],
           subject: mailOptions.subject,
           html: mailOptions.html
@@ -1439,7 +1439,7 @@ class EmailService {
     try {
       if (this.useResend) {
         const result = await this.resend.emails.send({
-          from: 'SkillSync <onboarding@resend.dev>',
+          from: 'SkillSync <noreply@skill-sync.org>',
           to: [mailOptions.to],
           subject: mailOptions.subject,
           html: mailOptions.html
@@ -1551,7 +1551,7 @@ class EmailService {
     try {
       if (this.useResend) {
         const result = await this.resend.emails.send({
-          from: 'SkillSync <onboarding@resend.dev>',
+          from: 'SkillSync <noreply@skill-sync.org>',
           to: [mailOptions.to],
           subject: mailOptions.subject,
           html: mailOptions.html
@@ -1664,7 +1664,7 @@ class EmailService {
     try {
       if (this.useResend) {
         const result = await this.resend.emails.send({
-          from: 'SkillSync <onboarding@resend.dev>',
+          from: 'SkillSync <noreply@skill-sync.org>',
           to: [mailOptions.to],
           subject: mailOptions.subject,
           html: mailOptions.html

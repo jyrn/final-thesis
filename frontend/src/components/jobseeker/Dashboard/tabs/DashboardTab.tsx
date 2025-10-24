@@ -30,7 +30,7 @@ const DashboardTab: React.FC<any> = ({
       <StatsGrid
         applicationsCount={applications.length}
         savedJobsCount={savedJobs.size}
-        interviewsCount={applications.filter((app: any) => app.status === 'interview').length}
+        interviewsCount={applications.filter((app: any) => app.status === 'initial_interview' || app.status === 'final_interview').length}
         availableJobsCount={jobs.length}
         onNavigate={onNavigate}
       />
