@@ -219,6 +219,7 @@ interface EmployerReportRow {
   status: string;
   dateRegistered: string;
   applicationCount: number;
+  jobPostingsCount: number;
 }
 
 interface JobReportRow {
@@ -1472,6 +1473,7 @@ const ReportsTab: React.FC = () => {
                               <SortableHeader column="industry">Industry</SortableHeader>
                               <SortableHeader column="email">Email</SortableHeader>
                               <SortableHeader column="status">Status</SortableHeader>
+                              <SortableHeader column="jobPostingsCount" isSortable={true}>Job Postings</SortableHeader>
                               <SortableHeader column="applicationCount" isSortable={true}>Total Applications</SortableHeader>
                               <SortableHeader column="dateRegistered" isSortable={true}>Date Registered</SortableHeader>
                             </tr>
@@ -1486,6 +1488,9 @@ const ReportsTab: React.FC = () => {
                                   <span className={`status-badge status-${employer.status.toLowerCase()}`}>
                                     {employer.status}
                                   </span>
+                                </td>
+                                <td className="count-cell">
+                                  <span className="count-badge">{employer.jobPostingsCount || 0}</span>
                                 </td>
                                 <td className="count-cell">
                                   <span className="count-badge">{employer.applicationCount}</span>

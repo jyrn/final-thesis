@@ -543,7 +543,8 @@ class PDFReportService {
         { key: 'industry', label: 'Industry' },
         { key: 'email', label: 'Email' },
         { key: 'status', label: 'Status' },
-        { key: 'totalApplications', label: 'Total Applications' },
+        { key: 'jobPostingsCount', label: 'Job Postings' },
+        { key: 'applicationCount', label: 'Total Applications' },
         { key: 'dateRegistered', label: 'Date Registered' }
       ];
     }
@@ -563,7 +564,7 @@ class PDFReportService {
   }
 
   extractCellValue(row, key) {
-    let value = row[key];
+    let value = undefined;
     
     // Handle nested objects
     if (key.includes('.')) {
@@ -598,23 +599,31 @@ class PDFReportService {
     }
     
     // Handle direct fields for both employer and job data
-    if (key === 'companyName' && row.companyName) {
+    if (key === 'companyName') {
       value = row.companyName;
-    } else if (key === 'industry' && row.industry) {
+    } else if (key === 'industry') {
       value = row.industry;
-    } else if (key === 'accountStatus' && row.accountStatus) {
+    } else if (key === 'accountStatus') {
       value = row.accountStatus;
+    } else if (key === 'status') {
+      value = row.status;
     }
     
     // Handle job-specific fields
-    if (key === 'title' && row.title) {
+    if (key === 'title') {
       value = row.title;
-    } else if (key === 'department' && row.department) {
+    } else if (key === 'department') {
       value = row.department;
-    } else if (key === 'salary' && row.salary) {
+    } else if (key === 'salary') {
       value = row.salary;
-    } else if (key === 'totalApplications' && row.totalApplications !== undefined) {
+    } else if (key === 'totalApplications') {
       value = row.totalApplications;
+    } else if (key === 'applicationCount') {
+      value = row.applicationCount;
+    } else if (key === 'jobPostingsCount') {
+      value = row.jobPostingsCount;
+    } else if (key === 'dateRegistered') {
+      value = row.dateRegistered;
     }
     
     // If value is still undefined, try to get it directly from row
@@ -650,7 +659,7 @@ class PDFReportService {
       if (key === 'salary') {
         return `₱${value.toLocaleString()}`;
       }
-      return value.toLocaleString();
+      return value.toString();
     }
     
     // Truncate long strings appropriately
@@ -673,6 +682,8 @@ class PDFReportService {
       'age': 55,
       'companyName': 110,
       'title': 100,
+      'jobPostingsCount': 85,
+      'applicationCount': 90,
       'totalApplications': 90,
       'department': 85,
       'industry': 90,

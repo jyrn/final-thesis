@@ -535,6 +535,7 @@ class XLSXReportService {
         { key: 'companyName', label: 'Company Name' },
         { key: 'industry', label: 'Industry' },
         { key: 'accountStatus', label: 'Status' },
+        { key: 'jobPostingsCount', label: 'Job Postings' },
         { key: 'createdAt', label: 'Registration Date' }
       ];
     } else {
@@ -599,6 +600,8 @@ class XLSXReportService {
       value = row.salary;
     } else if (key === 'totalApplications' && row.totalApplications !== undefined) {
       value = row.totalApplications;
+    } else if (key === 'jobPostingsCount' && row.jobPostingsCount !== undefined) {
+      value = row.jobPostingsCount;
     }
     
     // If value is still undefined, try to get it directly from row

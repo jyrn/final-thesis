@@ -1008,6 +1008,17 @@ router.get('/reports/employers-data', verifyToken, adminMiddleware, async (req, 
       applicationCountMap[count._id] = count.applicationCount;
     });
 
+    // Get job postings count for each employer
+    const jobCounts = await Job.aggregate([
+      { $match: { employerUid: { $in: employerIds } } },
+      { $group: { _id: '$employerUid', jobPostingsCount: { $sum: 1 } } }
+    ]);
+    
+    const jobCountMap = {};
+    jobCounts.forEach(count => {
+      jobCountMap[count._id] = count.jobPostingsCount;
+    });
+
     const formattedData = employers.map(employer => ({
       id: employer._id,
       companyName: employer.companyName || 'N/A',
@@ -1015,7 +1026,8 @@ router.get('/reports/employers-data', verifyToken, adminMiddleware, async (req, 
       email: employer.email || 'N/A',
       status: employer.accountStatus || 'pending',
       dateRegistered: employer.createdAt,
-      applicationCount: applicationCountMap[employer.uid || employer._id] || 0
+      applicationCount: applicationCountMap[employer.uid || employer._id] || 0,
+      jobPostingsCount: jobCountMap[employer.uid || employer._id] || 0
     }));
 
     res.json({
@@ -2078,7 +2090,8 @@ router.post('/reports/generate', verifyToken, adminMiddleware, async (req, res) 
             industry: emp.industry || 'N/A', 
             email: emp.email || 'N/A',
             status: emp.accountStatus || 'pending',
-            totalApplications: emp.totalApplications || 0,
+            jobPostingsCount: emp.totalJobPostings || 0,
+            applicationCount: emp.totalApplications || 0,
             dateRegistered: emp.createdAt ? new Date(emp.createdAt).toLocaleDateString() : 'N/A'
           })))
         };
