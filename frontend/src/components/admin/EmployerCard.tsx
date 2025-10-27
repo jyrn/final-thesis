@@ -1,6 +1,5 @@
 import React from 'react';
-import { FiMapPin, FiUsers, FiCalendar, FiEye, FiMail, FiPhone, FiFileText, FiChevronRight } from 'react-icons/fi';
-import styles from './EmployerCard.module.css';
+import { FiMapPin, FiMail, FiPhone, FiFileText, FiChevronRight } from 'react-icons/fi';
 import { getImageSrc } from '../../utils/imageUtils';
 import { PendingEmployer } from '../../types/admin';
 
@@ -15,13 +14,6 @@ const EmployerCard: React.FC<EmployerCardProps> = ({
   onClick,
   loading = false
 }) => {
-  const formatContactPersonName = () => {
-    const { firstName, lastName } = employer.contactPerson || {};
-    if (firstName && lastName) {
-      return `${firstName} ${lastName}`;
-    }
-    return firstName || lastName || 'Not provided';
-  };
 
   const getLocationSummary = () => {
     const address = employer.address;
@@ -36,7 +28,7 @@ const EmployerCard: React.FC<EmployerCardProps> = ({
   };
 
   const getCompanyInitials = () => {
-    const companyName = employer.companyDetails?.companyName || employer.userId.companyName;
+    const companyName = employer.companyDetails?.companyName || employer.userId?.companyName;
     if (!companyName) return 'C';
     
     // Split by spaces and take first letter of each word, max 2 letters
@@ -48,7 +40,7 @@ const EmployerCard: React.FC<EmployerCardProps> = ({
   };
 
   const getInitialsColor = () => {
-    const companyName = employer.companyDetails?.companyName || employer.userId.companyName || '';
+    const companyName = employer.companyDetails?.companyName || employer.userId?.companyName || '';
     // Generate a consistent color based on company name
     const colors = [
       '#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6',
@@ -59,9 +51,10 @@ const EmployerCard: React.FC<EmployerCardProps> = ({
   };
 
   const getCompanyLogo = () => {
-    const profilePicture = employer.profilePicture || employer.userId.profilePicture;
+    const profilePicture = employer.profilePicture || employer.userId?.profilePicture;
     
-    // Debug logging    if (profilePicture) {      return (
+    if (profilePicture) {
+      return (
         <div 
           className="company-initials"
           style={{ 
@@ -84,7 +77,9 @@ const EmployerCard: React.FC<EmployerCardProps> = ({
           />
         </div>
       );
-    }    return (
+    }
+
+    return (
       <div 
         className="company-initials"
         style={{ backgroundColor: getInitialsColor() }}
@@ -102,7 +97,7 @@ const EmployerCard: React.FC<EmployerCardProps> = ({
         </div>
         <div className="company-info">
           <h4 className="company-name">
-            {employer.companyDetails?.companyName || employer.userId.companyName}
+            {employer.companyDetails?.companyName || employer.userId?.companyName || 'Company Name Not Available'}
           </h4>
           <div className="company-meta">
             <span className="industry">
@@ -127,7 +122,7 @@ const EmployerCard: React.FC<EmployerCardProps> = ({
         <div className="quick-info">
           <div className="info-item">
             <FiMail className="info-icon" />
-            <span className="info-text">{employer.userId.email}</span>
+            <span className="info-text">{employer.userId?.email || 'Email not available'}</span>
           </div>
           
           {employer.contactPerson?.phoneNumber && (
@@ -154,7 +149,7 @@ const EmployerCard: React.FC<EmployerCardProps> = ({
         </div>
         
         <div className="registration-date">
-          Registered: {new Date(employer.userId.createdAt).toLocaleDateString()}
+          Registered: {employer.userId?.createdAt ? new Date(employer.userId.createdAt).toLocaleDateString() : 'Date not available'}
         </div>
         
         <div className="view-details">
