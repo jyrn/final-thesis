@@ -1557,7 +1557,7 @@ const EmployerDashboard: React.FC = () => {
                 // Clear any stored authentication data
                 localStorage.removeItem('authToken');
                 sessionStorage.clear();
-                window.location.href = '/auth/employer';
+                window.location.hash = '#/auth/employer';
               }}
             />
           )}
