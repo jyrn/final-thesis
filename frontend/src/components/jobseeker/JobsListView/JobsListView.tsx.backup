@@ -125,43 +125,18 @@ export const JobsListView: React.FC<JobsListViewProps> = ({
       requirements.forEach(req => {
         const lowerReq = req.toLowerCase();
         
-        // Extract exact skill matches with word boundaries
+        // Use word boundaries to avoid partial matches like 'go' from 'Good'
         allSkills.forEach(skill => {
-          // Create regex with word boundaries to avoid substring matches
           const regex = new RegExp(`\\b${skill.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'i');
           if (regex.test(lowerReq)) {
             extractedSkills.add(skill);
-          }
-        });
-        
-        // Extract skills from common patterns
-        const patterns = [
-          /(?:experience with|proficient in|knowledge of|familiar with|skilled in)\s+([\w\s,/+-]+?)(?:\.|,|;|$)/gi,
-          /(?:must have|required|need)\s+([\w\s,/+-]+?)(?:\s+(?:experience|skills?|knowledge))/gi,
-          /([\w+#-]{3,})\s+(?:programming|development|framework|library|database|tool)/gi,
-          /\b([a-z]{3,})(?:\.js|\.py|\.php|\.rb|\.go)\b/gi
-        ];
-        
-        patterns.forEach(pattern => {
-          let match;
-          while ((match = pattern.exec(lowerReq)) !== null) {
-            const extracted = match[1].trim();
-            if (extracted.length > 1 && extracted.length < 30) {
-              // Split by common separators and clean
-              extracted.split(/[,/&+\s]+/).forEach(skill => {
-                const cleanSkill = skill.trim().replace(/[^a-z0-9+#-]/g, '');
-                if (cleanSkill.length > 1 && allSkills.includes(cleanSkill)) {
-                  extractedSkills.add(cleanSkill);
-                }
-              });
-            }
           }
         });
       });
       
       return Array.from(extractedSkills);
     };
-    
+
     // Create TF-IDF vectors
     const createTFIDFVector = (skills: string[], allSkills: string[]): number[] => {
       const vector = new Array(allSkills.length).fill(0);
@@ -176,6 +151,87 @@ export const JobsListView: React.FC<JobsListViewProps> = ({
       allSkills.forEach((skill, index) => {
         const tf = skillCounts.has(skill) ? 1 : 0; // Binary presence
         vector[index] = tf;
+      });
+      
+      return vector;
+    };
+    
+    // Calculate cosine similarity
+    const cosineSimilarity = (vecA: number[], vecB: number[]): number => {
+      let dotProduct = 0;
+      let normA = 0;
+      let normB = 0;
+      
+      for (let i = 0; i < vecA.length; i++) {
+        dotProduct += vecA[i] * vecB[i];
+        normA += vecA[i] * vecA[i];
+        normB += vecB[i] * vecB[i];
+      }
+      
+      if (normA === 0 || normB === 0) return 0;
+      return dotProduct / (Math.sqrt(normA) * Math.sqrt(normB));
+    };
+    
+    // Extract keywords from job requirements
+    const jobKeywords = extractKeywords(job.requirements);
+    const lowerJobseekerSkills = jobseekerSkills.map(s => s.toLowerCase());
+    
+    if (debug) console.log('Extracted Job Keywords:', jobKeywords);
+    if (debug) console.log('Normalized Jobseeker Skills:', lowerJobseekerSkills);
+    
+    // Create unified skill vocabulary
+    const allSkillsVocab = Array.from(new Set([...jobKeywords, ...lowerJobseekerSkills]));
+    
+    if (debug) console.log('All Skills Vocabulary:', allSkillsVocab);
+    
+    // Create TF-IDF vectors
+    const jobVector = createTFIDFVector(jobKeywords, allSkillsVocab);
+    const candidateVector = createTFIDFVector(lowerJobseekerSkills, allSkillsVocab);
+    
+    if (debug) console.log('Job Vector:', jobVector);
+    if (debug) console.log('Candidate Vector:', candidateVector);
+    
+    // Calculate cosine similarity
+    const cosineSim = cosineSimilarity(jobVector, candidateVector);
+    
+    // Calculate exact match rate for bonus
+    const exactMatches = lowerJobseekerSkills.filter(skill => jobKeywords.includes(skill));
+    const exactMatchRate = jobKeywords.length > 0 ? exactMatches.length / jobKeywords.length : 0;
+    
+    if (debug) console.log('Cosine Similarity:', cosineSim);
+    if (debug) console.log('Exact Matches:', exactMatches);
+    if (debug) console.log('Exact Match Rate:', exactMatchRate);
+    
+    // Combine cosine similarity (60%) with exact match bonus (40%)
+    const skillsScore = (cosineSim * 0.6 + exactMatchRate * 0.4) * 0.7;
+    
+    if (debug) console.log('Skills Score (70%):', skillsScore);
+
+    // Education matching (30% weight)
+    let educationScore = 0;
+    if (jobseekerEducation && (job.educationLevel || job.preferredCourse)) {
+      let educationMatch = 0;
+      let totalEducationFactors = 0;
+      
+      // Handle string, object, or array education data
+      let educationText = '';
+      if (typeof jobseekerEducation === 'string') {
+        educationText = jobseekerEducation;
+      } else if (Array.isArray(jobseekerEducation)) {
+        // Handle array of education objects
+        educationText = jobseekerEducation.map(edu => 
+          `${edu.degree || ''} ${edu.school || ''} ${edu.major || ''} ${edu.course || ''} ${edu.field || ''}`
+        ).join(' ');
+      } else if (jobseekerEducation && typeof jobseekerEducation === 'object') {
+        // Handle single education object
+        if (jobseekerEducation.degrees && Array.isArray(jobseekerEducation.degrees)) {
+          educationText = jobseekerEducation.degrees.map(edu => `${edu.degree || ''} ${edu.school || ''} ${edu.major || ''} ${edu.course || ''}`).join(' ');
+        } else {
+          educationText = `${jobseekerEducation.level || ''} ${jobseekerEducation.field || ''}`;
+        }
+      }
+      
+      const educationLower = educationText.toLowerCase();
       });
       
       return vector;

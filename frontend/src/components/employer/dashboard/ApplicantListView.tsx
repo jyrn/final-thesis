@@ -59,20 +59,163 @@ export const ApplicantListView: React.FC<ApplicantListViewProps> = ({
     const targetJob = jobData || jobPostings.find(job => job.id?.toString() === applicant.jobId?.toString());
     if (!targetJob || !targetJob.requirements || targetJob.requirements.length === 0) return 0;
 
-    const lowerTarget = targetJob.requirements.map(s => s.toLowerCase());
-    const lowerSkills = applicantSkills.map(s => s.toLowerCase());
-
-    // Skills matching (70% weight) - Improved algorithm
-    const matchingSkills = lowerSkills.filter(skill => lowerTarget.includes(skill));
-  
-    // Calculate skill match percentage based on required skills
-    const requiredSkillsMatchRate = matchingSkills.length / lowerTarget.length;
-  
-    // Bonus for additional relevant skills (capped to prevent over-inflation)
-    const additionalSkillsBonus = Math.min(0.1, (applicantSkills.length - lowerTarget.length) * 0.005);
-  
-    // Full credit when all required skills match, plus bonus for additional skills
-    const skillsScore = (requiredSkillsMatchRate + (requiredSkillsMatchRate === 1.0 ? additionalSkillsBonus : 0)) * 0.7; // 70% weight for skills
+    // Extract keywords from job requirements (handles natural language descriptions)
+    const extractKeywords = (requirements: string[]): string[] => {
+      const allSkills = [
+        // Technical Skills
+        'javascript', 'java', 'python', 'react', 'angular', 'vue', 'node', 'nodejs', 'express',
+        'typescript', 'html', 'css', 'sass', 'scss', 'bootstrap', 'tailwind', 'jquery',
+        'php', 'laravel', 'symfony', 'ruby', 'rails', 'go', 'rust', 'swift', 'kotlin',
+        'c++', 'c#', 'sql', 'mysql', 'postgresql', 'mongodb', 'redis', 'elasticsearch',
+        'docker', 'kubernetes', 'aws', 'azure', 'gcp', 'git', 'github', 'gitlab',
+        'jenkins', 'ci/cd', 'devops', 'linux', 'unix', 'bash', 'shell', 'powershell',
+        'machine learning', 'ml', 'ai', 'tensorflow', 'pytorch', 'pandas', 'numpy',
+        'data science', 'analytics', 'tableau', 'powerbi', 'excel', 'stata',
+        'ui/ux', 'figma', 'sketch', 'adobe', 'photoshop', 'illustrator', 'xd',
+        'agile', 'scrum', 'kanban', 'jira', 'confluence', 'slack', 'teams',
+        'testing', 'jest', 'cypress', 'selenium', 'junit', 'mocha', 'chai',
+        'frontend', 'backend', 'fullstack', 'web development', 'api', 'rest', 'graphql',
+        
+        // Soft Skills & Communication
+        'communication', 'leadership', 'teamwork', 'collaboration', 'problem solving',
+        'critical thinking', 'analytical thinking', 'creativity', 'innovation', 'adaptability',
+        'time management', 'organization', 'multitasking', 'attention to detail', 'reliability',
+        'initiative', 'self-motivated', 'proactive', 'flexibility', 'stress management',
+        'emotional intelligence', 'interpersonal skills', 'public speaking', 'presentation',
+        'negotiation', 'conflict resolution', 'mentoring', 'coaching', 'training',
+        
+        // Business & Management
+        'project management', 'product management', 'business analysis', 'strategic planning',
+        'budget management', 'financial analysis', 'risk management', 'quality assurance',
+        'process improvement', 'change management', 'stakeholder management', 'vendor management',
+        'customer service', 'client relations', 'sales', 'marketing', 'business development',
+        'market research', 'competitive analysis', 'roi analysis', 'kpi tracking',
+        
+        // Industry-Specific Skills
+        'healthcare', 'nursing', 'medical', 'patient care', 'clinical', 'pharmaceutical',
+        'accounting', 'bookkeeping', 'auditing', 'tax preparation', 'payroll', 'invoicing',
+        'legal', 'compliance', 'regulatory', 'contracts', 'litigation', 'intellectual property',
+        'education', 'teaching', 'curriculum development', 'lesson planning', 'assessment',
+        'engineering', 'mechanical', 'electrical', 'civil', 'chemical', 'manufacturing',
+        'construction', 'architecture', 'design', 'cad', 'autocad', 'solidworks',
+        'logistics', 'supply chain', 'inventory management', 'procurement', 'warehousing',
+        'retail', 'merchandising', 'pos systems', 'inventory control', 'customer relations',
+        
+        // Digital & Marketing Skills
+        'digital marketing', 'social media', 'content marketing', 'seo', 'sem', 'ppc',
+        'email marketing', 'copywriting', 'content creation', 'brand management',
+        'graphic design', 'video editing', 'photography', 'wordpress', 'cms',
+        'google analytics', 'facebook ads', 'linkedin', 'instagram', 'tiktok',
+        
+        // Languages & Certifications
+        'english', 'spanish', 'french', 'mandarin', 'japanese', 'german', 'korean',
+        'bilingual', 'multilingual', 'translation', 'interpretation',
+        'pmp', 'cissp', 'cpa', 'cfa', 'six sigma', 'lean', 'itil', 'prince2',
+        'microsoft office', 'word', 'powerpoint', 'outlook', 'google workspace',
+        
+        // Research & Analysis
+        'research', 'data analysis', 'statistical analysis', 'survey design',
+        'qualitative research', 'quantitative research', 'market analysis',
+        'competitive intelligence', 'trend analysis', 'forecasting', 'modeling'
+      ];
+      
+      const extractedSkills = new Set<string>();
+      
+      requirements.forEach(req => {
+        const lowerReq = req.toLowerCase();
+        
+        // Extract exact skill matches with word boundaries
+        allSkills.forEach(skill => {
+          // Create regex with word boundaries to avoid substring matches
+          const regex = new RegExp(`\\b${skill.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'i');
+          if (regex.test(lowerReq)) {
+            extractedSkills.add(skill);
+          }
+        });
+        
+        // Extract skills from common patterns
+        const patterns = [
+          /(?:experience with|proficient in|knowledge of|familiar with|skilled in)\s+([\w\s,/+-]+?)(?:\.|,|;|$)/gi,
+          /(?:must have|required|need)\s+([\w\s,/+-]+?)(?:\s+(?:experience|skills?|knowledge))/gi,
+          /([\w+#-]{3,})\s+(?:programming|development|framework|library|database|tool)/gi,
+          /\b([a-z]{3,})(?:\.js|\.py|\.php|\.rb|\.go)\b/gi
+        ];
+        
+        patterns.forEach(pattern => {
+          let match;
+          while ((match = pattern.exec(lowerReq)) !== null) {
+            const extracted = match[1].trim();
+            if (extracted.length > 1 && extracted.length < 30) {
+              // Split by common separators and clean
+              extracted.split(/[,/&+\s]+/).forEach(skill => {
+                const cleanSkill = skill.trim().replace(/[^a-z0-9+#-]/g, '');
+                if (cleanSkill.length > 1 && allSkills.includes(cleanSkill)) {
+                  extractedSkills.add(cleanSkill);
+                }
+              });
+            }
+          }
+        });
+      });
+      
+      return Array.from(extractedSkills);
+    };
+    
+    // Create TF-IDF vectors
+    const createTFIDFVector = (skills: string[], allSkills: string[]): number[] => {
+      const vector = new Array(allSkills.length).fill(0);
+      const skillCounts = new Map<string, number>();
+      
+      // Count term frequencies
+      skills.forEach(skill => {
+        skillCounts.set(skill, (skillCounts.get(skill) || 0) + 1);
+      });
+      
+      // Calculate TF for each skill (simplified - just presence/absence)
+      allSkills.forEach((skill, index) => {
+        const tf = skillCounts.has(skill) ? 1 : 0; // Binary presence
+        vector[index] = tf;
+      });
+      
+      return vector;
+    };
+    
+    // Calculate cosine similarity
+    const cosineSimilarity = (vecA: number[], vecB: number[]): number => {
+      let dotProduct = 0;
+      let normA = 0;
+      let normB = 0;
+      
+      for (let i = 0; i < vecA.length; i++) {
+        dotProduct += vecA[i] * vecB[i];
+        normA += vecA[i] * vecA[i];
+        normB += vecB[i] * vecB[i];
+      }
+      
+      if (normA === 0 || normB === 0) return 0;
+      return dotProduct / (Math.sqrt(normA) * Math.sqrt(normB));
+    };
+    
+    // Extract keywords from job requirements
+    const jobKeywords = extractKeywords(targetJob.requirements);
+    const lowerApplicantSkills = applicantSkills.map(s => s.toLowerCase());
+    
+    // Create unified skill vocabulary
+    const allSkills = Array.from(new Set([...jobKeywords, ...lowerApplicantSkills]));
+    
+    // Create TF-IDF vectors
+    const jobVector = createTFIDFVector(jobKeywords, allSkills);
+    const candidateVector = createTFIDFVector(lowerApplicantSkills, allSkills);
+    
+    // Calculate cosine similarity score
+    const cosineSim = cosineSimilarity(jobVector, candidateVector);
+    
+    // Enhanced exact matching for bonus
+    const exactMatches = lowerApplicantSkills.filter(skill => jobKeywords.includes(skill));
+    const exactMatchRate = jobKeywords.length > 0 ? exactMatches.length / jobKeywords.length : 0;
+    
+    // Combine cosine similarity with exact matching bonus
+    const skillsScore = (cosineSim * 0.6 + exactMatchRate * 0.4) * 0.7; // 70% weight for skills
 
     // Skills matching calculation complete
 
