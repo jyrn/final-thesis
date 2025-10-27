@@ -188,6 +188,12 @@ export const PostJobTab: React.FC<PostJobTabProps> = ({
     if (formData.requirements.every(req => !req.trim())) {
       newErrors.requirements = 'At least one requirement is needed';
     }
+    if (!formData.educationLevel.trim()) {
+      newErrors.educationLevel = 'Education level is required';
+    }
+    if (!formData.preferredCourse.trim()) {
+      newErrors.preferredCourse = 'Preferred course/field is required';
+    }
 
     const minSalaryValue = formData.salaryMin?.toString().trim() || '';
     const maxSalaryValue = formData.salaryMax?.toString().trim() || '';
@@ -549,13 +555,16 @@ export const PostJobTab: React.FC<PostJobTabProps> = ({
                 </div>
 
                 <div className={styles.compactGroup}>
-                  <label className={styles.compactLabel}>Education Level</label>
+                  <label className={styles.compactLabel}>
+                    Education Level <span className={styles.required}>*</span>
+                  </label>
                   <select
-                    className={styles.compactSelect}
+                    className={`${styles.compactSelect} ${errors.educationLevel ? styles.inputError : ''}`}
                     value={formData.educationLevel}
                     onChange={(e) => handleInputChange('educationLevel', e.target.value)}
+                    required
                   >
-                    <option value="">Not Specified</option>
+                    <option value="" disabled>Select Education Level</option>
                     <option value="High School">High School</option>
                     <option value="Associate Degree">Associate Degree</option>
                     <option value="Bachelor's Degree">Bachelor's Degree</option>
@@ -566,13 +575,16 @@ export const PostJobTab: React.FC<PostJobTabProps> = ({
                 </div>
 
                 <div className={styles.compactGroup}>
-                  <label className={styles.compactLabel}>Preferred Course/Field</label>
+                  <label className={styles.compactLabel}>
+                    Preferred Course/Field <span className={styles.required}>*</span>
+                  </label>
                   <input
                     type="text"
-                    className={styles.compactInput}
+                    className={`${styles.compactInput} ${errors.preferredCourse ? styles.inputError : ''}`}
                     value={formData.preferredCourse}
                     onChange={(e) => handleInputChange('preferredCourse', e.target.value)}
                     placeholder="e.g. Computer Science, Engineering"
+                    required
                   />
                 </div>
 
