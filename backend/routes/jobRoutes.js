@@ -43,20 +43,38 @@ router.get('/', async (req, res) => {
     const endIndex = page * limit;
     const paginatedJobs = jobs.slice(startIndex, endIndex);
 
-    // Convert to public format and add company profile pictures
+    // Convert to public format and add fresh company details and profile pictures
     const publicJobs = await Promise.all(paginatedJobs.map(async (job) => {
       const jobData = job.getPublicData();
       
-      // Get employer's profile picture
+      // Get fresh employer details and profile picture
       try {
         const employer = await Employer.findById(job.employerId);
         if (employer) {
+          // Update company details with fresh data from employer profile
+          jobData.companyDetails = {
+            ...jobData.companyDetails,
+            name: employer.companyName,
+            description: employer.companyDescription,
+            industry: employer.industry,
+            website: employer.website,
+            size: employer.companySize,
+            founded: employer.foundedYear,
+            headquarters: employer.address?.city ? 
+              `${employer.address.city}, ${employer.address.province || ''}, ${employer.address.country || 'Philippines'}`.trim() : 
+              'Philippines',
+            isVerified: employer.accountStatus === 'verified'
+          };
+          
+          // Get employer's profile picture
           const user = await User.findOne({ uid: employer.uid });
           if (user && user.profilePicture) {
             jobData.companyLogo = user.profilePicture;
           }
         }
-      } catch (error) {      }
+      } catch (error) {
+        console.error('Error fetching employer details for job:', job._id, error);
+      }
       
       return jobData;
     }));
@@ -204,7 +222,7 @@ router.get('/employer/my-jobs', verifyToken, requireRole('employer'), async (req
 router.get('/:id', async (req, res) => {
   try {
     const job = await Job.findById(req.params.id)
-      .populate('employerId', 'companyName isVerified accountStatus companyDescription website');
+      .populate('employerId', 'companyName isVerified accountStatus companyDescription website industry companySize foundedYear address');
 
     if (!job) {
       return res.status(404).json({
@@ -216,14 +234,20 @@ router.get('/:id', async (req, res) => {
     // Increment view count
     await job.incrementViewCount();
 
-    // Get public job data with employer info
+    // Get public job data with fresh employer info
     const jobData = job.getPublicData();
     if (job.employerId) {
       jobData.companyDetails = {
         ...jobData.companyDetails,
         name: job.employerId.companyName,
         description: job.employerId.companyDescription,
+        industry: job.employerId.industry,
         website: job.employerId.website,
+        size: job.employerId.companySize,
+        founded: job.employerId.foundedYear,
+        headquarters: job.employerId.address?.city ? 
+          `${job.employerId.address.city}, ${job.employerId.address.province || ''}, ${job.employerId.address.country || 'Philippines'}`.trim() : 
+          'Philippines',
         isVerified: job.employerId.accountStatus === 'verified'
       };
     }
