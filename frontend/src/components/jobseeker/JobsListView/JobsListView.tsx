@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { FiMapPin, FiClock, FiDollarSign, FiBookmark, FiSearch, FiEye, FiBriefcase } from 'react-icons/fi';
+import { FiMapPin, FiClock, FiDollarSign, FiBookmark, FiSearch, FiEye, FiBriefcase, FiChevronDown, FiChevronUp } from 'react-icons/fi';
 import styles from './JobsListView.module.css';
 import { getImageSrc } from '../../../utils/imageUtils';
 import { Job } from '../../../types/Job';
@@ -25,6 +25,7 @@ export const JobsListView: React.FC<JobsListViewProps> = ({
   jobseekerSkills = [],
   jobseekerEducation,
 }) => {
+  const [showMatchingInfo, setShowMatchingInfo] = useState(false);
   // Levenshtein distance for fuzzy matching
   const levenshteinDistance = (str1: string, str2: string): number => {
     const matrix = [];
@@ -460,6 +461,102 @@ export const JobsListView: React.FC<JobsListViewProps> = ({
 
   return (
     <div className={styles.listContainer}>
+      {/* Job Matching Info Toggle */}
+      <div style={{ 
+        marginBottom: '16px'
+      }}>
+        <button
+          onClick={() => setShowMatchingInfo(!showMatchingInfo)}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            width: '100%',
+            padding: '12px 16px',
+            backgroundColor: showMatchingInfo ? '#e3f2fd' : '#ffffff',
+            border: `2px solid ${showMatchingInfo ? '#2196f3' : '#e0e0e0'}`,
+            borderRadius: '10px',
+            cursor: 'pointer',
+            fontSize: '15px',
+            fontWeight: '600',
+            color: showMatchingInfo ? '#1565c0' : '#424242',
+            transition: 'all 0.3s ease',
+            boxShadow: showMatchingInfo ? '0 2px 8px rgba(33, 150, 243, 0.15)' : '0 1px 3px rgba(0, 0, 0, 0.1)',
+            outline: 'none'
+          }}
+          onMouseEnter={(e) => {
+            if (!showMatchingInfo) {
+              e.currentTarget.style.backgroundColor = '#f5f5f5';
+              e.currentTarget.style.borderColor = '#bdbdbd';
+              e.currentTarget.style.boxShadow = '0 2px 6px rgba(0, 0, 0, 0.15)';
+            }
+          }}
+          onMouseLeave={(e) => {
+            if (!showMatchingInfo) {
+              e.currentTarget.style.backgroundColor = '#ffffff';
+              e.currentTarget.style.borderColor = '#e0e0e0';
+              e.currentTarget.style.boxShadow = '0 1px 3px rgba(0, 0, 0, 0.1)';
+            }
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <span style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              width: '24px',
+              height: '24px',
+              backgroundColor: showMatchingInfo ? '#2196f3' : '#9e9e9e',
+              borderRadius: '50%',
+              color: 'white',
+              fontSize: '12px',
+              fontWeight: 'bold',
+              transition: 'all 0.3s ease'
+            }}>
+              ?
+            </span>
+            <span>How does job matching work?</span>
+          </div>
+          <span style={{
+            transform: showMatchingInfo ? 'rotate(180deg)' : 'rotate(0deg)',
+            transition: 'transform 0.3s ease',
+            color: showMatchingInfo ? '#2196f3' : '#757575'
+          }}>
+            <FiChevronDown size={20} />
+          </span>
+        </button>
+        
+        {showMatchingInfo && (
+          <div style={{ 
+            padding: '16px', 
+            backgroundColor: '#e8f4fd', 
+            border: '1px solid #b3d9ff', 
+            borderRadius: '6px', 
+            marginTop: '8px',
+            color: '#0c5460',
+            animation: 'fadeIn 0.2s ease-in'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'flex-start', gap: '8px' }}>
+              <span style={{ 
+                fontSize: '16px', 
+                fontWeight: 'bold', 
+                color: '#0066cc',
+                minWidth: '20px'
+              }}></span>
+              <div>
+                <strong>How Job Matching Works:</strong>
+                <p style={{ margin: '8px 0 0 0', fontSize: '14px', lineHeight: '1.5' }}>
+                  Our matching system compares your profile with job requirements to calculate a compatibility score. 
+                  The algorithm analyzes various aspects of your background and matches them with what employers are looking for. 
+                  Jobs are automatically sorted by match score, with the most compatible opportunities appearing first. 
+                  This helps you quickly identify positions that best align with your qualifications and experience.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+
       {(!jobseekerSkills || jobseekerSkills.length === 0) && (
         <div style={{ 
           padding: '12px', 
@@ -472,6 +569,7 @@ export const JobsListView: React.FC<JobsListViewProps> = ({
           <strong>💡 Tip:</strong> Add skills to your resume to see accurate job matching scores based on your qualifications.
         </div>
       )}
+      
       <div className={styles.listHeader}>
         <div className={styles.headerCell}>#</div>
         <div className={styles.headerCell}>Top Jobs</div>
@@ -490,16 +588,16 @@ export const JobsListView: React.FC<JobsListViewProps> = ({
       
       <div className={styles.listBody}>
         {jobs
-          .map(job => ({ ...job, matchScore: calculateMatchScore(job, jobseekerEducation, job.title?.toLowerCase().includes('debug') || false) }))
-          .sort((a, b) => b.matchScore - a.matchScore)
-          .map((job, index) => {
-          const matchScore = job.matchScore;
-          // Use the original job.id for consistency with savedJobs Set
-          const isSaved = savedJobs.has(job.id);
-          const isApplied = appliedJobs.has(job.id);
+                .map(job => ({ ...job, matchScore: calculateMatchScore(job, jobseekerEducation, job.title?.toLowerCase().includes('debug') || false) }))
+                .sort((a, b) => b.matchScore - a.matchScore)
+                .map((job, index) => {
+                  const matchScore = job.matchScore;
+                  // Use the original job.id for consistency with savedJobs Set
+                  const isSaved = savedJobs.has(job.id);
+                  const isApplied = appliedJobs.has(job.id);
 
-          return (
-            <div key={job.id} className={styles.listRow}>
+                  return (
+                    <div key={job.id} className={styles.listRow}>
               <div className={styles.numberCell}>
                 <span className={styles.rowNumber}>{index + 1}</span>
               </div>

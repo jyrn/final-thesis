@@ -5,6 +5,7 @@ import { FiHome, FiBriefcase, FiFileText, FiUser, FiBookmark, FiMapPin, FiDollar
 import { getImageSrc } from '../../utils/imageUtils'
 import FilterModal from '../../components/jobseeker/FilterModal/FilterModal'
 import SearchBar from '../../components/jobseeker/SearchBar/SearchBar'
+import LocationFilter from '../../components/jobseeker/LocationFilter/LocationFilter'
 import ResumeUploadPrompt from '../../components/ResumeUploadPrompt';
 import JobDetailModal from '../../components/jobseeker/JobDetailModal/JobDetailModal';
 import ApplicationSuccessModal from '../../components/ApplicationSuccessModal';
@@ -70,6 +71,7 @@ const Dashboard: React.FC = () => {
   const [showApplicationSuccess, setShowApplicationSuccess] = useState(false)
   const [appliedJobDetails, setAppliedJobDetails] = useState<{ title: string; company: string } | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
+  const [locationFilter, setLocationFilter] = useState('')
   const [jobs, setJobs] = useState<Job[]>([])
   const [filteredJobs, setFilteredJobs] = useState<Job[]>([])
   const [showResumeUpload, setShowResumeUpload] = useState(false)
@@ -487,14 +489,53 @@ const Dashboard: React.FC = () => {
   }
 
   const getJobsToDisplay = () => {
-    // Always use filteredJobs as the base (includes both search and filter results)
-    let jobsToShow = filteredJobs;
+    // Start with all jobs and apply filters step by step
+    let jobsToShow = jobs;
     
-    // If no search query and user has resume, apply skill matching to filtered results
+    // Apply search filter (keywords, companies, job titles)
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase().trim();
+      jobsToShow = jobsToShow.filter(job => {
+        const title = (job.title || '').toLowerCase();
+        const company = (job.company || '').toLowerCase();
+        const description = (job.description || '').toLowerCase();
+        const requirements = (job.requirements || []).join(' ').toLowerCase();
+        
+        return title.includes(query) || 
+               company.includes(query) || 
+               description.includes(query) || 
+               requirements.includes(query);
+      });
+    }
+    
+    // Apply location filter (only location field)
+    if (locationFilter.trim()) {
+      jobsToShow = jobsToShow.filter(job => {
+        const jobLocation = (job.location || '').toLowerCase();
+        const filterText = locationFilter.toLowerCase().trim();
+        
+        // Check for exact match first
+        if (jobLocation === filterText) {
+          return true;
+        }
+        
+        // Check if job location contains the full search term as a substring
+        // This allows partial matching but prevents word-by-word matching
+        return jobLocation.includes(filterText);
+      });
+    }
+    
+    // Apply additional filters from filteredJobs if they exist
+    if (filteredJobs.length !== jobs.length) {
+      const filteredJobIds = new Set(filteredJobs.map(job => job.id));
+      jobsToShow = jobsToShow.filter(job => filteredJobIds.has(job.id));
+    }
+    
+    // If no search query and user has resume, apply skill matching for sorting
     if (searchQuery.trim() === '' && resume && !hasSkippedResume) {
       const userSkills = resume.skills?.map(skill => skill?.toLowerCase() || '') || [];
       
-      jobsToShow = filteredJobs
+      jobsToShow = jobsToShow
         .map(job => {
           const jobRequirements = job.requirements || []
           const matchingSkills = jobRequirements.filter(req => 
@@ -751,11 +792,28 @@ const Dashboard: React.FC = () => {
           
           {activeTab === 'jobs' && (
             <div className={styles.headerSearch}>
-              <SearchBar 
-                value={searchQuery}
-                onChange={(value) => setSearchQuery(value)}
-                placeholder="Search for jobs, companies, or keywords"
-              />
+              <div style={{ 
+                display: 'flex', 
+                gap: '12px', 
+                alignItems: 'center',
+                width: '100%',
+                flexWrap: 'wrap'
+              }}>
+                <div style={{ flex: '2', minWidth: '250px' }}>
+                  <SearchBar 
+                    value={searchQuery}
+                    onChange={(value) => setSearchQuery(value)}
+                    placeholder="Search for jobs, companies, or keywords"
+                  />
+                </div>
+                <div style={{ flex: '1', minWidth: '200px' }}>
+                  <LocationFilter 
+                    value={locationFilter}
+                    onChange={(value) => setLocationFilter(value)}
+                    placeholder="Filter by location"
+                  />
+                </div>
+              </div>
             </div>
           )}
           
