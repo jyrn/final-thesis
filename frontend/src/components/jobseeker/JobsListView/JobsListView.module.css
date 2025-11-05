@@ -3,17 +3,19 @@
   border-radius: 8px;
   border: 1px solid #d1d5db;
   overflow: hidden;
+  width: 100%;
 }
 
 .listHeader {
   display: grid;
-  grid-template-columns: 50px 1.5fr 1fr 1fr 0.8fr 170px;
+  grid-template-columns: 60px 1fr 1fr 1fr 140px 160px;
   background: #f9fafb;
   color: #374151;
   padding: 12px 0;
   font-weight: 600;
   font-size: 13px;
   border-bottom: 1px solid #e5e7eb;
+  width: 100%;
 }
 
 .headerCell {
@@ -38,15 +40,17 @@
 .listBody {
   max-height: 70vh;
   overflow-y: auto;
+  overflow-x: auto;
 }
 
 .listRow {
   display: grid;
-  grid-template-columns: 50px 1.5fr 1fr 1fr 0.8fr 170px;
+  grid-template-columns: 60px 1fr 1fr 1fr 140px 160px;
   padding: 12px 0;
   border-bottom: 1px solid #f3f4f6;
   align-items: center;
   transition: background-color 0.2s;
+  width: 100%;
 }
 
 .listRow:hover {
@@ -91,6 +95,7 @@
   align-items: center;
   padding: 0 10px;
   border-right: 1px solid #d1d5db;
+  overflow: hidden;
 }
 
 .avatar {
@@ -125,6 +130,7 @@
 .companyInfo {
   min-width: 0;
   flex: 1;
+  overflow: hidden;
 }
 
 .companyName {
@@ -152,6 +158,9 @@
   color: #6b7280;
   font-size: 12px;
   margin-bottom: 4px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .postedDate {
@@ -388,6 +397,7 @@
   flex-wrap: wrap;
   gap: 6px;
   max-width: 100%;
+  overflow: hidden;
 }
 
 .skillTag {
@@ -583,10 +593,14 @@
 @media (max-width: 1024px) and (min-width: 769px) {
   .listHeader,
   .listRow {
-    grid-template-columns: 40px 1.2fr 0.8fr 0.8fr 0.7fr 140px;
+    grid-template-columns: 50px 1fr 0.9fr 0.9fr 120px 140px;
   }
   
   .companyName {
+    font-size: 12px;
+  }
+  
+  .jobTitle {
     font-size: 12px;
   }
   
@@ -604,8 +618,8 @@
   }
   
   .applyButton {
-    min-width: 60px;
-    width: 60px;
+    min-width: 50px;
+    width: 50px;
     font-size: 9px;
   }
 }

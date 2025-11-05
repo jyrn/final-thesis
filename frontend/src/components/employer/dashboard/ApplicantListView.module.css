@@ -3,17 +3,19 @@
   border-radius: 8px;
   border: 1px solid #d1d5db;
   overflow: hidden;
+  width: 100%;
 }
 
 .listHeader {
   display: grid;
-  grid-template-columns: 60px 1.5fr 1.2fr 1.3fr 1.3fr 1fr 1.3fr 0.8fr;
+  grid-template-columns: 60px 1fr 1fr 1.2fr 1.2fr 130px 120px 100px;
   background: #f9fafb;
   color: #374151;
   padding: 16px 0;
   font-weight: 600;
   font-size: 14px;
   border-bottom: 1px solid #e5e7eb;
+  width: 100%;
 }
 
 .headerCell {
@@ -30,15 +32,17 @@
 .listBody {
   max-height: 70vh;
   overflow-y: auto;
+  overflow-x: auto;
 }
 
 .listRow {
   display: grid;
-  grid-template-columns: 60px 1.5fr 1.2fr 1.3fr 1.3fr 1fr 1.3fr 0.8fr;
+  grid-template-columns: 60px 1fr 1fr 1.2fr 1.2fr 130px 120px 100px;
   padding: 16px 0;
   border-bottom: 1px solid #f3f4f6;
   align-items: center;
   transition: background-color 0.2s;
+  width: 100%;
 }
 
 .listRow:hover {
@@ -102,6 +106,7 @@
 .applicantInfo {
   min-width: 0;
   flex: 1;
+  overflow: hidden;
 }
 
 .applicantName {
@@ -109,16 +114,23 @@
   color: #111827;
   font-size: 14px;
   margin-bottom: 2px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .applicantPosition {
   color: #6b7280;
   font-size: 12px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .skillsCell {
   padding: 0 16px;
   border-right: 1px solid #d1d5db;
+  overflow: hidden;
 }
 
 .skillsList {
@@ -126,6 +138,7 @@
   flex-wrap: wrap;
   gap: 6px;
   max-width: 100%;
+  overflow: hidden;
 }
 
 .skillTag {
@@ -230,6 +243,7 @@
   .listRow {
     grid-template-columns: 1fr;
     gap: 8px;
+    min-width: auto;
   }
   
   .headerCell {
@@ -303,6 +317,7 @@
   display: flex;
   flex-direction: column;
   gap: 2px;
+  overflow: hidden;
 }
 
 .jobTitle {
@@ -310,12 +325,18 @@
   color: #1f2937;
   font-size: 14px;
   line-height: 1.2;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .jobDepartment {
   font-size: 12px;
   color: #6b7280;
   font-weight: 400;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 /* Info banner styles */
@@ -370,12 +391,12 @@
 .statusBadge {
   display: inline-flex;
   align-items: center;
-  padding: 4px 12px;
-  border-radius: 16px;
-  font-size: 12px;
+  padding: 3px 8px;
+  border-radius: 12px;
+  font-size: 11px;
   font-weight: 600;
   text-transform: capitalize;
-  min-width: 120px;
+  min-width: 90px;
   justify-content: center;
 }
 
@@ -410,6 +431,54 @@
 }
 
 .statusText {
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 600;
+}
+
+/* Tablet adjustments */
+@media (max-width: 1024px) and (min-width: 769px) {
+  .listHeader,
+  .listRow {
+    grid-template-columns: 50px 1fr 0.9fr 1.1fr 1.1fr 110px 100px 80px;
+  }
+  
+  .applicantName {
+    font-size: 13px;
+    max-width: 110px;
+  }
+  
+  .applicantPosition {
+    font-size: 11px;
+    max-width: 110px;
+  }
+  
+  .jobTitle {
+    font-size: 13px;
+    max-width: 110px;
+  }
+  
+  .jobDepartment {
+    font-size: 11px;
+    max-width: 110px;
+  }
+  
+  .skillTag {
+    font-size: 10px;
+    padding: 3px 6px;
+  }
+  
+  .matchBar {
+    width: 50px;
+  }
+  
+  .viewButton {
+    font-size: 11px;
+    padding: 6px 8px;
+  }
+  
+  .statusBadge {
+    min-width: 80px;
+    font-size: 11px;
+    padding: 3px 8px;
+  }
 }
